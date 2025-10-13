@@ -36,6 +36,9 @@ const Canvas = () => {
   const [onlineUsers, setOnlineUsers] = useState({});
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
+  // Dragging state
+  const [isDraggingShape, setIsDraggingShape] = useState(false);
+  
   // Set up real-time subscriptions
   useEffect(() => {
     if (!currentUser) return;
@@ -96,9 +99,20 @@ const Canvas = () => {
   }, []);
   
   // Handle drag move for panning
+  const handleStageDragStart = (e) => {
+    // Prevent stage dragging if we're dragging a shape
+    if (isDraggingShape) {
+      e.evt.preventDefault();
+      return false;
+    }
+  };
+
   const handleDragEnd = (e) => {
-    setStageX(e.target.x());
-    setStageY(e.target.y());
+    // Only update stage position if it's actually the stage being dragged
+    if (e.target === e.target.getStage()) {
+      setStageX(e.target.x());
+      setStageY(e.target.y());
+    }
   };
   
   // Create new shape
@@ -121,7 +135,24 @@ const Canvas = () => {
   }, [stageX, stageY, stageScale, currentUser]);
   
   // Handle shape drag
-  const handleShapeDragEnd = async (id, newAttrs) => {
+  const handleShapeDragStart = (e) => {
+    setIsDraggingShape(true);
+    // Stop event propagation to prevent stage drag
+    e.evt.stopPropagation();
+    // Directly disable stage dragging
+    if (stageRef.current) {
+      stageRef.current.draggable(false);
+    }
+  };
+
+  const handleShapeDragEnd = async (e, id, newAttrs) => {
+    setIsDraggingShape(false);
+    // Stop event propagation
+    e.evt.stopPropagation();
+    // Directly enable stage dragging
+    if (stageRef.current) {
+      stageRef.current.draggable(true);
+    }
     try {
       await updateShapeInFirestore(id, newAttrs);
       // Shape will be updated in local state via Firestore subscription
@@ -144,7 +175,11 @@ const Canvas = () => {
       y: (pos.y - stageY) / stageScale,
     };
     
-    setMousePos(canvasPos);
+    // Only update mouse position state occasionally to avoid excessive re-renders
+    if (Date.now() - (handleMouseMove.lastPosUpdate || 0) > 100) {
+      setMousePos(canvasPos);
+      handleMouseMove.lastPosUpdate = Date.now();
+    }
     
     // Throttle cursor updates (update every 50ms)
     if (Date.now() - (handleMouseMove.lastUpdate || 0) > 50) {
@@ -212,7 +247,8 @@ const Canvas = () => {
           ref={stageRef}
           width={VIEWPORT_WIDTH}
           height={VIEWPORT_HEIGHT}
-          draggable
+          draggable={true}
+          onDragStart={handleStageDragStart}
           onWheel={handleWheel}
           onDragEnd={handleDragEnd}
           onMouseMove={handleMouseMove}
@@ -253,8 +289,9 @@ const Canvas = () => {
                 height={shape.height}
                 fill={shape.fill}
                 draggable
+                onDragStart={handleShapeDragStart}
                 onDragEnd={(e) => {
-                  handleShapeDragEnd(shape.id, {
+                  handleShapeDragEnd(e, shape.id, {
                     x: e.target.x(),
                     y: e.target.y(),
                   });
