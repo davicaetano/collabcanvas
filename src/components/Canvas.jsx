@@ -198,16 +198,6 @@ const Canvas = () => {
     // Subscribe to presence with active user filtering
     const unsubscribePresence = subscribeToPresence((presenceData) => {
       const activeUsers = filterActiveUsers(presenceData);
-      
-      // Log when online user count changes
-      const previousCount = Object.keys(onlineUsers).length;
-      const newCount = Object.keys(activeUsers).length;
-      
-      if (previousCount !== newCount) {
-        console.log(`📊 Online users changed: ${previousCount} → ${newCount}`);
-        console.log('Current online users:', Object.values(activeUsers).map(user => user.name));
-      }
-      
       setOnlineUsers(activeUsers);
     });
 
@@ -215,8 +205,6 @@ const Canvas = () => {
     updatePresence(currentUser.uid, {
       name: currentUser.displayName,
       photo: currentUser.photoURL,
-    }).then(() => {
-      console.log(`✅ ${currentUser.displayName} joined the canvas`);
     });
 
     // Set up heartbeat to update presence every 60 seconds (reduced frequency)
@@ -231,10 +219,7 @@ const Canvas = () => {
     // Set up cleanup to remove inactive users every 2 minutes
     const cleanupInterval = setInterval(async () => {
       try {
-        const removedCount = await cleanupInactiveUsers();
-        if (removedCount > 0) {
-          console.log(`🧹 Cleaned up ${removedCount} inactive users`);
-        }
+        await cleanupInactiveUsers();
       } catch (error) {
         console.error('Error cleaning up inactive users:', error);
       }
@@ -243,7 +228,6 @@ const Canvas = () => {
     // Handle page unload - remove user immediately when closing app
     const handleBeforeUnload = async () => {
       try {
-        console.log(`👋 ${currentUser.displayName} is leaving the canvas`);
         await removePresence(currentUser.uid);
         await removeCursor(currentUser.uid);
       } catch (error) {

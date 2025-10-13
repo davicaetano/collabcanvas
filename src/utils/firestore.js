@@ -121,26 +121,15 @@ export const cleanupInactiveUsers = async () => {
   const twoMinutesAgo = now - (2 * 60 * 1000); // 2 minutes in milliseconds
   
   const deletePromises = [];
-  const inactiveUsers = [];
   
   snapshot.forEach((doc) => {
     const data = doc.data();
     if (data.lastSeen && data.lastSeen.toMillis() < twoMinutesAgo) {
-      const lastSeenTime = new Date(data.lastSeen.toMillis());
-      const inactiveMinutes = Math.floor((now - data.lastSeen.toMillis()) / (60 * 1000));
-      
-      console.log(`🧹 Removing inactive user: ${data.name} (inactive for ${inactiveMinutes} minutes, last seen: ${lastSeenTime.toLocaleTimeString()})`);
-      inactiveUsers.push(data.name);
       deletePromises.push(deleteDoc(doc.ref));
     }
   });
   
   await Promise.all(deletePromises);
-  
-  if (deletePromises.length > 0) {
-    console.log(`🧹 Cleanup complete: Removed ${deletePromises.length} inactive users: ${inactiveUsers.join(', ')}`);
-  }
-  
   return deletePromises.length; // Return number of users removed
 };
 
@@ -153,9 +142,6 @@ export const filterActiveUsers = (users) => {
     // More tolerant filtering - include users without lastSeen (newly joined) or recently active
     if (!userData.lastSeen || userData.lastSeen.toMillis() > threeMinutesAgo) {
       activeUsers[userId] = userData;
-    } else {
-      const inactiveMinutes = Math.floor((now - userData.lastSeen.toMillis()) / (60 * 1000));
-      console.log(`🚫 Filtering out inactive user: ${userData.name} (inactive for ${inactiveMinutes} minutes)`);
     }
   });
   
