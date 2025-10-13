@@ -19,6 +19,143 @@ const CANVAS_HEIGHT = 3000;
 const VIEWPORT_WIDTH = window.innerWidth;
 const VIEWPORT_HEIGHT = window.innerHeight - 60; // Account for header
 
+// Helper function to get user initials (Google style - prefer 1 initial)
+const getUserInitials = (name) => {
+  if (!name) return '?';
+  const names = name.trim().split(' ');
+  // Google style: prefer first initial only, unless it's a very short name
+  return names[0].charAt(0).toUpperCase();
+};
+
+// Helper function to generate Google-like colors for user based on name
+const getUserColor = (name) => {
+  if (!name) return '#9CA3AF'; // gray-400
+  
+  // Google-like color palette
+  const googleColors = [
+    '#DB4437', // Red
+    '#4285F4', // Blue  
+    '#0F9D58', // Green
+    '#F4B400', // Yellow
+    '#AB47BC', // Purple
+    '#FF7043', // Orange
+    '#00ACC1', // Cyan
+    '#7B1FA2', // Deep Purple
+    '#689F38', // Light Green
+    '#FF5722', // Deep Orange
+    '#795548', // Brown
+    '#607D8B'  // Blue Grey
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  return googleColors[Math.abs(hash) % googleColors.length];
+};
+
+// Current User Avatar component
+const CurrentUserAvatar = ({ user }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
+  const initials = getUserInitials(user?.displayName);
+  const bgColor = getUserColor(user?.displayName);
+  
+  return (
+    <div 
+      className="w-8 h-8 rounded-full relative shadow-sm overflow-hidden"
+      style={{ backgroundColor: bgColor }}
+    >
+      {/* Initials - only show when no photo or photo failed */}
+      {(!user?.photoURL || imageError || !imageLoaded) && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center text-white font-medium"
+          style={{ 
+            fontSize: '14px',
+            backgroundColor: bgColor,
+            fontWeight: '500',
+            lineHeight: '32px' // Match container height for perfect centering
+          }}
+        >
+          {initials}
+        </div>
+      )}
+      
+      {/* Photo - only render if user has photo AND no error AND loaded */}
+      {user?.photoURL && !imageError && (
+        <img
+          src={user.photoURL}
+          alt={user.displayName}
+          className="w-full h-full rounded-full object-cover absolute inset-0"
+          onError={(e) => {
+            console.log('Current user image failed to load');
+            setImageError(true);
+            setImageLoaded(false);
+          }}
+          onLoad={(e) => {
+            console.log('Current user image loaded successfully');
+            setImageError(false);
+            setImageLoaded(true);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Avatar component for online users
+const AvatarComponent = ({ user, index }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
+  const initials = getUserInitials(user.name);
+  const bgColor = getUserColor(user.name);
+  
+  return (
+    <div
+      className="w-8 h-8 rounded-full border-2 border-gray-800 relative shadow-sm overflow-hidden"
+      title={user.name}
+      style={{ backgroundColor: bgColor }}
+    >
+      {/* Initials - only show when no photo or photo failed */}
+      {(!user.photo || imageError || !imageLoaded) && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center text-white font-medium"
+          style={{ 
+            fontSize: '14px',
+            backgroundColor: bgColor,
+            fontWeight: '500',
+            lineHeight: '32px' // Match container height for perfect centering
+          }}
+        >
+          {initials}
+        </div>
+      )}
+      
+      {/* Photo - only render if user has photo AND no error */}
+      {user.photo && !imageError && (
+        <img
+          src={user.photo}
+          alt={user.name}
+          className="w-full h-full rounded-full object-cover absolute inset-0"
+          onError={(e) => {
+            console.log('Image failed to load for:', user.name);
+            setImageError(true);
+            setImageLoaded(false);
+          }}
+          onLoad={(e) => {
+            console.log('Image loaded successfully for:', user.name);
+            setImageError(false);
+            setImageLoaded(true);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
 const Canvas = () => {
   const { currentUser, logout } = useAuth();
   const stageRef = useRef();
@@ -214,22 +351,12 @@ const Canvas = () => {
             </span>
             <div className="flex -space-x-2">
               {Object.values(onlineUsers).slice(0, 5).map((user, index) => (
-                <img
-                  key={index}
-                  src={user.photo}
-                  alt={user.name}
-                  className="w-8 h-8 rounded-full border-2 border-gray-800"
-                  title={user.name}
-                />
+                <AvatarComponent key={`${user.uid}-${index}`} user={user} index={index} />
               ))}
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <img
-              src={currentUser?.photoURL}
-              alt={currentUser?.displayName}
-              className="w-8 h-8 rounded-full"
-            />
+            <CurrentUserAvatar user={currentUser} />
             <span className="text-sm">{currentUser?.displayName}</span>
           </div>
           <button
