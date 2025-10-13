@@ -18,10 +18,20 @@ export const AuthProvider = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('Attempting Google sign-in...');
+      console.log('Firebase config check:', {
+        apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? 'Set' : 'Missing',
+        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? 'Set' : 'Missing',
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? 'Set' : 'Missing'
+      });
+      
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('Sign-in successful:', result.user);
       return result.user;
     } catch (error) {
-      console.error('Error signing in with Google:', error);
+      console.error('Detailed sign-in error:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       throw error;
     }
   };
