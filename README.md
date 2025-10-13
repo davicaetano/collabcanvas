@@ -72,31 +72,58 @@ Real-time Shapes    Real-time Cursors
 ## Development Status
 
 ✅ Basic project setup  
-✅ Authentication system  
-✅ Canvas with pan/zoom  
-✅ Basic shape creation  
-🔄 Real-time Firestore sync (in progress)  
-⏳ Cursor tracking  
-⏳ Presence system  
-⏳ Production deployment  
+✅ Authentication system (Google OAuth)  
+✅ Canvas with pan/zoom functionality  
+✅ Basic shape creation and manipulation  
+✅ Real-time Firestore synchronization  
+✅ Live cursor tracking  
+✅ User presence system  
+🔄 Production deployment (next step)  
+⏳ Performance testing and polish  
 
-## MVP Requirements
+## MVP Requirements Checklist
 
 - [x] Google OAuth authentication
-- [x] Canvas with pan/zoom functionality
+- [x] Canvas with pan/zoom functionality  
 - [x] Shape creation (rectangles)
 - [x] Shape manipulation (drag to move)
-- [ ] Real-time shape synchronization
-- [ ] Live cursor tracking
-- [ ] Presence awareness (online users)
-- [ ] State persistence
-- [ ] Conflict resolution
-- [ ] Production deployment
+- [x] Real-time shape synchronization between users
+- [x] Live cursor tracking with user names
+- [x] Presence awareness (online users list)
+- [x] State persistence via Firestore
+- [x] Conflict resolution (last-write-wins via Firestore)
+- [ ] Production deployment on Vercel
+- [ ] Performance testing with 5+ concurrent users
+
+## Current Features
+
+### ✅ Implemented
+- **Authentication**: Google OAuth login/logout
+- **Canvas**: Smooth pan (drag) and zoom (scroll wheel) 
+- **Shapes**: Click to create rectangles, drag to move
+- **Real-time Sync**: All changes appear instantly for other users
+- **Live Cursors**: See other users' mouse cursors with names
+- **Presence**: View who's online with avatars
+- **State Persistence**: Refresh browser, canvas state persists
+
+### 🚀 Ready for Testing
+The application is fully functional for the MVP requirements. You can:
+1. Set up Firebase credentials
+2. Test with multiple browser windows
+3. Deploy to Vercel for public access
 
 ## Next Steps
 
-1. Integrate Firestore for real-time shape sync
-2. Implement cursor tracking system
-3. Add user presence indicators
-4. Deploy to production
-5. Performance testing with multiple users
+### For Production Deployment:
+1. **Firebase Setup**: Create Firebase project and add credentials to `.env`
+2. **Vercel Deployment**: Push to GitHub and connect to Vercel
+3. **Performance Testing**: Test with 5+ concurrent users
+4. **Security Rules**: Apply the included `firestore.rules` to Firebase
+
+### Future Enhancements (Post-MVP):
+- Multiple shape types (circles, text)
+- Shape resizing and rotation
+- Color picker for shapes
+- Undo/redo functionality
+- Shape selection and multi-select
+- Export/import canvas data
