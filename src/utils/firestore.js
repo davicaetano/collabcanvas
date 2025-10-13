@@ -5,7 +5,10 @@ import {
   deleteDoc, 
   onSnapshot, 
   serverTimestamp,
-  updateDoc 
+  updateDoc,
+  query,
+  where,
+  getDocs
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -100,4 +103,61 @@ export const subscribeToPresence = (callback) => {
 export const removePresence = async (userId) => {
   const presenceRef = doc(db, 'canvases', CANVAS_ID, 'presence', userId);
   await deleteDoc(presenceRef);
+};
+
+// Enhanced presence management
+export const updateHeartbeat = async (userId) => {
+  const presenceRef = doc(db, 'canvases', CANVAS_ID, 'presence', userId);
+  await updateDoc(presenceRef, {
+    lastSeen: serverTimestamp(),
+    online: true,
+  });
+};
+
+export const cleanupInactiveUsers = async () => {
+  const presenceRef = collection(db, 'canvases', CANVAS_ID, 'presence');
+  const snapshot = await getDocs(presenceRef);
+  const now = Date.now();
+  const twoMinutesAgo = now - (2 * 60 * 1000); // 2 minutes in milliseconds
+  
+  const deletePromises = [];
+  const inactiveUsers = [];
+  
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    if (data.lastSeen && data.lastSeen.toMillis() < twoMinutesAgo) {
+      const lastSeenTime = new Date(data.lastSeen.toMillis());
+      const inactiveMinutes = Math.floor((now - data.lastSeen.toMillis()) / (60 * 1000));
+      
+      console.log(`🧹 Removing inactive user: ${data.name} (inactive for ${inactiveMinutes} minutes, last seen: ${lastSeenTime.toLocaleTimeString()})`);
+      inactiveUsers.push(data.name);
+      deletePromises.push(deleteDoc(doc.ref));
+    }
+  });
+  
+  await Promise.all(deletePromises);
+  
+  if (deletePromises.length > 0) {
+    console.log(`🧹 Cleanup complete: Removed ${deletePromises.length} inactive users: ${inactiveUsers.join(', ')}`);
+  }
+  
+  return deletePromises.length; // Return number of users removed
+};
+
+export const filterActiveUsers = (users) => {
+  const now = Date.now();
+  const threeMinutesAgo = now - (3 * 60 * 1000); // Increased to 3 minutes for more tolerance
+  
+  const activeUsers = {};
+  Object.entries(users).forEach(([userId, userData]) => {
+    // More tolerant filtering - include users without lastSeen (newly joined) or recently active
+    if (!userData.lastSeen || userData.lastSeen.toMillis() > threeMinutesAgo) {
+      activeUsers[userId] = userData;
+    } else {
+      const inactiveMinutes = Math.floor((now - userData.lastSeen.toMillis()) / (60 * 1000));
+      console.log(`🚫 Filtering out inactive user: ${userData.name} (inactive for ${inactiveMinutes} minutes)`);
+    }
+  });
+  
+  return activeUsers;
 };

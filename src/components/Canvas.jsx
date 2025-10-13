@@ -10,7 +10,10 @@ import {
   removeCursor,
   updatePresence,
   subscribeToPresence,
-  removePresence
+  removePresence,
+  updateHeartbeat,
+  cleanupInactiveUsers,
+  filterActiveUsers
 } from '../utils/firestore';
 
 // Canvas constants
@@ -192,22 +195,77 @@ const Canvas = () => {
       setCursors(otherCursors);
     });
 
-    // Subscribe to presence
+    // Subscribe to presence with active user filtering
     const unsubscribePresence = subscribeToPresence((presenceData) => {
-      setOnlineUsers(presenceData);
+      const activeUsers = filterActiveUsers(presenceData);
+      
+      // Log when online user count changes
+      const previousCount = Object.keys(onlineUsers).length;
+      const newCount = Object.keys(activeUsers).length;
+      
+      if (previousCount !== newCount) {
+        console.log(`📊 Online users changed: ${previousCount} → ${newCount}`);
+        console.log('Current online users:', Object.values(activeUsers).map(user => user.name));
+      }
+      
+      setOnlineUsers(activeUsers);
     });
 
-    // Update presence
+    // Initial presence update
     updatePresence(currentUser.uid, {
       name: currentUser.displayName,
       photo: currentUser.photoURL,
+    }).then(() => {
+      console.log(`✅ ${currentUser.displayName} joined the canvas`);
     });
+
+    // Set up heartbeat to update presence every 60 seconds (reduced frequency)
+    const heartbeatInterval = setInterval(async () => {
+      try {
+        await updateHeartbeat(currentUser.uid);
+      } catch (error) {
+        console.error('Error updating heartbeat:', error);
+      }
+    }, 60000); // 60 seconds instead of 30
+
+    // Set up cleanup to remove inactive users every 2 minutes
+    const cleanupInterval = setInterval(async () => {
+      try {
+        const removedCount = await cleanupInactiveUsers();
+        if (removedCount > 0) {
+          console.log(`🧹 Cleaned up ${removedCount} inactive users`);
+        }
+      } catch (error) {
+        console.error('Error cleaning up inactive users:', error);
+      }
+    }, 120000); // 2 minutes instead of 1
+
+    // Handle page unload - remove user immediately when closing app
+    const handleBeforeUnload = async () => {
+      try {
+        console.log(`👋 ${currentUser.displayName} is leaving the canvas`);
+        await removePresence(currentUser.uid);
+        await removeCursor(currentUser.uid);
+      } catch (error) {
+        console.error('Error cleaning up on page unload:', error);
+      }
+    };
+
+    // Add event listeners for page unload
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('unload', handleBeforeUnload);
 
     // Cleanup on unmount
     return () => {
       unsubscribeShapes();
       unsubscribeCursors();
       unsubscribePresence();
+      clearInterval(heartbeatInterval);
+      clearInterval(cleanupInterval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('unload', handleBeforeUnload);
+      
+      // Remove presence and cursor
       removeCursor(currentUser.uid);
       removePresence(currentUser.uid);
     };
