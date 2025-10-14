@@ -22,6 +22,20 @@ const CANVAS_HEIGHT = 3000;
 const VIEWPORT_WIDTH = window.innerWidth;
 const VIEWPORT_HEIGHT = window.innerHeight - 60; // Account for header
 
+// Performance constants
+const GRID_SIZE = 50;
+const ZOOM_MIN = 0.1;
+const ZOOM_MAX = 5;
+const ZOOM_SCALE_FACTOR = 1.02;
+const CURSOR_UPDATE_THROTTLE = 50; // ms
+const MOUSE_POS_UPDATE_THROTTLE = 100; // ms
+const HEARTBEAT_INTERVAL = 60000; // 60 seconds
+const CLEANUP_INTERVAL = 120000; // 2 minutes
+
+// Avatar constants
+const AVATAR_SIZE = 32; // 8 * 4 (w-8 h-8 in Tailwind)
+const AVATAR_FONT_SIZE = 14;
+
 // Helper function to get user initials (Google style - prefer 1 initial)
 const getUserInitials = (name) => {
   if (!name) return '?';
@@ -59,7 +73,7 @@ const getUserColor = (name) => {
 };
 
 // Current User Avatar component
-const CurrentUserAvatar = ({ user }) => {
+const CurrentUserAvatar = React.memo(({ user }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
@@ -76,10 +90,10 @@ const CurrentUserAvatar = ({ user }) => {
         <div 
           className="absolute inset-0 flex items-center justify-center text-white font-medium"
           style={{ 
-            fontSize: '14px',
+            fontSize: `${AVATAR_FONT_SIZE}px`,
             backgroundColor: bgColor,
             fontWeight: '500',
-            lineHeight: '32px' // Match container height for perfect centering
+            lineHeight: `${AVATAR_SIZE}px` // Match container height for perfect centering
           }}
         >
           {initials}
@@ -92,13 +106,11 @@ const CurrentUserAvatar = ({ user }) => {
           src={user.photoURL}
           alt={user.displayName}
           className="w-full h-full rounded-full object-cover absolute inset-0"
-          onError={(e) => {
-            console.log('Current user image failed to load');
+          onError={() => {
             setImageError(true);
             setImageLoaded(false);
           }}
-          onLoad={(e) => {
-            console.log('Current user image loaded successfully');
+          onLoad={() => {
             setImageError(false);
             setImageLoaded(true);
           }}
@@ -106,10 +118,10 @@ const CurrentUserAvatar = ({ user }) => {
       )}
     </div>
   );
-};
+});
 
 // Avatar component for online users
-const AvatarComponent = ({ user, index }) => {
+const AvatarComponent = React.memo(({ user }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
@@ -127,10 +139,10 @@ const AvatarComponent = ({ user, index }) => {
         <div 
           className="absolute inset-0 flex items-center justify-center text-white font-medium"
           style={{ 
-            fontSize: '14px',
+            fontSize: `${AVATAR_FONT_SIZE}px`,
             backgroundColor: bgColor,
             fontWeight: '500',
-            lineHeight: '32px' // Match container height for perfect centering
+            lineHeight: `${AVATAR_SIZE}px` // Match container height for perfect centering
           }}
         >
           {initials}
@@ -143,13 +155,11 @@ const AvatarComponent = ({ user, index }) => {
           src={user.photo}
           alt={user.name}
           className="w-full h-full rounded-full object-cover absolute inset-0"
-          onError={(e) => {
-            console.log('Image failed to load for:', user.name);
+          onError={() => {
             setImageError(true);
             setImageLoaded(false);
           }}
-          onLoad={(e) => {
-            console.log('Image loaded successfully for:', user.name);
+          onLoad={() => {
             setImageError(false);
             setImageLoaded(true);
           }}
@@ -157,7 +167,7 @@ const AvatarComponent = ({ user, index }) => {
       )}
     </div>
   );
-};
+});
 
 const Canvas = () => {
   const { currentUser, logout } = useAuth();
@@ -207,14 +217,14 @@ const Canvas = () => {
       photo: currentUser.photoURL,
     });
 
-    // Set up heartbeat to update presence every 60 seconds (reduced frequency)
+    // Set up heartbeat to update presence every 60 seconds
     const heartbeatInterval = setInterval(async () => {
       try {
         await updateHeartbeat(currentUser.uid);
       } catch (error) {
         console.error('Error updating heartbeat:', error);
       }
-    }, 60000); // 60 seconds instead of 30
+    }, HEARTBEAT_INTERVAL);
 
     // Set up cleanup to remove inactive users every 2 minutes
     const cleanupInterval = setInterval(async () => {
@@ -223,7 +233,7 @@ const Canvas = () => {
       } catch (error) {
         console.error('Error cleaning up inactive users:', error);
       }
-    }, 120000); // 2 minutes instead of 1
+    }, CLEANUP_INTERVAL);
 
     // Handle page unload - remove user immediately when closing app
     const handleBeforeUnload = async () => {
@@ -259,7 +269,6 @@ const Canvas = () => {
   const handleWheel = useCallback((e) => {
     e.evt.preventDefault();
     
-    const scaleBy = 1.02;
     const stage = stageRef.current;
     const oldScale = stage.scaleX();
     const mousePointTo = {
@@ -267,10 +276,10 @@ const Canvas = () => {
       y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
     };
     
-    const newScale = e.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+    const newScale = e.evt.deltaY > 0 ? oldScale * ZOOM_SCALE_FACTOR : oldScale / ZOOM_SCALE_FACTOR;
     
     // Limit zoom
-    if (newScale < 0.1 || newScale > 5) return;
+    if (newScale < ZOOM_MIN || newScale > ZOOM_MAX) return;
     
     setStageScale(newScale);
     setStageX(-(mousePointTo.x - stage.getPointerPosition().x / newScale) * newScale);
@@ -355,13 +364,13 @@ const Canvas = () => {
     };
     
     // Only update mouse position state occasionally to avoid excessive re-renders
-    if (Date.now() - (handleMouseMove.lastPosUpdate || 0) > 100) {
+    if (Date.now() - (handleMouseMove.lastPosUpdate || 0) > MOUSE_POS_UPDATE_THROTTLE) {
       setMousePos(canvasPos);
       handleMouseMove.lastPosUpdate = Date.now();
     }
     
-    // Throttle cursor updates (update every 50ms)
-    if (Date.now() - (handleMouseMove.lastUpdate || 0) > 50) {
+    // Throttle cursor updates
+    if (Date.now() - (handleMouseMove.lastUpdate || 0) > CURSOR_UPDATE_THROTTLE) {
       updateCursor(currentUser.uid, {
         x: canvasPos.x,
         y: canvasPos.y,
@@ -393,7 +402,7 @@ const Canvas = () => {
             </span>
             <div className="flex -space-x-2">
               {Object.values(onlineUsers).slice(0, 5).map((user, index) => (
-                <AvatarComponent key={`${user.uid}-${index}`} user={user} index={index} />
+                <AvatarComponent key={`${user.uid}-${index}`} user={user} />
               ))}
             </div>
           </div>
@@ -427,19 +436,23 @@ const Canvas = () => {
           y={stageY}
         >
           <Layer>
-            {/* Grid background */}
-            {Array.from({ length: Math.ceil(CANVAS_WIDTH / 50) }, (_, i) => (
-              <React.Fragment key={`grid-${i}`}>
+            {/* Grid background - optimized rendering */}
+            {Array.from({ length: Math.ceil(CANVAS_WIDTH / GRID_SIZE) }, (_, i) => (
+              <React.Fragment key={`grid-v-${i}`}>
                 <Rect
-                  x={i * 50}
+                  x={i * GRID_SIZE}
                   y={0}
                   width={1}
                   height={CANVAS_HEIGHT}
                   fill="#e5e5e5"
                 />
+              </React.Fragment>
+            ))}
+            {Array.from({ length: Math.ceil(CANVAS_HEIGHT / GRID_SIZE) }, (_, i) => (
+              <React.Fragment key={`grid-h-${i}`}>
                 <Rect
                   x={0}
-                  y={i * 50}
+                  y={i * GRID_SIZE}
                   width={CANVAS_WIDTH}
                   height={1}
                   fill="#e5e5e5"
