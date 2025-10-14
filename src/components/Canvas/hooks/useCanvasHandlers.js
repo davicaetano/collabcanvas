@@ -8,7 +8,6 @@ import { getUserColor } from '../../../utils/colors';
 import { 
   ZOOM_MIN, 
   ZOOM_MAX, 
-  ZOOM_SCALE_FACTOR,
   CURSOR_UPDATE_THROTTLE 
 } from '../../../utils/canvas';
 
@@ -32,7 +31,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     setDrawStartPos,
     previewRect,
     setPreviewRect,
-    setMousePos,
     isDraggingShape,
     setIsDraggingShape,
     isDraggingCanvas,
@@ -66,8 +64,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
   // Add 500 rectangles for stress testing
   const add500Rectangles = useCallback(async () => {
     if (!currentUser) return;
-    
-    console.log('Adding 500 rectangles for stress testing...');
     const promises = [];
     
     for (let i = 0; i < 500; i++) {
@@ -96,7 +92,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     }
     
     await Promise.all(promises);
-    console.log('Finished adding 500 rectangles!');
   }, [currentUser]);
 
   // Toggle modes
@@ -197,8 +192,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       y: (pos.y - stageY) / stageScale,
     };
     
-    setMousePos(canvasPos);
-    
     // Update drawing preview in add mode
     if (isAddMode && isDrawing && drawStartPos) {
       setPreviewRect({
@@ -226,7 +219,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     stageX, 
     stageY, 
     stageScale, 
-    setMousePos, 
     isAddMode, 
     isDrawing, 
     drawStartPos, 

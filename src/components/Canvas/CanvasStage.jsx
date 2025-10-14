@@ -1,11 +1,11 @@
 import React from 'react';
 import { Stage, Layer } from 'react-konva';
 import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../../utils/canvas';
+import { updateCursor } from '../../utils/firestore';
 import CanvasGrid from './CanvasGrid';
 import CanvasPreview from './CanvasPreview';
 import CanvasShapes from './CanvasShapes';
 import CanvasCursors from './CanvasCursors';
-import { updateCursor } from '../../utils/firestore';
 
 const CanvasStage = React.memo(({ 
   canvasState, 

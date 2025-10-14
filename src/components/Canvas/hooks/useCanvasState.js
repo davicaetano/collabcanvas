@@ -21,7 +21,6 @@ export const useCanvasState = () => {
   // Multiplayer state
   const [cursors, setCursors] = useState({});
   const [onlineUsers, setOnlineUsers] = useState({});
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isDraggingShape, setIsDraggingShape] = useState(false);
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
 
@@ -53,8 +52,6 @@ export const useCanvasState = () => {
     setCursors,
     onlineUsers,
     setOnlineUsers,
-    mousePos,
-    setMousePos,
     isDraggingShape,
     setIsDraggingShape,
     isDraggingCanvas,
