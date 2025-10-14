@@ -11,10 +11,7 @@ import {
   removeCursor,
   updatePresence,
   subscribeToPresence,
-  removePresence,
-  updateHeartbeat,
-  cleanupInactiveUsers,
-  filterActiveUsers
+  removePresence
 } from '../utils/firestore';
 
 // Canvas constants
@@ -30,8 +27,6 @@ const ZOOM_MAX = 5;
 const ZOOM_SCALE_FACTOR = 1.02;
 const CURSOR_UPDATE_THROTTLE = 50; // ms
 const MOUSE_POS_UPDATE_THROTTLE = 100; // ms
-const HEARTBEAT_INTERVAL = 60000; // 60 seconds
-const CLEANUP_INTERVAL = 120000; // 2 minutes
 
 // Avatar constants
 const AVATAR_SIZE = 32; // 8 * 4 (w-8 h-8 in Tailwind)
@@ -212,10 +207,9 @@ const Canvas = () => {
       setCursors(otherCursors);
     });
 
-    // Subscribe to presence with active user filtering
+    // Subscribe to presence (no filtering - show all users)
     const unsubscribePresence = subscribeToPresence((presenceData) => {
-      const activeUsers = filterActiveUsers(presenceData);
-      setOnlineUsers(activeUsers);
+      setOnlineUsers(presenceData);
     });
 
     // Initial presence update
@@ -223,24 +217,6 @@ const Canvas = () => {
       name: currentUser.displayName,
       photo: currentUser.photoURL,
     });
-
-    // Set up heartbeat to update presence every 60 seconds
-    const heartbeatInterval = setInterval(async () => {
-      try {
-        await updateHeartbeat(currentUser.uid);
-      } catch (error) {
-        console.error('Error updating heartbeat:', error);
-      }
-    }, HEARTBEAT_INTERVAL);
-
-    // Set up cleanup to remove inactive users every 2 minutes
-    const cleanupInterval = setInterval(async () => {
-      try {
-        await cleanupInactiveUsers();
-      } catch (error) {
-        console.error('Error cleaning up inactive users:', error);
-      }
-    }, CLEANUP_INTERVAL);
 
     // Handle page unload - remove user immediately when closing app
     const handleBeforeUnload = async () => {
@@ -261,8 +237,6 @@ const Canvas = () => {
       unsubscribeShapes();
       unsubscribeCursors();
       unsubscribePresence();
-      clearInterval(heartbeatInterval);
-      clearInterval(cleanupInterval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('unload', handleBeforeUnload);
       
