@@ -179,6 +179,7 @@ const Canvas = () => {
   
   // UI state
   const [isAddMode, setIsAddMode] = useState(false);
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawStartPos, setDrawStartPos] = useState(null);
   const [previewRect, setPreviewRect] = useState(null);
@@ -269,8 +270,8 @@ const Canvas = () => {
   
   // Handle drag move for panning
   const handleStageDragStart = (e) => {
-    // Prevent stage dragging if we're dragging a shape, drawing, or in add mode
-    if (isDraggingShape || isDrawing || isAddMode) {
+    // Prevent stage dragging if we're dragging a shape, drawing, in add mode, or in delete mode
+    if (isDraggingShape || isDrawing || isAddMode || isDeleteMode) {
       e.evt.preventDefault();
       return false;
     }
@@ -287,7 +288,20 @@ const Canvas = () => {
   // Toggle add mode (for button click)
   const toggleAddMode = useCallback(() => {
     setIsAddMode(!isAddMode);
+    // Exit delete mode if entering add mode
+    if (!isAddMode) {
+      setIsDeleteMode(false);
+    }
   }, [isAddMode]);
+
+  // Toggle delete mode (for button click)
+  const toggleDeleteMode = useCallback(() => {
+    setIsDeleteMode(!isDeleteMode);
+    // Exit add mode if entering delete mode
+    if (!isDeleteMode) {
+      setIsAddMode(false);
+    }
+  }, [isDeleteMode]);
 
   // Create new shape at specific position and size
   const createShapeAt = useCallback(async (x, y, width = 100, height = 100) => {
@@ -465,17 +479,22 @@ const Canvas = () => {
     }
   }, [isAddMode, isDrawing]);
 
-  // Handle escape key to exit add mode
+  // Handle escape key to exit add mode or delete mode
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isAddMode) {
-        setIsAddMode(false);
+      if (e.key === 'Escape') {
+        if (isAddMode) {
+          setIsAddMode(false);
+        }
+        if (isDeleteMode) {
+          setIsDeleteMode(false);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAddMode]);
+  }, [isAddMode, isDeleteMode]);
   
   return (
     <div className="h-screen flex flex-col">
@@ -494,6 +513,17 @@ const Canvas = () => {
               title={isAddMode ? "Click on canvas to place rectangle" : "Click to enter add mode"}
             >
               {isAddMode ? '📍 Click to Place' : 'Add Rectangle'}
+            </button>
+            <button
+              onClick={toggleDeleteMode}
+              className={`px-4 py-2 rounded text-sm transition-colors ${
+                isDeleteMode 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-orange-600 hover:bg-orange-700'
+              }`}
+              title={isDeleteMode ? "Click on shapes to delete them" : "Click to enter delete mode"}
+            >
+              {isDeleteMode ? '🗑️ Click to Delete' : 'Delete Shape'}
             </button>
             <button
               onClick={deleteAllShapes}
@@ -536,7 +566,7 @@ const Canvas = () => {
           ref={stageRef}
           width={VIEWPORT_WIDTH}
           height={VIEWPORT_HEIGHT}
-          draggable={!isAddMode && !isDraggingShape}
+          draggable={!isAddMode && !isDeleteMode && !isDraggingShape}
           onDragStart={handleStageDragStart}
           onWheel={handleWheel}
           onDragEnd={handleDragEnd}
@@ -548,7 +578,9 @@ const Canvas = () => {
           scaleY={stageScale}
           x={stageX}
           y={stageY}
-          style={{ cursor: isAddMode ? 'crosshair' : 'default' }}
+          style={{ 
+            cursor: isAddMode ? 'crosshair' : isDeleteMode ? 'not-allowed' : 'default' 
+          }}
         >
           <Layer>
             {/* Grid background - optimized rendering */}
@@ -600,28 +632,45 @@ const Canvas = () => {
                 width={shape.width}
                 height={shape.height}
                 fill={shape.fill}
-                draggable={!isAddMode}
+                draggable={!isAddMode && !isDeleteMode}
+                onClick={async (e) => {
+                  if (isDeleteMode) {
+                    // Delete shape when in delete mode
+                    e.evt.stopPropagation();
+                    try {
+                      await deleteShapeInFirestore(shape.id);
+                      // Exit delete mode after deleting a shape
+                      setIsDeleteMode(false);
+                    } catch (error) {
+                      console.error('Error deleting shape:', error);
+                    }
+                  }
+                }}
                 onDragStart={(e) => {
-                  if (isAddMode) {
+                  if (isAddMode || isDeleteMode) {
                     e.evt.preventDefault();
                     return false;
                   }
                   handleShapeDragStart(e);
                 }}
                 onDragEnd={(e) => {
-                  if (isAddMode) return;
+                  if (isAddMode || isDeleteMode) return;
                   handleShapeDragEnd(e, shape.id, {
                     x: e.target.x(),
                     y: e.target.y(),
                   });
                 }}
                 onMouseEnter={(e) => {
-                  if (!isAddMode) {
+                  if (isDeleteMode) {
+                    e.target.getStage().container().style.cursor = 'pointer';
+                  } else if (!isAddMode) {
                     e.target.getStage().container().style.cursor = 'pointer';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!isAddMode) {
+                  if (isDeleteMode) {
+                    e.target.getStage().container().style.cursor = 'not-allowed';
+                  } else if (!isAddMode) {
                     e.target.getStage().container().style.cursor = 'default';
                   }
                 }}
