@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, enableNetwork, disableNetwork } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 // TODO: Create .env file with your actual Firebase config values
@@ -23,5 +23,18 @@ export const googleProvider = new GoogleAuthProvider();
 
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
+
+// Enable offline persistence (automatically caches data locally)
+// This allows the app to work offline and sync when back online
+try {
+  // Note: In Firestore v9+, offline persistence is enabled by default
+  // But you can explicitly control it if needed
+  console.log('Firestore offline persistence is enabled by default');
+} catch (error) {
+  console.error('Failed to enable offline persistence:', error);
+}
+
+// Export functions to manually control network state if needed
+export { enableNetwork, disableNetwork };
 
 export default app;

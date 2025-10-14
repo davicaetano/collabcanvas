@@ -2,7 +2,9 @@ import { useCallback, useEffect } from 'react';
 import { 
   createShape as createShapeInFirestore,
   deleteShape as deleteShapeInFirestore,
-  updateCursor
+  updateCursor,
+  addShapesBatch,
+  deleteAllShapes as deleteAllShapesInFirestore
 } from '../../../utils/firestore';
 import { getUserColor } from '../../../utils/colors';
 import { 
@@ -58,14 +60,13 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
 
   // Delete all shapes
   const deleteAllShapes = useCallback(async () => {
-    const deletePromises = shapes.map(shape => deleteShapeInFirestore(shape.id));
-    await Promise.all(deletePromises);
-  }, [shapes]);
+    await deleteAllShapesInFirestore();
+  }, []);
 
   // Add 500 rectangles for stress testing
   const add500Rectangles = useCallback(async () => {
     if (!currentUser) return;
-    const promises = [];
+    const shapes = [];
     
     for (let i = 0; i < 500; i++) {
       // Generate random positions across the canvas
@@ -87,24 +88,37 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
         fill: randomColor,
         stroke: randomColor,
         strokeWidth: 2,
+        userId: currentUser.uid,
       };
       
-      promises.push(createShapeInFirestore(newShape, currentUser.uid));
+      shapes.push(newShape);
     }
     
-    await Promise.all(promises);
+    // Use batch write for much faster performance
+    await addShapesBatch(shapes);
   }, [currentUser]);
 
   // Toggle modes
   const toggleAddMode = useCallback(() => {
     setIsAddMode(prev => !prev);
     if (isDeleteMode) setIsDeleteMode(false);
-  }, [isDeleteMode, setIsAddMode, setIsDeleteMode]);
+    
+    // Reset drawing state when toggling add mode
+    setIsDrawing(false);
+    setDrawStartPos(null);
+    setPreviewRect(null);
+  }, [isDeleteMode, setIsAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
 
   const toggleDeleteMode = useCallback(() => {
     setIsDeleteMode(prev => !prev);
-    if (isAddMode) setIsAddMode(false);
-  }, [isAddMode, setIsAddMode, setIsDeleteMode]);
+    if (isAddMode) {
+      setIsAddMode(false);
+      // Reset drawing state when switching from add mode
+      setIsDrawing(false);
+      setDrawStartPos(null);
+      setPreviewRect(null);
+    }
+  }, [isAddMode, setIsAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
 
   // Handle wheel zoom
   const handleWheel = useCallback((e) => {
@@ -258,21 +272,28 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
         Math.pow(previewRect.width, 2) + Math.pow(previewRect.height, 2)
       );
       
+      // Exit add mode immediately (before async operations)
+      setIsAddMode(false);
+      
       if (dragDistance < 10) {
         // Small drag or click - create default size rectangle
-        await createShapeAt(drawStartPos.x, drawStartPos.y);
-        // Exit add mode after creating rectangle
-        setIsAddMode(false);
+        try {
+          await createShapeAt(drawStartPos.x, drawStartPos.y);
+        } catch (error) {
+          console.error('Failed to create shape (offline?):', error);
+        }
       } else if (previewRect.width > 5 && previewRect.height > 5) {
         // Actual drag - create rectangle with drawn dimensions
-        await createShapeAt(
-          previewRect.x,
-          previewRect.y,
-          previewRect.width,
-          previewRect.height
-        );
-        // Exit add mode after creating rectangle
-        setIsAddMode(false);
+        try {
+          await createShapeAt(
+            previewRect.x,
+            previewRect.y,
+            previewRect.width,
+            previewRect.height
+          );
+        } catch (error) {
+          console.error('Failed to create shape (offline?):', error);
+        }
       }
     }
     
@@ -297,14 +318,20 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        if (isAddMode) setIsAddMode(false);
+        if (isAddMode) {
+          setIsAddMode(false);
+          // Reset drawing state when exiting add mode
+          setIsDrawing(false);
+          setDrawStartPos(null);
+          setPreviewRect(null);
+        }
         if (isDeleteMode) setIsDeleteMode(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAddMode, isDeleteMode, setIsAddMode, setIsDeleteMode]);
+  }, [isAddMode, isDeleteMode, setIsAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
 
   return {
     createShapeAt,

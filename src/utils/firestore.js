@@ -5,7 +5,9 @@ import {
   deleteDoc, 
   onSnapshot, 
   serverTimestamp,
-  updateDoc
+  updateDoc,
+  writeBatch,
+  getDocs
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -100,4 +102,57 @@ export const subscribeToPresence = (callback) => {
 export const removePresence = async (userId) => {
   const presenceRef = doc(db, 'canvases', CANVAS_ID, 'presence', userId);
   await deleteDoc(presenceRef);
+};
+
+// Batch write multiple shapes at once for better performance
+export const addShapesBatch = async (shapes) => {
+  const shapesRef = collection(db, 'canvases', CANVAS_ID, 'shapes');
+  const BATCH_SIZE = 500; // Firestore batch limit
+  
+  // Split shapes into batches of 500
+  const batches = [];
+  for (let i = 0; i < shapes.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    const batchShapes = shapes.slice(i, i + BATCH_SIZE);
+    
+    batchShapes.forEach((shape) => {
+      const docRef = doc(shapesRef);
+      batch.set(docRef, {
+        ...shape,
+        createdAt: serverTimestamp(),
+      });
+    });
+    
+    batches.push(batch.commit());
+  }
+  
+  // Execute all batches in parallel
+  await Promise.all(batches);
+};
+
+// Batch delete all shapes for better performance
+export const deleteAllShapes = async () => {
+  const shapesRef = collection(db, 'canvases', CANVAS_ID, 'shapes');
+  const snapshot = await getDocs(shapesRef);
+  
+  if (snapshot.empty) return; // No shapes to delete
+  
+  const BATCH_SIZE = 500; // Firestore batch limit
+  const docs = snapshot.docs;
+  
+  // Split deletes into batches of 500
+  const batches = [];
+  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    const batchDocs = docs.slice(i, i + BATCH_SIZE);
+    
+    batchDocs.forEach((docSnapshot) => {
+      batch.delete(docSnapshot.ref);
+    });
+    
+    batches.push(batch.commit());
+  }
+  
+  // Execute all batches in parallel
+  await Promise.all(batches);
 };
