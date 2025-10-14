@@ -198,16 +198,10 @@ const Canvas = () => {
   // Handle shape operations
   const handleShapeDragStart = (e) => {
     setIsDraggingShape(true);
-    if (stageRef.current) {
-      stageRef.current.draggable(false);
-    }
   };
 
   const handleShapeDragEnd = async (e, shapeId, updates) => {
     setIsDraggingShape(false);
-    if (stageRef.current) {
-      stageRef.current.draggable(true);
-    }
     
     try {
       await updateShapeInFirestore(shapeId, updates);
@@ -451,6 +445,49 @@ const Canvas = () => {
                     return false;
                   }
                   handleShapeDragStart(e);
+                }}
+                onDragMove={(e) => {
+                  if (isAddMode || isDeleteMode) return;
+                  
+                  // Update shape position in real-time for other users
+                  const newPosition = {
+                    x: e.target.x(),
+                    y: e.target.y(),
+                  };
+                  
+                  // Throttle shape updates during drag
+                  const now = Date.now();
+                  if (now - (e.target._lastShapeUpdate || 0) > 50) { // 20fps updates
+                    updateShapeInFirestore(shape.id, {
+                      ...shape,
+                      x: newPosition.x,
+                      y: newPosition.y,
+                    });
+                    e.target._lastShapeUpdate = now;
+                  }
+                  
+                  // Update cursor position while dragging shapes
+                  if (currentUser) {
+                    const stage = stageRef.current;
+                    const pos = stage.getPointerPosition();
+                    if (pos) {
+                      const canvasPos = {
+                        x: (pos.x - stageX) / stageScale,
+                        y: (pos.y - stageY) / stageScale,
+                      };
+                      
+                      // Throttle cursor updates during drag
+                      if (now - (handleMouseMove.lastUpdate || 0) > CURSOR_UPDATE_THROTTLE) {
+                        updateCursor(currentUser.uid, {
+                          x: canvasPos.x,
+                          y: canvasPos.y,
+                          name: currentUser.displayName,
+                          color: getUserColor(currentUser.uid),
+                        });
+                        handleMouseMove.lastUpdate = now;
+                      }
+                    }
+                  }
                 }}
                 onDragEnd={(e) => {
                   if (isAddMode || isDeleteMode) return;
