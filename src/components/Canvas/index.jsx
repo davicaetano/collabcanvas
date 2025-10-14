@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Stage, Layer, Rect, Group, Text as KonvaText } from 'react-konva';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   subscribeToShapes, 
   createShape as createShapeInFirestore,
@@ -12,176 +12,27 @@ import {
   updatePresence,
   subscribeToPresence,
   removePresence
-} from '../utils/firestore';
-
-// Canvas constants
-const CANVAS_WIDTH = 3000;
-const CANVAS_HEIGHT = 3000;
-const VIEWPORT_WIDTH = window.innerWidth;
-const VIEWPORT_HEIGHT = window.innerHeight - 60; // Account for header
-
-// Performance constants
-const GRID_SIZE = 50;
-const ZOOM_MIN = 0.1;
-const ZOOM_MAX = 5;
-const ZOOM_SCALE_FACTOR = 1.02;
-const CURSOR_UPDATE_THROTTLE = 50; // ms
-const MOUSE_POS_UPDATE_THROTTLE = 100; // ms
-
-// Avatar constants
-const AVATAR_SIZE = 32; // 8 * 4 (w-8 h-8 in Tailwind)
-const AVATAR_FONT_SIZE = 14;
-
-// Helper function to generate consistent unique colors for all user elements
-const getUserColor = (userId) => {
-  if (!userId) return '#9CA3AF'; // gray-400 fallback
-  
-  // Unified color palette with excellent contrast and visibility
-  // Works well for both cursors and avatar backgrounds
-  const colors = [
-    '#E53E3E', // Red
-    '#3182CE', // Blue
-    '#38A169', // Green
-    '#D69E2E', // Yellow/Orange
-    '#805AD5', // Purple
-    '#DD6B20', // Orange
-    '#319795', // Teal
-    '#E53E3E', // Red variant
-    '#2B6CB0', // Blue variant
-    '#2F855A', // Green variant
-    '#B7791F', // Yellow variant
-    '#6B46C1', // Purple variant
-    '#C05621', // Orange variant
-    '#2C7A7B', // Teal variant
-    '#9F1239', // Rose
-    '#1E40AF', // Indigo
-    '#059669', // Emerald
-    '#DC2626', // Red-600
-    '#7C3AED', // Violet
-    '#0891B2'  // Cyan
-  ];
-
-  // Create robust hash from the entire userId
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    const char = userId.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  
-  // Use absolute value and modulo to get consistent color index
-  const colorIndex = Math.abs(hash) % colors.length;
-  return colors[colorIndex];
-};
-const getUserInitials = (name) => {
-  if (!name) return '?';
-  const names = name.trim().split(' ');
-  // Google style: prefer first initial only, unless it's a very short name
-  return names[0].charAt(0).toUpperCase();
-};
-
-// Current User Avatar component
-const CurrentUserAvatar = React.memo(({ user }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  
-  const initials = getUserInitials(user?.displayName);
-  const bgColor = getUserColor(user?.uid);
-  
-  return (
-    <div 
-      className="w-8 h-8 rounded-full relative shadow-sm overflow-hidden"
-      style={{ backgroundColor: bgColor }}
-    >
-      {/* Initials - only show when no photo or photo failed */}
-      {(!user?.photoURL || imageError || !imageLoaded) && (
-        <div 
-          className="absolute inset-0 flex items-center justify-center text-white font-medium"
-          style={{ 
-            fontSize: `${AVATAR_FONT_SIZE}px`,
-            backgroundColor: bgColor,
-            fontWeight: '500',
-            lineHeight: `${AVATAR_SIZE}px` // Match container height for perfect centering
-          }}
-        >
-          {initials}
-        </div>
-      )}
-      
-      {/* Photo - only render if user has photo AND no error AND loaded */}
-      {user?.photoURL && !imageError && (
-        <img
-          src={user.photoURL}
-          alt={user.displayName}
-          className="w-full h-full rounded-full object-cover absolute inset-0"
-          onError={() => {
-            setImageError(true);
-            setImageLoaded(false);
-          }}
-          onLoad={() => {
-            setImageError(false);
-            setImageLoaded(true);
-          }}
-        />
-      )}
-    </div>
-  );
-});
-
-// Avatar component for online users
-const AvatarComponent = React.memo(({ user }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  
-  const initials = getUserInitials(user.name);
-  const bgColor = getUserColor(user.uid);
-  
-  return (
-    <div
-      className="w-8 h-8 rounded-full border-2 border-gray-800 relative shadow-sm overflow-hidden"
-      title={user.name}
-      style={{ backgroundColor: bgColor }}
-    >
-      {/* Initials - only show when no photo or photo failed */}
-      {(!user.photo || imageError || !imageLoaded) && (
-        <div 
-          className="absolute inset-0 flex items-center justify-center text-white font-medium"
-          style={{ 
-            fontSize: `${AVATAR_FONT_SIZE}px`,
-            backgroundColor: bgColor,
-            fontWeight: '500',
-            lineHeight: `${AVATAR_SIZE}px` // Match container height for perfect centering
-          }}
-        >
-          {initials}
-        </div>
-      )}
-      
-      {/* Photo - only render if user has photo AND no error */}
-      {user.photo && !imageError && (
-        <img
-          src={user.photo}
-          alt={user.name}
-          className="w-full h-full rounded-full object-cover absolute inset-0"
-          onError={() => {
-            setImageError(true);
-            setImageLoaded(false);
-          }}
-          onLoad={() => {
-            setImageError(false);
-            setImageLoaded(true);
-          }}
-        />
-      )}
-    </div>
-  );
-});
+} from '../../utils/firestore';
+import CanvasHeader from './CanvasHeader';
+import { getUserColor } from '../../utils/colors';
+import { 
+  CANVAS_WIDTH, 
+  CANVAS_HEIGHT, 
+  VIEWPORT_WIDTH, 
+  VIEWPORT_HEIGHT,
+  GRID_SIZE,
+  ZOOM_MIN,
+  ZOOM_MAX,
+  ZOOM_SCALE_FACTOR,
+  CURSOR_UPDATE_THROTTLE,
+  MOUSE_POS_UPDATE_THROTTLE
+} from '../../utils/canvas';
 
 const Canvas = () => {
   const { currentUser, logout } = useAuth();
   const stageRef = useRef();
   
-  // Viewport state
+  // Canvas state
   const [stageScale, setStageScale] = useState(1);
   const [stageX, setStageX] = useState(0);
   const [stageY, setStageY] = useState(0);
@@ -200,11 +51,9 @@ const Canvas = () => {
   const [cursors, setCursors] = useState({});
   const [onlineUsers, setOnlineUsers] = useState({});
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  
-  // Dragging state
   const [isDraggingShape, setIsDraggingShape] = useState(false);
-  
-  // Set up real-time subscriptions
+
+  // Subscribe to real-time data
   useEffect(() => {
     if (!currentUser) return;
 
@@ -262,18 +111,15 @@ const Canvas = () => {
   // Handle wheel zoom
   const handleWheel = useCallback((e) => {
     e.evt.preventDefault();
-    
+
     const stage = stageRef.current;
     const oldScale = stage.scaleX();
     const mousePointTo = {
       x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
       y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
     };
-    
-    const newScale = e.evt.deltaY > 0 ? oldScale * ZOOM_SCALE_FACTOR : oldScale / ZOOM_SCALE_FACTOR;
-    
-    // Limit zoom
-    if (newScale < ZOOM_MIN || newScale > ZOOM_MAX) return;
+
+    const newScale = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, e.evt.deltaY > 0 ? oldScale / ZOOM_SCALE_FACTOR : oldScale * ZOOM_SCALE_FACTOR));
     
     setStageScale(newScale);
     setStageX(-(mousePointTo.x - stage.getPointerPosition().x / newScale) * newScale);
@@ -339,41 +185,32 @@ const Canvas = () => {
   const deleteAllShapes = useCallback(async () => {
     if (shapes.length === 0) return;
     
-    // Confirm before deleting all shapes
     if (window.confirm(`Are you sure you want to delete all ${shapes.length} shapes? This action cannot be undone.`)) {
       try {
-        // Delete all shapes from Firestore
         const deletePromises = shapes.map(shape => deleteShapeInFirestore(shape.id));
         await Promise.all(deletePromises);
-        // Shapes will be removed from local state via Firestore subscription
       } catch (error) {
         console.error('Error deleting shapes:', error);
       }
     }
   }, [shapes]);
-  
-  // Handle shape drag
+
+  // Handle shape operations
   const handleShapeDragStart = (e) => {
     setIsDraggingShape(true);
-    // Stop event propagation to prevent stage drag
-    e.evt.stopPropagation();
-    // Directly disable stage dragging
     if (stageRef.current) {
       stageRef.current.draggable(false);
     }
   };
 
-  const handleShapeDragEnd = async (e, id, newAttrs) => {
+  const handleShapeDragEnd = async (e, shapeId, updates) => {
     setIsDraggingShape(false);
-    // Stop event propagation
-    e.evt.stopPropagation();
-    // Directly enable stage dragging
     if (stageRef.current) {
       stageRef.current.draggable(true);
     }
+    
     try {
-      await updateShapeInFirestore(id, newAttrs);
-      // Shape will be updated in local state via Firestore subscription
+      await updateShapeInFirestore(shapeId, updates);
     } catch (error) {
       console.error('Error updating shape:', error);
     }
@@ -510,67 +347,17 @@ const Canvas = () => {
   
   return (
     <div className="h-screen flex flex-col">
-      {/* Header */}
-      <header className="h-15 bg-gray-800 text-white flex items-center justify-between px-4">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-bold">CollabCanvas</h1>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={toggleAddMode}
-              className={`px-4 py-2 rounded text-sm transition-colors ${
-                isAddMode 
-                  ? 'bg-green-600 hover:bg-green-700' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-              title={isAddMode ? "Click on canvas to place rectangle" : "Click to enter add mode"}
-            >
-              {isAddMode ? '📍 Click to Place' : 'Add Rectangle'}
-            </button>
-            <button
-              onClick={toggleDeleteMode}
-              className={`px-4 py-2 rounded text-sm transition-colors ${
-                isDeleteMode 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-orange-600 hover:bg-orange-700'
-              }`}
-              title={isDeleteMode ? "Click on shapes to delete them" : "Click to enter delete mode"}
-            >
-              {isDeleteMode ? '🗑️ Click to Delete' : 'Delete Shape'}
-            </button>
-            <button
-              onClick={deleteAllShapes}
-              disabled={shapes.length === 0}
-              className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded text-sm"
-              title={shapes.length === 0 ? "No shapes to delete" : `Delete all ${shapes.length} shapes`}
-            >
-              Clear All
-            </button>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-300">
-              Online: {Object.keys(onlineUsers).length}
-            </span>
-            <div className="flex -space-x-2">
-              {Object.entries(onlineUsers).slice(0, 5).map(([userId, user], index) => (
-                <AvatarComponent key={`${userId}-${index}`} user={{...user, uid: userId}} />
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <CurrentUserAvatar user={currentUser} />
-            <span className="text-sm">{currentUser?.displayName}</span>
-          </div>
-          <button
-            onClick={logout}
-            className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
-          >
-            Sign Out
-          </button>
-        </div>
-      </header>
+      <CanvasHeader
+        isAddMode={isAddMode}
+        isDeleteMode={isDeleteMode}
+        onToggleAddMode={toggleAddMode}
+        onToggleDeleteMode={toggleDeleteMode}
+        onDeleteAllShapes={deleteAllShapes}
+        shapesCount={shapes.length}
+        currentUser={currentUser}
+        onlineUsers={onlineUsers}
+        onLogout={logout}
+      />
       
       {/* Canvas */}
       <div className="flex-1 overflow-hidden bg-gray-100">
