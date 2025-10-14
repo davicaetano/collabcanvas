@@ -22,7 +22,17 @@ const Canvas = () => {
   );
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col" style={{ 
+      border: 'none', 
+      outline: 'none',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100vh'
+    }}>
       <CanvasHeader
         isAddMode={canvasState.isAddMode}
         isDeleteMode={canvasState.isDeleteMode}
@@ -31,6 +41,8 @@ const Canvas = () => {
         onDeleteAllShapes={handlers.deleteAllShapes}
         onAdd500Rectangles={handlers.add500Rectangles}
         shapesCount={canvasState.shapes.length}
+        selectedColor={canvasState.selectedColor}
+        onColorChange={canvasState.setSelectedColor}
         currentUser={currentUser}
         onlineUsers={canvasState.onlineUsers}
         onLogout={logout}

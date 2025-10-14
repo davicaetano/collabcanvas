@@ -31,6 +31,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     setDrawStartPos,
     previewRect,
     setPreviewRect,
+    selectedColor,
     isDraggingShape,
     setIsDraggingShape,
     isDraggingCanvas,
@@ -47,13 +48,13 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       y,
       width,
       height,
-      fill: 'blue',
-      stroke: 'blue',
+      fill: selectedColor,
+      stroke: selectedColor,
       strokeWidth: 2,
     };
     
     await createShapeInFirestore(newShape, currentUser.uid);
-  }, [currentUser]);
+  }, [currentUser, selectedColor]);
 
   // Delete all shapes
   const deleteAllShapes = useCallback(async () => {

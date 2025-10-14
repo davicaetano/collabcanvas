@@ -2,7 +2,7 @@
 export const CANVAS_WIDTH = 3000;
 export const CANVAS_HEIGHT = 3000;
 export const VIEWPORT_WIDTH = window.innerWidth;
-export const VIEWPORT_HEIGHT = window.innerHeight - 60; // Account for header
+export const VIEWPORT_HEIGHT = window.innerHeight; // Account for expanded header with toolbar
 
 // Performance constants
 export const GRID_SIZE = 50;

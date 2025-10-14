@@ -18,6 +18,9 @@ export const useCanvasState = () => {
   const [drawStartPos, setDrawStartPos] = useState(null);
   const [previewRect, setPreviewRect] = useState(null);
   
+  // Shape creation state
+  const [selectedColor, setSelectedColor] = useState('#3B82F6'); // Default blue
+  
   // Multiplayer state
   const [cursors, setCursors] = useState({});
   const [onlineUsers, setOnlineUsers] = useState({});
@@ -47,6 +50,9 @@ export const useCanvasState = () => {
     setDrawStartPos,
     previewRect,
     setPreviewRect,
+    // Shape creation state
+    selectedColor,
+    setSelectedColor,
     // Multiplayer state
     cursors,
     setCursors,

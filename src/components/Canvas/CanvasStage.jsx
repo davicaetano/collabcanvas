@@ -23,6 +23,7 @@ const CanvasStage = React.memo(({
     isDraggingShape,
     isDraggingCanvas,
     previewRect,
+    selectedColor,
     cursors,
     setIsDeleteMode,
   } = canvasState;
@@ -40,7 +41,7 @@ const CanvasStage = React.memo(({
   } = handlers;
 
   return (
-    <div className="flex-1 overflow-hidden bg-gray-100">
+    <div className="flex-1 overflow-hidden bg-white" style={{ border: 'none', outline: 'none' }}>
       <Stage
         ref={stageRef}
         width={VIEWPORT_WIDTH}
@@ -69,7 +70,7 @@ const CanvasStage = React.memo(({
           <CanvasGrid />
           
           {/* Preview rectangle while drawing */}
-          <CanvasPreview isAddMode={isAddMode} previewRect={previewRect} />
+          <CanvasPreview isAddMode={isAddMode} previewRect={previewRect} selectedColor={selectedColor} />
           
           {/* Shapes */}
           <CanvasShapes
