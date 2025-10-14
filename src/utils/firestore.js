@@ -116,7 +116,7 @@ export const addShapesBatch = async (shapes) => {
     const batchShapes = shapes.slice(i, i + BATCH_SIZE);
     
     batchShapes.forEach((shape) => {
-      const docRef = doc(shapesRef);
+      const docRef = doc(shapesRef, shape.id);
       batch.set(docRef, {
         ...shape,
         createdAt: serverTimestamp(),

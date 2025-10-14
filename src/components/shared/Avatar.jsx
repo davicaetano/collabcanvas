@@ -12,8 +12,14 @@ export const CurrentUserAvatar = React.memo(({ user }) => {
   
   return (
     <div 
-      className="w-8 h-8 rounded-full relative shadow-sm overflow-hidden"
-      style={{ backgroundColor: bgColor }}
+      className="w-10 h-10 rounded-full relative shadow-sm overflow-hidden"
+      style={{ 
+        backgroundColor: bgColor,
+        width: '40px',
+        height: '40px',
+        minWidth: '40px',
+        minHeight: '40px'
+      }}
     >
       {/* Initials - always render for fallback */}
       {(!user?.photoURL || imageError || !imageLoaded) && (
@@ -60,9 +66,15 @@ export const AvatarComponent = React.memo(({ user }) => {
   
   return (
     <div
-      className="w-8 h-8 rounded-full border-2 border-gray-800 relative shadow-sm overflow-hidden"
+      className="w-10 h-10 rounded-full border-2 border-gray-800 relative shadow-sm overflow-hidden"
       title={user.name}
-      style={{ backgroundColor: bgColor }}
+      style={{ 
+        backgroundColor: bgColor,
+        width: '40px',
+        height: '40px',
+        minWidth: '40px',
+        minHeight: '40px'
+      }}
     >
       {/* Initials - always render for fallback */}
       {(!user.photo || imageError || !imageLoaded) && (

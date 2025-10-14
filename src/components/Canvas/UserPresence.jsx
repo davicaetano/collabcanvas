@@ -9,9 +9,22 @@ const UserPresence = ({ onlineUsers }) => {
       <span className="text-sm text-gray-300">
         Online: {userCount}
       </span>
-      <div className="flex -space-x-2">
+      <div className="flex min-h-[40px]">
         {Object.entries(onlineUsers).slice(0, 5).map(([userId, user], index) => (
-          <AvatarComponent key={`${userId}-${index}`} user={{...user, uid: userId}} />
+          <div 
+            key={`${userId}-${index}`} 
+            className="w-10 h-10 flex-shrink-0"
+            style={{ 
+              zIndex: 10 - index,
+              marginLeft: index > 0 ? '-10px' : '0px',
+              width: '40px',
+              height: '40px',
+              minWidth: '40px',
+              minHeight: '40px'
+            }}
+          >
+            <AvatarComponent user={{...user, uid: userId}} />
+          </div>
         ))}
       </div>
     </div>

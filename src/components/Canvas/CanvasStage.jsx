@@ -26,6 +26,7 @@ const CanvasStage = React.memo(({
     selectedColor,
     cursors,
     setIsDeleteMode,
+    setShapes,
   } = canvasState;
 
   const {
@@ -86,6 +87,7 @@ const CanvasStage = React.memo(({
             stageScale={stageScale}
             updateCursor={updateCursor}
             onDeleteModeExit={() => setIsDeleteMode(false)}
+            onShapeDelete={setShapes}
           />
           
           {/* Cursors */}

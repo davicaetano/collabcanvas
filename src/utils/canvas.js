@@ -11,5 +11,5 @@ export const ZOOM_MAX = 5;
 export const CURSOR_UPDATE_THROTTLE = 50; // ms - synchronized updates
 
 // Avatar constants
-export const AVATAR_SIZE = 32; // 8 * 4 (w-8 h-8 in Tailwind)
-export const AVATAR_FONT_SIZE = 14;
+export const AVATAR_SIZE = 40; // 10 * 4 (w-10 h-10 in Tailwind)
+export const AVATAR_FONT_SIZE = 16;

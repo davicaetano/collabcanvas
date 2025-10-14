@@ -19,13 +19,23 @@ const CanvasShapes = React.memo(({
   stageY,
   stageScale,
   updateCursor,
-  onDeleteModeExit
+  onDeleteModeExit,
+  onShapeDelete
 }) => {
   const handleShapeClick = async (shapeId) => {
     if (isDeleteMode) {
-      await deleteShapeInFirestore(shapeId);
-      // Auto-exit delete mode after deleting a shape
-      onDeleteModeExit();
+      try {
+        await deleteShapeInFirestore(shapeId);
+        
+        // Force immediate local update by filtering out the deleted shape
+        const updatedShapes = shapes.filter(shape => shape.id !== shapeId);
+        onShapeDelete(updatedShapes);
+        
+        // Auto-exit delete mode after deleting a shape
+        onDeleteModeExit();
+      } catch (error) {
+        console.error('Failed to delete shape:', shapeId, error);
+      }
     }
   };
 

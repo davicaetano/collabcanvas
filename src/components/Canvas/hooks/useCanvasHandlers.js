@@ -67,6 +67,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
   const add500Rectangles = useCallback(async () => {
     if (!currentUser) return;
     const shapes = [];
+    const baseTimestamp = Date.now();
     
     for (let i = 0; i < 500; i++) {
       // Generate random positions across the canvas
@@ -80,7 +81,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       const randomColor = getUserColor(randomUserId);
       
       const newShape = {
-        id: `stress-${Date.now()}-${i}`,
+        id: `${baseTimestamp}-${i}`,
         x,
         y,
         width,
