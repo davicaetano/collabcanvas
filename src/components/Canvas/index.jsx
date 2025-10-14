@@ -29,6 +29,7 @@ const Canvas = () => {
         onToggleAddMode={handlers.toggleAddMode}
         onToggleDeleteMode={handlers.toggleDeleteMode}
         onDeleteAllShapes={handlers.deleteAllShapes}
+        onAdd500Rectangles={handlers.add500Rectangles}
         shapesCount={canvasState.shapes.length}
         currentUser={currentUser}
         onlineUsers={canvasState.onlineUsers}

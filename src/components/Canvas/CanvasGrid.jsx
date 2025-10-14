@@ -6,7 +6,7 @@ const CanvasGrid = React.memo(() => {
   return (
     <>
       {/* Vertical grid lines */}
-      {Array.from({ length: Math.ceil(CANVAS_WIDTH / GRID_SIZE) }, (_, i) => (
+      {Array.from({ length: Math.ceil(CANVAS_WIDTH / GRID_SIZE) + 1 }, (_, i) => (
         <Rect
           key={`grid-v-${i}`}
           x={i * GRID_SIZE}
@@ -18,7 +18,7 @@ const CanvasGrid = React.memo(() => {
       ))}
       
       {/* Horizontal grid lines */}
-      {Array.from({ length: Math.ceil(CANVAS_HEIGHT / GRID_SIZE) }, (_, i) => (
+      {Array.from({ length: Math.ceil(CANVAS_HEIGHT / GRID_SIZE) + 1 }, (_, i) => (
         <Rect
           key={`grid-h-${i}`}
           x={0}

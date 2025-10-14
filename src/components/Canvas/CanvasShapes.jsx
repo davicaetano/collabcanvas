@@ -111,16 +111,14 @@ const CanvasShapes = React.memo(({
           onMouseEnter={(e) => {
             if (isDeleteMode) {
               e.target.getStage().container().style.cursor = 'pointer';
-            } else if (!isAddMode) {
-              e.target.getStage().container().style.cursor = 'pointer';
             }
+            // Keep normal cursor when not in delete mode
           }}
           onMouseLeave={(e) => {
             if (isDeleteMode) {
               e.target.getStage().container().style.cursor = 'not-allowed';
-            } else if (!isAddMode) {
-              e.target.getStage().container().style.cursor = 'default';
             }
+            // Keep normal cursor when not in delete mode
           }}
           onClick={() => handleShapeClick(shape.id)}
         />

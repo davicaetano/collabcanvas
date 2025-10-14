@@ -21,6 +21,7 @@ const CanvasStage = React.memo(({
     isAddMode,
     isDeleteMode,
     isDraggingShape,
+    isDraggingCanvas,
     previewRect,
     cursors,
     setIsDeleteMode,
@@ -57,7 +58,10 @@ const CanvasStage = React.memo(({
         x={stageX}
         y={stageY}
         style={{ 
-          cursor: isAddMode ? 'crosshair' : isDeleteMode ? 'not-allowed' : 'default' 
+          cursor: isDraggingCanvas ? 'grabbing' : 
+                  isAddMode ? 'crosshair' : 
+                  isDeleteMode ? 'not-allowed' : 
+                  'default' 
         }}
       >
         <Layer>

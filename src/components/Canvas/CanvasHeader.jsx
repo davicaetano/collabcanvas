@@ -10,6 +10,7 @@ const CanvasHeader = ({
   onToggleAddMode,
   onToggleDeleteMode,
   onDeleteAllShapes,
+  onAdd500Rectangles,
   shapesCount,
   // User props
   currentUser,
@@ -26,6 +27,7 @@ const CanvasHeader = ({
           onToggleAddMode={onToggleAddMode}
           onToggleDeleteMode={onToggleDeleteMode}
           onDeleteAllShapes={onDeleteAllShapes}
+          onAdd500Rectangles={onAdd500Rectangles}
           shapesCount={shapesCount}
         />
       </div>

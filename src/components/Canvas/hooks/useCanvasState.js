@@ -23,6 +23,7 @@ export const useCanvasState = () => {
   const [onlineUsers, setOnlineUsers] = useState({});
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isDraggingShape, setIsDraggingShape] = useState(false);
+  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
 
   return {
     stageRef,
@@ -56,5 +57,7 @@ export const useCanvasState = () => {
     setMousePos,
     isDraggingShape,
     setIsDraggingShape,
+    isDraggingCanvas,
+    setIsDraggingCanvas,
   };
 };

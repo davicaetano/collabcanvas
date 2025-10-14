@@ -5,7 +5,8 @@ const CanvasToolbar = ({
   isDeleteMode, 
   onToggleAddMode, 
   onToggleDeleteMode, 
-  onDeleteAllShapes, 
+  onDeleteAllShapes,
+  onAdd500Rectangles,
   shapesCount 
 }) => {
   return (
@@ -41,6 +42,14 @@ const CanvasToolbar = ({
         title={shapesCount === 0 ? "No shapes to delete" : `Delete all ${shapesCount} shapes`}
       >
         Clear All
+      </button>
+      
+      <button
+        onClick={onAdd500Rectangles}
+        className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded text-sm"
+        title="Add 500 rectangles for stress testing"
+      >
+        🧪 Add 500
       </button>
     </div>
   );

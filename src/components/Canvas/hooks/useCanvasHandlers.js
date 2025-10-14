@@ -35,6 +35,8 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     setMousePos,
     isDraggingShape,
     setIsDraggingShape,
+    isDraggingCanvas,
+    setIsDraggingCanvas,
   } = canvasState;
 
   // Create shape at specific position
@@ -61,6 +63,42 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     await Promise.all(deletePromises);
   }, [shapes]);
 
+  // Add 500 rectangles for stress testing
+  const add500Rectangles = useCallback(async () => {
+    if (!currentUser) return;
+    
+    console.log('Adding 500 rectangles for stress testing...');
+    const promises = [];
+    
+    for (let i = 0; i < 500; i++) {
+      // Generate random positions across the canvas
+      const x = Math.random() * 2500; // Spread across canvas width
+      const y = Math.random() * 2500; // Spread across canvas height
+      const width = 50 + Math.random() * 100; // Random width between 50-150
+      const height = 50 + Math.random() * 100; // Random height between 50-150
+      
+      // Generate random color using the same system as cursors
+      const randomUserId = `user-${Math.floor(Math.random() * 1000)}`;
+      const randomColor = getUserColor(randomUserId);
+      
+      const newShape = {
+        id: `stress-${Date.now()}-${i}`,
+        x,
+        y,
+        width,
+        height,
+        fill: randomColor,
+        stroke: randomColor,
+        strokeWidth: 2,
+      };
+      
+      promises.push(createShapeInFirestore(newShape, currentUser.uid));
+    }
+    
+    await Promise.all(promises);
+    console.log('Finished adding 500 rectangles!');
+  }, [currentUser]);
+
   // Toggle modes
   const toggleAddMode = useCallback(() => {
     setIsAddMode(prev => !prev);
@@ -80,8 +118,24 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     const oldScale = stageScale;
     const pointer = stage.getPointerPosition();
     
-    const scaleBy = e.evt.deltaY > 0 ? 1 / ZOOM_SCALE_FACTOR : ZOOM_SCALE_FACTOR;
-    const newScale = Math.min(Math.max(oldScale * scaleBy, ZOOM_MIN), ZOOM_MAX);
+    // Improve zoom sensitivity for different input devices
+    // Mouse wheels typically have larger deltaY values (100+)
+    // Trackpads have smaller, more granular deltaY values (1-10)
+    const deltaY = e.evt.deltaY;
+    const isMouse = Math.abs(deltaY) > 50; // Likely mouse wheel if large delta
+    
+    // Adjust zoom factor based on input device and delta magnitude
+    let zoomIntensity;
+    if (isMouse) {
+      // For mouse wheels: use a more aggressive zoom factor
+      zoomIntensity = deltaY > 0 ? 0.9 : 1.1; // 10% zoom per scroll
+    } else {
+      // For trackpads: use the existing smooth zoom factor but scale with deltaY
+      const scaleFactor = 1 + (Math.abs(deltaY) * 0.01); // Scale with deltaY magnitude
+      zoomIntensity = deltaY > 0 ? 1 / scaleFactor : scaleFactor;
+    }
+    
+    const newScale = Math.min(Math.max(oldScale * zoomIntensity, ZOOM_MIN), ZOOM_MAX);
     
     setStageScale(newScale);
     
@@ -107,7 +161,8 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       return false;
     }
     setIsDraggingShape(false);
-  }, [isDraggingShape, isDrawing, isAddMode, isDeleteMode, setIsDraggingShape]);
+    setIsDraggingCanvas(true); // Set canvas dragging state
+  }, [isDraggingShape, isDrawing, isAddMode, isDeleteMode, setIsDraggingShape, setIsDraggingCanvas]);
 
   const handleDragEnd = useCallback((e) => {
     // Only update stage position if it's actually the stage being dragged
@@ -115,7 +170,8 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       setStageX(e.target.x());
       setStageY(e.target.y());
     }
-  }, [setStageX, setStageY]);
+    setIsDraggingCanvas(false); // Reset canvas dragging state
+  }, [setStageX, setStageY, setIsDraggingCanvas]);
 
   // Handle shape drag
   const handleShapeDragStart = useCallback((e) => {
@@ -260,6 +316,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
   return {
     createShapeAt,
     deleteAllShapes,
+    add500Rectangles,
     toggleAddMode,
     toggleDeleteMode,
     handleWheel,
