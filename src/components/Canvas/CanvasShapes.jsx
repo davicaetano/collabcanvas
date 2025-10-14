@@ -35,44 +35,57 @@ const CanvasShapes = React.memo(({
     // Stop event propagation to prevent canvas dragging
     e.evt.stopPropagation();
     
-    // Update shape position in real-time for other users
-    const newPosition = {
-      x: e.target.x(),
-      y: e.target.y(),
-    };
-    
-    // Throttle shape updates during drag
+    // Throttle both local and remote updates to match cursor speed
     const now = Date.now();
-    if (now - (e.target._lastShapeUpdate || 0) > 50) { // 50ms throttle
+    const shouldUpdate = now - (e.target._lastShapeUpdate || 0) > CURSOR_UPDATE_THROTTLE;
+    
+    if (shouldUpdate) {
+      // Get the current position
+      const newPosition = {
+        x: e.target.x(),
+        y: e.target.y(),
+      };
+      
+      // Update shape position in Firestore
       updateShapeInFirestore(shape.id, {
         ...shape,
         x: newPosition.x,
         y: newPosition.y,
       });
       e.target._lastShapeUpdate = now;
-    }
-    
-    // Update cursor position while dragging shapes
-    if (currentUser) {
-      const stage = stageRef.current;
-      const pos = stage.getPointerPosition();
-      if (pos) {
-        const canvasPos = {
-          x: (pos.x - stageX) / stageScale,
-          y: (pos.y - stageY) / stageScale,
-        };
-        
-        // Throttle cursor updates during drag
-        if (now - (handleShapeDragMove.lastUpdate || 0) > CURSOR_UPDATE_THROTTLE) {
+      
+      // Update cursor position at the same time for better sync
+      if (currentUser) {
+        const stage = stageRef.current;
+        const pos = stage.getPointerPosition();
+        if (pos) {
+          const canvasPos = {
+            x: (pos.x - stageX) / stageScale,
+            y: (pos.y - stageY) / stageScale,
+          };
+          
           updateCursor(currentUser.uid, {
             x: canvasPos.x,
             y: canvasPos.y,
             name: currentUser.displayName,
             color: getUserColor(currentUser.uid),
           });
-          handleShapeDragMove.lastUpdate = now;
         }
       }
+    } else {
+      // If not time to update, reset position to last updated position to throttle local movement
+      if (e.target._lastPosition) {
+        e.target.x(e.target._lastPosition.x);
+        e.target.y(e.target._lastPosition.y);
+      }
+    }
+    
+    // Store the last updated position
+    if (shouldUpdate) {
+      e.target._lastPosition = {
+        x: e.target.x(),
+        y: e.target.y(),
+      };
     }
   };
 

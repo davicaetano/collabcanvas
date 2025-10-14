@@ -9,7 +9,7 @@ export const GRID_SIZE = 50;
 export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 5;
 export const ZOOM_SCALE_FACTOR = 1.02;
-export const CURSOR_UPDATE_THROTTLE = 50; // ms
+export const CURSOR_UPDATE_THROTTLE = 50; // ms - synchronized updates
 export const MOUSE_POS_UPDATE_THROTTLE = 100; // ms
 
 // Avatar constants
