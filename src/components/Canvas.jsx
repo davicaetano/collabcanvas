@@ -5,6 +5,7 @@ import {
   subscribeToShapes, 
   createShape as createShapeInFirestore,
   updateShape as updateShapeInFirestore,
+  deleteShape as deleteShapeInFirestore,
   updateCursor,
   subscribeToCursors,
   removeCursor,
@@ -181,6 +182,12 @@ const Canvas = () => {
   // Shapes state
   const [shapes, setShapes] = useState([]);
   
+  // UI state
+  const [isAddMode, setIsAddMode] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawStartPos, setDrawStartPos] = useState(null);
+  const [previewRect, setPreviewRect] = useState(null);
+  
   // Multiplayer state
   const [cursors, setCursors] = useState({});
   const [onlineUsers, setOnlineUsers] = useState({});
@@ -288,8 +295,8 @@ const Canvas = () => {
   
   // Handle drag move for panning
   const handleStageDragStart = (e) => {
-    // Prevent stage dragging if we're dragging a shape
-    if (isDraggingShape) {
+    // Prevent stage dragging if we're dragging a shape, drawing, or in add mode
+    if (isDraggingShape || isDrawing || isAddMode) {
       e.evt.preventDefault();
       return false;
     }
@@ -303,24 +310,47 @@ const Canvas = () => {
     }
   };
   
-  // Create new shape
-  const createShape = useCallback(async () => {
+  // Toggle add mode (for button click)
+  const toggleAddMode = useCallback(() => {
+    setIsAddMode(!isAddMode);
+  }, [isAddMode]);
+
+  // Create new shape at specific position and size
+  const createShapeAt = useCallback(async (x, y, width = 100, height = 100) => {
     const newShape = {
       id: Date.now().toString(),
-      x: -stageX / stageScale + 100,
-      y: -stageY / stageScale + 100,
-      width: 100,
-      height: 100,
+      x: width === 100 ? x - 50 : x, // Center default rectangles, use exact position for drawn ones
+      y: height === 100 ? y - 50 : y,
+      width,
+      height,
       fill: '#3B82F6',
     };
     
     try {
       await createShapeInFirestore(newShape, currentUser?.uid);
+      setIsAddMode(false); // Exit add mode after placing rectangle
       // Shape will be added to local state via Firestore subscription
     } catch (error) {
       console.error('Error creating shape:', error);
     }
-  }, [stageX, stageY, stageScale, currentUser]);
+  }, [currentUser]);
+
+  // Delete all shapes
+  const deleteAllShapes = useCallback(async () => {
+    if (shapes.length === 0) return;
+    
+    // Confirm before deleting all shapes
+    if (window.confirm(`Are you sure you want to delete all ${shapes.length} shapes? This action cannot be undone.`)) {
+      try {
+        // Delete all shapes from Firestore
+        const deletePromises = shapes.map(shape => deleteShapeInFirestore(shape.id));
+        await Promise.all(deletePromises);
+        // Shapes will be removed from local state via Firestore subscription
+      } catch (error) {
+        console.error('Error deleting shapes:', error);
+      }
+    }
+  }, [shapes]);
   
   // Handle shape drag
   const handleShapeDragStart = (e) => {
@@ -362,6 +392,19 @@ const Canvas = () => {
       x: (pos.x - stageX) / stageScale,
       y: (pos.y - stageY) / stageScale,
     };
+
+    // Handle rectangle drawing when in add mode and drawing
+    if (isAddMode && isDrawing && drawStartPos) {
+      const width = canvasPos.x - drawStartPos.x;
+      const height = canvasPos.y - drawStartPos.y;
+      
+      setPreviewRect({
+        x: width < 0 ? canvasPos.x : drawStartPos.x,
+        y: height < 0 ? canvasPos.y : drawStartPos.y,
+        width: Math.abs(width),
+        height: Math.abs(height),
+      });
+    }
     
     // Only update mouse position state occasionally to avoid excessive re-renders
     if (Date.now() - (handleMouseMove.lastPosUpdate || 0) > MOUSE_POS_UPDATE_THROTTLE) {
@@ -379,7 +422,86 @@ const Canvas = () => {
       });
       handleMouseMove.lastUpdate = Date.now();
     }
-  }, [currentUser, stageX, stageY, stageScale]);
+  }, [currentUser, stageX, stageY, stageScale, isAddMode, isDrawing, drawStartPos]);
+
+  // Handle canvas click and mouse down for drawing
+  const handleCanvasMouseDown = useCallback((e) => {
+    // In add mode, always handle mouse down for drawing, regardless of target
+    if (isAddMode) {
+      // Stop event from propagating to shapes
+      e.evt.stopPropagation();
+      
+      const stage = stageRef.current;
+      const pos = stage.getPointerPosition();
+      if (!pos) return;
+      
+      const canvasPos = {
+        x: (pos.x - stageX) / stageScale,
+        y: (pos.y - stageY) / stageScale,
+      };
+      
+      // Start drawing
+      setIsDrawing(true);
+      setDrawStartPos(canvasPos);
+      setPreviewRect({
+        x: canvasPos.x,
+        y: canvasPos.y,
+        width: 0,
+        height: 0,
+      });
+    }
+  }, [isAddMode, stageX, stageY, stageScale]);
+
+  // Handle mouse up to finish drawing
+  const handleCanvasMouseUp = useCallback(async () => {
+    if (isAddMode && isDrawing && drawStartPos && previewRect) {
+      // Check if it was a click (small drag) or actual drag
+      const dragDistance = Math.sqrt(
+        Math.pow(previewRect.width, 2) + Math.pow(previewRect.height, 2)
+      );
+      
+      if (dragDistance < 10) {
+        // Small drag or click - create default size rectangle
+        await createShapeAt(drawStartPos.x, drawStartPos.y);
+      } else if (previewRect.width > 5 && previewRect.height > 5) {
+        // Actual drag - create rectangle with drawn dimensions
+        await createShapeAt(
+          previewRect.x,
+          previewRect.y,
+          previewRect.width,
+          previewRect.height
+        );
+      }
+    }
+    
+    // Reset drawing state
+    setIsDrawing(false);
+    setDrawStartPos(null);
+    setPreviewRect(null);
+  }, [isAddMode, isDrawing, drawStartPos, previewRect, createShapeAt]);
+
+  // Handle canvas click (for non-drawing interactions)
+  const handleCanvasClick = useCallback(async (e) => {
+    // Only handle clicks on empty canvas (not on shapes)
+    if (e.target === e.target.getStage()) {
+      if (isAddMode && !isDrawing) {
+        // Quick click without drag - handled by mouse up
+        return;
+      }
+    }
+  }, [isAddMode, isDrawing]);
+
+  // Handle escape key to exit add mode
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isAddMode) {
+        setIsAddMode(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAddMode]);
   
   return (
     <div className="h-screen flex flex-col">
@@ -387,12 +509,27 @@ const Canvas = () => {
       <header className="h-15 bg-gray-800 text-white flex items-center justify-between px-4">
         <div className="flex items-center space-x-4">
           <h1 className="text-xl font-bold">CollabCanvas</h1>
-          <button
-            onClick={createShape}
-            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm"
-          >
-            Add Rectangle
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={toggleAddMode}
+              className={`px-4 py-2 rounded text-sm transition-colors ${
+                isAddMode 
+                  ? 'bg-green-600 hover:bg-green-700' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+              title={isAddMode ? "Click on canvas to place rectangle" : "Click to enter add mode"}
+            >
+              {isAddMode ? '📍 Click to Place' : 'Add Rectangle'}
+            </button>
+            <button
+              onClick={deleteAllShapes}
+              disabled={shapes.length === 0}
+              className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded text-sm"
+              title={shapes.length === 0 ? "No shapes to delete" : `Delete all ${shapes.length} shapes`}
+            >
+              Clear All
+            </button>
+          </div>
         </div>
         
         <div className="flex items-center space-x-4">
@@ -425,15 +562,19 @@ const Canvas = () => {
           ref={stageRef}
           width={VIEWPORT_WIDTH}
           height={VIEWPORT_HEIGHT}
-          draggable={true}
+          draggable={!isAddMode && !isDraggingShape}
           onDragStart={handleStageDragStart}
           onWheel={handleWheel}
           onDragEnd={handleDragEnd}
           onMouseMove={handleMouseMove}
+          onMouseDown={handleCanvasMouseDown}
+          onMouseUp={handleCanvasMouseUp}
+          onClick={handleCanvasClick}
           scaleX={stageScale}
           scaleY={stageScale}
           x={stageX}
           y={stageY}
+          style={{ cursor: isAddMode ? 'crosshair' : 'default' }}
         >
           <Layer>
             {/* Grid background - optimized rendering */}
@@ -460,6 +601,21 @@ const Canvas = () => {
               </React.Fragment>
             ))}
             
+            {/* Preview rectangle while drawing in add mode */}
+            {isAddMode && previewRect && (
+              <Rect
+                x={previewRect.x}
+                y={previewRect.y}
+                width={previewRect.width}
+                height={previewRect.height}
+                fill="rgba(59, 130, 246, 0.2)"
+                stroke="#3B82F6"
+                strokeWidth={2}
+                dash={[5, 5]}
+                listening={false}
+              />
+            )}
+            
             {/* Shapes */}
             {shapes.map((shape) => (
               <Rect
@@ -470,19 +626,30 @@ const Canvas = () => {
                 width={shape.width}
                 height={shape.height}
                 fill={shape.fill}
-                draggable
-                onDragStart={handleShapeDragStart}
+                draggable={!isAddMode}
+                onDragStart={(e) => {
+                  if (isAddMode) {
+                    e.evt.preventDefault();
+                    return false;
+                  }
+                  handleShapeDragStart(e);
+                }}
                 onDragEnd={(e) => {
+                  if (isAddMode) return;
                   handleShapeDragEnd(e, shape.id, {
                     x: e.target.x(),
                     y: e.target.y(),
                   });
                 }}
                 onMouseEnter={(e) => {
-                  e.target.getStage().container().style.cursor = 'pointer';
+                  if (!isAddMode) {
+                    e.target.getStage().container().style.cursor = 'pointer';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.target.getStage().container().style.cursor = 'default';
+                  if (!isAddMode) {
+                    e.target.getStage().container().style.cursor = 'default';
+                  }
                 }}
               />
             ))}
