@@ -22,17 +22,7 @@ const Canvas = () => {
   );
 
   return (
-    <div className="h-screen flex flex-col" style={{ 
-      border: 'none', 
-      outline: 'none',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      width: '100vw',
-      height: '100vh'
-    }}>
+    <div className="fixed inset-0 w-screen h-screen flex flex-col">
       <CanvasHeader
         isAddMode={canvasState.isAddMode}
         isDeleteMode={canvasState.isDeleteMode}

@@ -4,11 +4,14 @@ import { AVATAR_SIZE, AVATAR_FONT_SIZE } from '../../utils/canvas';
 
 // Current User Avatar component
 export const CurrentUserAvatar = React.memo(({ user }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   const initials = getUserInitials(user?.displayName);
   const bgColor = getUserColor(user?.uid);
+  
+  const hasPhoto = user?.photoURL && !imageError;
+  const showImage = hasPhoto && imageLoaded;
   
   return (
     <div 
@@ -21,8 +24,8 @@ export const CurrentUserAvatar = React.memo(({ user }) => {
         minHeight: '40px'
       }}
     >
-      {/* Initials - always render for fallback */}
-      {(!user?.photoURL || imageError || !imageLoaded) && (
+      {/* Initials - show when no photo, error, or image not loaded yet */}
+      {!showImage && (
         <div 
           className="w-full h-full flex items-center justify-center text-white font-medium pointer-events-none"
           style={{
@@ -36,18 +39,22 @@ export const CurrentUserAvatar = React.memo(({ user }) => {
         </div>
       )}
       
-      {/* Photo - only render if user has photo AND no error */}
-      {user?.photoURL && !imageError && (
+      {/* Photo - always render when hasPhoto, but control visibility */}
+      {hasPhoto && (
         <img
           src={user.photoURL}
           alt={user.displayName}
           className="w-full h-full rounded-full object-cover absolute inset-0"
-          onError={() => {
+          style={{ 
+            zIndex: 20,
+            opacity: imageLoaded ? 1 : 0,
+            transition: 'opacity 0.2s ease-in-out'
+          }}
+          onError={(e) => {
             setImageError(true);
             setImageLoaded(false);
           }}
-          onLoad={() => {
-            setImageError(false);
+          onLoad={(e) => {
             setImageLoaded(true);
           }}
         />
@@ -58,11 +65,14 @@ export const CurrentUserAvatar = React.memo(({ user }) => {
 
 // Avatar component for online users
 export const AvatarComponent = React.memo(({ user }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   const initials = getUserInitials(user.name);
   const bgColor = getUserColor(user.uid);
+  
+  const hasPhoto = user.photo && !imageError;
+  const showImage = hasPhoto && imageLoaded;
   
   return (
     <div
@@ -76,8 +86,8 @@ export const AvatarComponent = React.memo(({ user }) => {
         minHeight: '40px'
       }}
     >
-      {/* Initials - always render for fallback */}
-      {(!user.photo || imageError || !imageLoaded) && (
+      {/* Initials - show when no photo, error, or image not loaded yet */}
+      {!showImage && (
         <div 
           className="w-full h-full flex items-center justify-center text-white font-medium pointer-events-none"
           style={{
@@ -91,18 +101,22 @@ export const AvatarComponent = React.memo(({ user }) => {
         </div>
       )}
       
-      {/* Photo - only render if user has photo AND no error */}
-      {user.photo && !imageError && (
+      {/* Photo - always render when hasPhoto, but control visibility */}
+      {hasPhoto && (
         <img
           src={user.photo}
           alt={user.name}
           className="w-full h-full rounded-full object-cover absolute inset-0"
-          onError={() => {
+          style={{ 
+            zIndex: 20,
+            opacity: imageLoaded ? 1 : 0,
+            transition: 'opacity 0.2s ease-in-out'
+          }}
+          onError={(e) => {
             setImageError(true);
             setImageLoaded(false);
           }}
-          onLoad={() => {
-            setImageError(false);
+          onLoad={(e) => {
             setImageLoaded(true);
           }}
         />

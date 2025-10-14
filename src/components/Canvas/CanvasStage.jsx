@@ -42,7 +42,7 @@ const CanvasStage = React.memo(({
   } = handlers;
 
   return (
-    <div className="flex-1 overflow-hidden bg-white" style={{ border: 'none', outline: 'none' }}>
+    <div className="flex-1 overflow-hidden bg-white">
       <Stage
         ref={stageRef}
         width={VIEWPORT_WIDTH}
