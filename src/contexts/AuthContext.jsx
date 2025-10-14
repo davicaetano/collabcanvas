@@ -5,6 +5,7 @@ import {
   signOut 
 } from 'firebase/auth';
 import { auth, googleProvider } from '../utils/firebase';
+import { removePresence, removeCursor } from '../utils/firestore';
 
 const AuthContext = createContext({});
 
@@ -28,6 +29,14 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Clean up presence and cursor data before signing out
+      if (currentUser) {
+        await Promise.all([
+          removePresence(currentUser.uid),
+          removeCursor(currentUser.uid)
+        ]);
+      }
+      
       await signOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -36,13 +45,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // If user was signed out (user is null) and we had a previous user, clean up
+      if (!user && currentUser) {
+        try {
+          await Promise.all([
+            removePresence(currentUser.uid),
+            removeCursor(currentUser.uid)
+          ]);
+        } catch (error) {
+          console.error('Error cleaning up on auth state change:', error);
+        }
+      }
+      
       setCurrentUser(user);
       setLoading(false);
     });
 
     return unsubscribe;
-  }, []);
+  }, [currentUser]);
 
   const value = {
     currentUser,
