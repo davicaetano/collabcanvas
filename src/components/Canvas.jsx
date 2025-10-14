@@ -32,40 +32,52 @@ const MOUSE_POS_UPDATE_THROTTLE = 100; // ms
 const AVATAR_SIZE = 32; // 8 * 4 (w-8 h-8 in Tailwind)
 const AVATAR_FONT_SIZE = 14;
 
-// Helper function to get user initials (Google style - prefer 1 initial)
+// Helper function to generate consistent unique colors for all user elements
+const getUserColor = (userId) => {
+  if (!userId) return '#9CA3AF'; // gray-400 fallback
+  
+  // Unified color palette with excellent contrast and visibility
+  // Works well for both cursors and avatar backgrounds
+  const colors = [
+    '#E53E3E', // Red
+    '#3182CE', // Blue
+    '#38A169', // Green
+    '#D69E2E', // Yellow/Orange
+    '#805AD5', // Purple
+    '#DD6B20', // Orange
+    '#319795', // Teal
+    '#E53E3E', // Red variant
+    '#2B6CB0', // Blue variant
+    '#2F855A', // Green variant
+    '#B7791F', // Yellow variant
+    '#6B46C1', // Purple variant
+    '#C05621', // Orange variant
+    '#2C7A7B', // Teal variant
+    '#9F1239', // Rose
+    '#1E40AF', // Indigo
+    '#059669', // Emerald
+    '#DC2626', // Red-600
+    '#7C3AED', // Violet
+    '#0891B2'  // Cyan
+  ];
+
+  // Create robust hash from the entire userId
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    const char = userId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Use absolute value and modulo to get consistent color index
+  const colorIndex = Math.abs(hash) % colors.length;
+  return colors[colorIndex];
+};
 const getUserInitials = (name) => {
   if (!name) return '?';
   const names = name.trim().split(' ');
   // Google style: prefer first initial only, unless it's a very short name
   return names[0].charAt(0).toUpperCase();
-};
-
-// Helper function to generate Google-like colors for user based on name
-const getUserColor = (name) => {
-  if (!name) return '#9CA3AF'; // gray-400
-  
-  // Google-like color palette
-  const googleColors = [
-    '#DB4437', // Red
-    '#4285F4', // Blue  
-    '#0F9D58', // Green
-    '#F4B400', // Yellow
-    '#AB47BC', // Purple
-    '#FF7043', // Orange
-    '#00ACC1', // Cyan
-    '#7B1FA2', // Deep Purple
-    '#689F38', // Light Green
-    '#FF5722', // Deep Orange
-    '#795548', // Brown
-    '#607D8B'  // Blue Grey
-  ];
-  
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  return googleColors[Math.abs(hash) % googleColors.length];
 };
 
 // Current User Avatar component
@@ -74,7 +86,7 @@ const CurrentUserAvatar = React.memo(({ user }) => {
   const [imageError, setImageError] = useState(false);
   
   const initials = getUserInitials(user?.displayName);
-  const bgColor = getUserColor(user?.displayName);
+  const bgColor = getUserColor(user?.uid);
   
   return (
     <div 
@@ -122,7 +134,7 @@ const AvatarComponent = React.memo(({ user }) => {
   const [imageError, setImageError] = useState(false);
   
   const initials = getUserInitials(user.name);
-  const bgColor = getUserColor(user.name);
+  const bgColor = getUserColor(user.uid);
   
   return (
     <div
@@ -406,7 +418,7 @@ const Canvas = () => {
         x: canvasPos.x,
         y: canvasPos.y,
         name: currentUser.displayName,
-        color: `hsl(${currentUser.uid.charCodeAt(0) * 137.508 % 360}, 70%, 50%)`,
+        color: getUserColor(currentUser.uid),
       });
       handleMouseMove.lastUpdate = Date.now();
     }
@@ -542,8 +554,8 @@ const Canvas = () => {
               Online: {Object.keys(onlineUsers).length}
             </span>
             <div className="flex -space-x-2">
-              {Object.values(onlineUsers).slice(0, 5).map((user, index) => (
-                <AvatarComponent key={`${user.uid}-${index}`} user={user} />
+              {Object.entries(onlineUsers).slice(0, 5).map(([userId, user], index) => (
+                <AvatarComponent key={`${userId}-${index}`} user={{...user, uid: userId}} />
               ))}
             </div>
           </div>
