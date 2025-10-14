@@ -37,7 +37,7 @@ const CanvasToolbar = ({
       <button
         onClick={onDeleteAllShapes}
         disabled={shapesCount === 0}
-        className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded text-sm"
+        className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 px-4 py-2 rounded text-sm"
         title={shapesCount === 0 ? "No shapes to delete" : `Delete all ${shapesCount} shapes`}
       >
         Clear All
