@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import CanvasHeader from './CanvasHeader';
 import CanvasStage from './CanvasStage';
 import FloatingToolbar from './FloatingToolbar';
+import PropertiesToolbar from './PropertiesToolbar';
 import { useCanvasState } from './hooks/useCanvasState';
 import { useCanvasHandlers } from './hooks/useCanvasHandlers';
 import { useMultiplayer } from './hooks/useMultiplayer';
@@ -67,7 +68,8 @@ const Canvas = () => {
   );
 
   return (
-    <div className="fixed inset-0 w-screen h-screen flex flex-col">
+    <div className="fixed inset-0 flex flex-col overflow-hidden">
+      {/* Header spans full width */}
       <CanvasHeader
         isAddMode={canvasState.isAddMode}
         isDeleteMode={canvasState.isDeleteMode}
@@ -83,16 +85,25 @@ const Canvas = () => {
         onLogout={logout}
       />
       
-      <CanvasStage 
-        canvasState={canvasState}
-        handlers={handlers}
-        currentUser={currentUser}
-      />
-      
-      <FloatingToolbar 
-        selectedTool={selectedTool}
-        onToolChange={handleToolChange}
-      />
+      {/* Content area below header */}
+      <div className="flex-1 flex flex-row overflow-hidden">
+        {/* Left content area */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <CanvasStage 
+            canvasState={canvasState}
+            handlers={handlers}
+            currentUser={currentUser}
+          />
+          
+          <FloatingToolbar 
+            selectedTool={selectedTool}
+            onToolChange={handleToolChange}
+          />
+        </div>
+        
+        {/* Right properties panel - starts below header */}
+        <PropertiesToolbar />
+      </div>
     </div>
   );
 };

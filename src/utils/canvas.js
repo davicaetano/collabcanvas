@@ -46,6 +46,7 @@ export const GRID_COLOR = '#e5e5e5';
 export const Z_INDEX_INITIALS = 10;
 export const Z_INDEX_AVATAR_IMAGE = 20;
 export const Z_INDEX_FLOATING_TOOLBAR = 1000;
+export const Z_INDEX_PROPERTIES_TOOLBAR = 100;
 
 // Floating Toolbar constants
 export const TOOLBAR_BUTTON_SIZE = 48; // px - Figma-style larger buttons
@@ -64,3 +65,12 @@ export const TOOLBAR_SELECTED_ICON_COLOR = 'text-blue-600'; // selected icon col
 export const TOOLBAR_DEFAULT_BG = 'bg-transparent'; // default button background
 export const TOOLBAR_DEFAULT_BORDER = 'border-transparent'; // default button border
 export const TOOLBAR_DEFAULT_ICON_COLOR = 'text-gray-600'; // default icon color
+
+// Properties Toolbar constants
+export const PROPERTIES_PANEL_WIDTH = 320; // px - fixed width for properties panel
+export const PROPERTIES_PANEL_BACKGROUND = 'bg-gray-800'; // dark theme to match header
+export const PROPERTIES_PANEL_BORDER = 'border-gray-700'; // subtle border
+export const PROPERTIES_PANEL_TEXT_COLOR = 'text-white'; // text color for dark theme
+export const PROPERTIES_SECTION_SPACING = 16; // px - space between property sections
+export const PROPERTIES_INPUT_HEIGHT = 32; // px - standard input height
+export const PROPERTIES_LABEL_COLOR = 'text-gray-300'; // label color for dark theme

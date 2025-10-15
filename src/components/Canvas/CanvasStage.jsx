@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
 import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../../utils/canvas';
 import { updateCursor } from '../../utils/firestore';
@@ -41,12 +41,38 @@ const CanvasStage = React.memo(({
     handleCanvasClick,
   } = handlers;
 
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
+
+  // Dynamic viewport dimensions that update on window resize
+  const [viewportDimensions, setViewportDimensions] = useState({
+    width: VIEWPORT_WIDTH,
+    height: VIEWPORT_HEIGHT
+  });
+
+  // Update viewport dimensions on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div className="flex-1 overflow-hidden bg-white">
+    <div 
+      className="flex-1 overflow-hidden bg-white"
+      style={{
+        ...(isDevMode && { border: '5px solid blue' }), // DEV MODE: Blue border for canvas area
+      }}
+    >
       <Stage
         ref={stageRef}
-        width={VIEWPORT_WIDTH}
-        height={VIEWPORT_HEIGHT}
+        width={viewportDimensions.width}
+        height={viewportDimensions.height}
         draggable={!isAddMode && !isDeleteMode && !isDraggingShape}
         onDragStart={handleStageDragStart}
         onWheel={handleWheel}
