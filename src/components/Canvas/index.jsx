@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import CanvasHeader from './CanvasHeader';
 import CanvasStage from './CanvasStage';
+import FloatingToolbar from './FloatingToolbar';
 import { useCanvasState } from './hooks/useCanvasState';
 import { useCanvasHandlers } from './hooks/useCanvasHandlers';
 import { useMultiplayer } from './hooks/useMultiplayer';
@@ -43,6 +44,8 @@ const Canvas = () => {
         handlers={handlers}
         currentUser={currentUser}
       />
+      
+      <FloatingToolbar />
     </div>
   );
 };

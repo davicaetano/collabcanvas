@@ -45,3 +45,22 @@ export const GRID_COLOR = '#e5e5e5';
 // Z-index constants
 export const Z_INDEX_INITIALS = 10;
 export const Z_INDEX_AVATAR_IMAGE = 20;
+export const Z_INDEX_FLOATING_TOOLBAR = 1000;
+
+// Floating Toolbar constants
+export const TOOLBAR_BUTTON_SIZE = 48; // px - Figma-style larger buttons
+export const TOOLBAR_ICON_SIZE = 24; // px - icon size within buttons
+export const TOOLBAR_BUTTON_SPACING = 8; // px - space between buttons
+export const TOOLBAR_BOTTOM_OFFSET = 24; // px - distance from bottom of screen
+export const TOOLBAR_BORDER_RADIUS = 12; // px - rounded corners
+export const TOOLBAR_PADDING = 8; // px - internal padding of toolbar container
+export const TOOLBAR_HOVER_SCALE = 1.05; // scale factor on button hover
+export const TOOLBAR_TRANSITION_DURATION = 200; // ms - smooth transitions
+
+// Selected button styling constants
+export const TOOLBAR_SELECTED_BG = 'bg-blue-100/80'; // selected button background
+export const TOOLBAR_SELECTED_BORDER = 'border-blue-300/60'; // selected button border
+export const TOOLBAR_SELECTED_ICON_COLOR = 'text-blue-600'; // selected icon color
+export const TOOLBAR_DEFAULT_BG = 'bg-transparent'; // default button background
+export const TOOLBAR_DEFAULT_BORDER = 'border-transparent'; // default button border
+export const TOOLBAR_DEFAULT_ICON_COLOR = 'text-gray-600'; // default icon color
