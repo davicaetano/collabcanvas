@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { MousePointer2, Hand, Square, Trash2 } from 'lucide-react';
 import {
   TOOLBAR_BUTTON_SIZE,
@@ -18,10 +18,7 @@ import {
   TOOLBAR_DEFAULT_ICON_COLOR
 } from '../../utils/canvas';
 
-const FloatingToolbar = () => {
-  // State to track which tool is currently selected
-  const [selectedTool, setSelectedTool] = useState('select'); // Default to select tool
-
+const FloatingToolbar = ({ selectedTool, onToolChange }) => {
   // Define toolbar buttons with their icons
   const toolbarButtons = [
     {
@@ -47,8 +44,8 @@ const FloatingToolbar = () => {
   ];
 
   const handleButtonClick = (buttonId) => {
-    // Update selected tool state
-    setSelectedTool(buttonId);
+    // Call parent handler to update tool selection and canvas modes
+    onToolChange(buttonId);
   };
 
   return (
