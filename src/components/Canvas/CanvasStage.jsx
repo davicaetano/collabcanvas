@@ -95,6 +95,15 @@ const CanvasStage = React.memo(({
         scaleY={stageScale}
         x={stageX}
         y={stageY}
+        style={{
+          cursor: isPanMode 
+            ? (isDraggingCanvas ? 'grabbing' : 'grab')
+            : isAddMode 
+            ? 'crosshair'
+            : isDeleteMode 
+            ? 'not-allowed'
+            : 'default'
+        }}
       >
         <Layer>
           {/* Grid background */}

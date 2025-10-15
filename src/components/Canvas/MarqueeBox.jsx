@@ -4,7 +4,6 @@ import {
   MARQUEE_STROKE_WIDTH,
   MARQUEE_FILL_COLOR,
   MARQUEE_DASH_PATTERN,
-  Z_INDEX_MARQUEE,
 } from '../../utils/canvas';
 
 /**
@@ -39,7 +38,6 @@ export const MarqueeBox = ({ marqueeStart, marqueeEnd }) => {
       strokeWidth={MARQUEE_STROKE_WIDTH}
       dash={MARQUEE_DASH_PATTERN}
       listening={false} // Don't capture mouse events
-      zIndex={Z_INDEX_MARQUEE}
     />
   );
 };
