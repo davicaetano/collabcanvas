@@ -1,0 +1,59 @@
+graph TB
+    subgraph "Client Browser A"
+        A1[React App]
+        A2[react-konva Canvas]
+        A3[Firebase SDK]
+        A1 --> A2
+        A1 --> A3
+    end
+
+    subgraph "Client Browser B"
+        B1[React App]
+        B2[react-konva Canvas]
+        B3[Firebase SDK]
+        B1 --> B2
+        B1 --> B3
+    end
+
+    subgraph "Firebase Backend"
+        F1[Firebase Auth]
+        F2[Firestore Database]
+        F3[Real-time Listeners]
+        
+        subgraph "Firestore Collections"
+            C1[(Canvas Shapes)]
+            C2[(User Cursors)]
+            C3[(Presence/Online Users)]
+        end
+        
+        F2 --> C1
+        F2 --> C2
+        F2 --> C3
+        F3 -.-> C1
+        F3 -.-> C2
+        F3 -.-> C3
+    end
+
+    subgraph "Deployment"
+        V[Vercel Hosting]
+    end
+
+    A3 <-->|Real-time Sync| F3
+    B3 <-->|Real-time Sync| F3
+    
+    A3 -->|Google OAuth| F1
+    B3 -->|Google OAuth| F1
+    
+    A1 -.->|User Actions| A2
+    B1 -.->|User Actions| B2
+    
+    V -.->|Serves| A1
+    V -.->|Serves| B1
+
+    style F1 fill:#FFA500
+    style F2 fill:#4285F4
+    style F3 fill:#0F9D58
+    style V fill:#000000,color:#fff
+    style C1 fill:#E8F4F8
+    style C2 fill:#E8F4F8
+    style C3 fill:#E8F4F8
