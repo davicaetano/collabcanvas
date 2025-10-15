@@ -230,7 +230,53 @@ cursor: isSelectMode ? 'url(/select-cursor.svg) 3 3, auto' : 'default'
 
 ## Recent Changes
 
-### Custom Cursor Implementation (Latest)
+### Bug Fix: Marquee Selection Deselection Issue (Latest)
+**Date**: October 15, 2025  
+**Issue**: When a shape was selected and user started a marquee selection, the shapes would be selected correctly but immediately deselected by the subsequent click event.
+
+**Root Cause**:
+The event sequence was:
+1. `mouseDown` → Start marquee selection
+2. `mouseMove` → Update marquee box
+3. `mouseUp` → Select shapes inside marquee ✅
+4. `click` → Deselect all (because click was on empty canvas) ❌
+
+**Solution**:
+Clear selection immediately on `mouseDown` when starting marquee **without modifier keys** (Shift/Ctrl/Cmd). This prevents the conflict with the `click` event.
+
+**Implementation**:
+```javascript
+// In handleCanvasMouseDown
+if (isSelectMode && e.target === e.target.getStage()) {
+  const hasModifierKey = e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey;
+  
+  // If no modifier key, clear selection immediately
+  if (!hasModifierKey && selectedShapes.length > 0) {
+    setSelectedShapes([]);
+  }
+  
+  setIsMarqueeSelecting(true);
+  // ... rest of marquee setup
+}
+```
+
+**Behavior**:
+- **Without modifier**: Deselects existing shapes immediately, then selects marquee result (replace selection)
+- **With Shift/Ctrl/Cmd**: Keeps existing shapes selected, then adds marquee result (add to selection)
+
+**Benefits**:
+- ✅ Marquee selection now works correctly with pre-existing selections
+- ✅ Clear and intuitive UX - no unexpected deselections
+- ✅ Modifier key behavior preserved for additive selection
+
+**Files Modified**:
+- `hooks/useCanvasHandlers.js` - Added immediate deselection logic in `handleCanvasMouseDown`
+
+**Commit**: `6a7c0af` - "fix: deselect shapes immediately on marquee start without modifier key"
+
+---
+
+### Custom Cursor Implementation
 **Date**: Current session  
 **Reason**: Visual consistency between cursor and toolbar icon
 
@@ -297,5 +343,5 @@ if (isSelectMode) {
 
 ---
 
-**Last Updated**: Phase 2 Implementation - Custom Cursor & Marquee Selection Complete
+**Last Updated**: October 15, 2025 - Bug Fix: Marquee Selection Deselection Issue
 
