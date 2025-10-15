@@ -277,3 +277,4 @@ Canvas (main container - fixed inset-0, flex flex-row)
 ---
 
 This properties toolbar will transform CollabCanvas from a basic drawing tool into a professional design application with precise control over every aspect of the canvas and its contents.
+
