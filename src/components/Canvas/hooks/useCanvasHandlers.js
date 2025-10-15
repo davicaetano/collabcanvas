@@ -53,6 +53,8 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     setMarqueeStart,
     marqueeEnd,
     setMarqueeEnd,
+    marqueePreviewShapes,
+    setMarqueePreviewShapes,
     isDraggingShape,
     setIsDraggingShape,
     isDraggingCanvas,
@@ -250,6 +252,28 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     // Update marquee selection in select mode
     if (isSelectMode && isMarqueeSelecting && marqueeStart) {
       setMarqueeEnd(canvasPos);
+      
+      // Calculate marquee bounds for preview
+      const marqueeRect = {
+        x: Math.min(marqueeStart.x, canvasPos.x),
+        y: Math.min(marqueeStart.y, canvasPos.y),
+        width: Math.abs(canvasPos.x - marqueeStart.x),
+        height: Math.abs(canvasPos.y - marqueeStart.y),
+      };
+      
+      // Find shapes that intersect with marquee in real-time
+      const intersectingShapes = shapes.filter(shape => {
+        const shapeRect = {
+          x: shape.x,
+          y: shape.y,
+          width: shape.width,
+          height: shape.height,
+        };
+        return rectanglesIntersect(marqueeRect, shapeRect);
+      });
+      
+      // Update preview shapes (IDs only)
+      setMarqueePreviewShapes(intersectingShapes.map(shape => shape.id));
     }
     
     // Throttle cursor updates
@@ -276,7 +300,10 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     isSelectMode,
     isMarqueeSelecting,
     marqueeStart,
-    setMarqueeEnd
+    setMarqueeEnd,
+    shapes,
+    rectanglesIntersect,
+    setMarqueePreviewShapes
   ]);
 
   // Handle canvas mouse down for drawing and marquee selection
@@ -387,6 +414,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       setIsMarqueeSelecting(false);
       setMarqueeStart(null);
       setMarqueeEnd(null);
+      setMarqueePreviewShapes([]); // Clear preview shapes
     }
     
     // Reset drawing state
@@ -412,7 +440,8 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     setSelectedShapes,
     setIsMarqueeSelecting,
     setMarqueeStart,
-    setMarqueeEnd
+    setMarqueeEnd,
+    setMarqueePreviewShapes
   ]);
 
   // Handle canvas click

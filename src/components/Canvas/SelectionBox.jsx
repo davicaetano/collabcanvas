@@ -6,10 +6,11 @@ import {
   SELECTION_HANDLE_SIZE,
   SELECTION_HANDLE_FILL,
   SELECTION_HANDLE_STROKE,
-  SELECTION_HANDLE_STROKE_WIDTH
+  SELECTION_HANDLE_STROKE_WIDTH,
+  getCursorForMode
 } from '../../utils/canvas';
 
-const SelectionBox = ({ shape }) => {
+const SelectionBox = ({ shape, modes }) => {
   if (!shape) return null;
 
   const { x, y, width, height } = shape;
@@ -59,7 +60,8 @@ const SelectionBox = ({ shape }) => {
             e.target.getStage().container().style.cursor = handle.cursor;
           }}
           onMouseLeave={(e) => {
-            e.target.getStage().container().style.cursor = 'default';
+            // Restore cursor based on active mode instead of forcing 'default'
+            e.target.getStage().container().style.cursor = getCursorForMode(modes || {});
           }}
         />
       ))}

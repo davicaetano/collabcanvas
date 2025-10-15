@@ -30,6 +30,7 @@ export const useCanvasState = () => {
   const [isMarqueeSelecting, setIsMarqueeSelecting] = useState(false);
   const [marqueeStart, setMarqueeStart] = useState(null);
   const [marqueeEnd, setMarqueeEnd] = useState(null);
+  const [marqueePreviewShapes, setMarqueePreviewShapes] = useState([]); // Shapes being previewed during marquee drag
   
   // Multiplayer state
   const [cursors, setCursors] = useState({});
@@ -77,6 +78,8 @@ export const useCanvasState = () => {
     setMarqueeStart,
     marqueeEnd,
     setMarqueeEnd,
+    marqueePreviewShapes,
+    setMarqueePreviewShapes,
     // Multiplayer state
     cursors,
     setCursors,

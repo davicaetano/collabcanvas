@@ -5,7 +5,7 @@ import {
   deleteShape as deleteShapeInFirestore
 } from '../../utils/firestore';
 import { getUserColor } from '../../utils/colors';
-import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
+import { CURSOR_UPDATE_THROTTLE, getCursorForMode } from '../../utils/canvas';
 import SelectionBox from './SelectionBox';
 
 const CanvasShapes = React.memo(({ 
@@ -14,6 +14,7 @@ const CanvasShapes = React.memo(({
   isAddMode, 
   isDeleteMode,
   isPanMode,
+  isDraggingCanvas,
   onShapeDragStart, 
   onShapeDragEnd,
   currentUser,
@@ -25,8 +26,11 @@ const CanvasShapes = React.memo(({
   onDeleteModeExit,
   onShapeDelete,
   selectedShapes,
+  marqueePreviewShapes,
   onShapeSelect
 }) => {
+  // Create modes object for cursor helper
+  const modes = { isSelectMode, isAddMode, isDeleteMode, isPanMode, isDraggingCanvas };
   const handleShapeClick = async (e, shapeId) => {
     if (isDeleteMode) {
       try {
@@ -161,9 +165,9 @@ const CanvasShapes = React.memo(({
             }
           }}
           onMouseLeave={(e) => {
-            // Reset cursor only if it was changed (delete mode)
+            // Restore cursor based on active mode instead of hardcoding
             if (isDeleteMode) {
-              e.target.getStage().container().style.cursor = 'not-allowed';
+              e.target.getStage().container().style.cursor = getCursorForMode(modes);
             }
           }}
           onClick={(e) => handleShapeClick(e, shape.id)}
@@ -174,7 +178,17 @@ const CanvasShapes = React.memo(({
       {isSelectMode && selectedShapes && selectedShapes.map((shapeId) => {
         const shape = shapes.find(s => s.id === shapeId);
         if (!shape) return null;
-        return <SelectionBox key={`selection-${shapeId}`} shape={shape} />;
+        return <SelectionBox key={`selection-${shapeId}`} shape={shape} modes={modes} />;
+      })}
+
+      {/* Render preview selection boxes during marquee drag */}
+      {isSelectMode && marqueePreviewShapes && marqueePreviewShapes.map((shapeId) => {
+        // Don't render preview if already selected
+        if (selectedShapes && selectedShapes.includes(shapeId)) return null;
+        
+        const shape = shapes.find(s => s.id === shapeId);
+        if (!shape) return null;
+        return <SelectionBox key={`preview-${shapeId}`} shape={shape} modes={modes} />;
       })}
     </>
   );

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Stage, Layer } from 'react-konva';
-import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../../utils/canvas';
+import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT, getCursorForMode } from '../../utils/canvas';
 import { updateCursor } from '../../utils/firestore';
 import CanvasGrid from './CanvasGrid';
 import CanvasPreview from './CanvasPreview';
@@ -32,6 +32,7 @@ const CanvasStage = React.memo(({
     isMarqueeSelecting,
     marqueeStart,
     marqueeEnd,
+    marqueePreviewShapes,
     cursors,
     setIsDeleteMode,
     setShapes,
@@ -70,6 +71,25 @@ const CanvasStage = React.memo(({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Calculate cursor based on active modes
+  const cursor = useMemo(() => {
+    const modes = {
+      isPanMode,
+      isAddMode,
+      isDeleteMode,
+      isSelectMode,
+      isDraggingCanvas
+    };
+    const calculatedCursor = getCursorForMode(modes);
+    
+    // Debug log to verify modes are changing
+    if (isDevMode) {
+      console.log('Cursor modes:', modes, '→ Cursor:', calculatedCursor);
+    }
+    
+    return calculatedCursor;
+  }, [isPanMode, isAddMode, isDeleteMode, isSelectMode, isDraggingCanvas, isDevMode]);
+
   return (
     <div 
       className="flex-1 overflow-hidden bg-white"
@@ -94,11 +114,7 @@ const CanvasStage = React.memo(({
         x={stageX}
         y={stageY}
         style={{ 
-          cursor: isPanMode ? (isDraggingCanvas ? 'grabbing' : 'grab') :
-                  isAddMode ? 'crosshair' : 
-                  isDeleteMode ? 'not-allowed' :
-                  isSelectMode ? 'url(/select-cursor.svg) 3 3, auto' : 
-                  'default' 
+          cursor: cursor
         }}
       >
         <Layer>
@@ -120,6 +136,7 @@ const CanvasStage = React.memo(({
             isAddMode={isAddMode}
             isDeleteMode={isDeleteMode}
             isPanMode={isPanMode}
+            isDraggingCanvas={isDraggingCanvas}
             onShapeDragStart={handleShapeDragStart}
             onShapeDragEnd={handleShapeDragEnd}
             currentUser={currentUser}
@@ -131,6 +148,7 @@ const CanvasStage = React.memo(({
             onDeleteModeExit={() => setIsDeleteMode(false)}
             onShapeDelete={setShapes}
             selectedShapes={selectedShapes}
+            marqueePreviewShapes={marqueePreviewShapes}
             onShapeSelect={onShapeSelect}
           />
           

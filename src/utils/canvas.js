@@ -90,3 +90,16 @@ export const MARQUEE_STROKE_WIDTH = 1.5; // px - thinner than selection border
 export const MARQUEE_FILL_COLOR = 'rgba(59, 130, 246, 0.1)'; // semi-transparent blue fill
 export const MARQUEE_DASH_PATTERN = [5, 5]; // dashed line for marquee
 export const Z_INDEX_MARQUEE = 500; // above shapes, below floating toolbar
+
+// Helper function to get the appropriate cursor based on active mode
+export const getCursorForMode = (modes) => {
+  const { isPanMode, isAddMode, isDeleteMode, isSelectMode, isDraggingCanvas } = modes;
+  
+  if (isPanMode) {
+    return isDraggingCanvas ? 'grabbing' : 'grab';
+  }
+  if (isAddMode) return 'crosshair';
+  if (isDeleteMode) return 'not-allowed';
+  if (isSelectMode) return 'default'; // Using native CSS cursor instead of custom SVG
+  return 'default';
+};
