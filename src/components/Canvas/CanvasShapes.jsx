@@ -143,6 +143,13 @@ const CanvasShapes = React.memo(({
             }
             // Stop event propagation to prevent canvas dragging
             e.evt.stopPropagation();
+            
+            // Auto-select shape if not already selected (and not in multi-select mode)
+            const isMultiSelect = e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey;
+            if (!selectedShapes.includes(shape.id) && !isMultiSelect) {
+              onShapeSelect([shape.id]);
+            }
+            
             onShapeDragStart(e);
           }}
           onDragMove={(e) => handleShapeDragMove(e, shape)}

@@ -102,6 +102,8 @@ const CanvasStage = React.memo(({
             ? 'crosshair'
             : isDeleteMode 
             ? 'not-allowed'
+            : isSelectMode
+            ? 'url(/select-cursor.svg) 3 3, auto'
             : 'default'
         }}
       >

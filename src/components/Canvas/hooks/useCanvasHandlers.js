@@ -334,9 +334,18 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     // Handle select mode (marquee selection)
     // Only start marquee if clicking on empty canvas (not on a shape)
     if (isSelectMode && e.target === e.target.getStage()) {
+      const hasModifierKey = e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey;
+      
+      // If no modifier key, clear selection immediately to avoid conflict with click event
+      if (!hasModifierKey && selectedShapes.length > 0) {
+        setSelectedShapes([]);
+      }
+      
       setIsMarqueeSelecting(true);
       setMarqueeStart(canvasPos);
       setMarqueeEnd(canvasPos);
+      // Store modifier key state for later use in mouse up
+      e.target._marqueeModifierKey = hasModifierKey;
     }
   }, [
     isAddMode, 
@@ -350,7 +359,9 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     setPreviewRect,
     setIsMarqueeSelecting,
     setMarqueeStart,
-    setMarqueeEnd
+    setMarqueeEnd,
+    selectedShapes,
+    setSelectedShapes
   ]);
 
   // Handle canvas mouse up
@@ -407,8 +418,25 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
         return rectanglesIntersect(marqueeRect, shapeRect);
       });
       
+      // Check if modifier key was held during marquee selection
+      const stage = stageRef.current;
+      const wasModifierKeyHeld = stage?._marqueeModifierKey || false;
+      
       // Update selection
-      setSelectedShapes(intersectingShapes.map(shape => shape.id));
+      if (wasModifierKeyHeld) {
+        // ADD to selection: merge with existing selection
+        const newShapeIds = intersectingShapes.map(shape => shape.id);
+        const mergedSelection = [...new Set([...selectedShapes, ...newShapeIds])];
+        setSelectedShapes(mergedSelection);
+      } else {
+        // REPLACE selection
+        setSelectedShapes(intersectingShapes.map(shape => shape.id));
+      }
+      
+      // Clear modifier key flag
+      if (stage) {
+        stage._marqueeModifierKey = false;
+      }
       
       // Reset marquee state
       setIsMarqueeSelecting(false);
@@ -437,11 +465,13 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     marqueeEnd,
     shapes,
     rectanglesIntersect,
+    selectedShapes,
     setSelectedShapes,
     setIsMarqueeSelecting,
     setMarqueeStart,
     setMarqueeEnd,
-    setMarqueePreviewShapes
+    setMarqueePreviewShapes,
+    stageRef
   ]);
 
   // Handle canvas click
