@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
-import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT, getCursorForMode } from '../../utils/canvas';
+import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../../utils/canvas';
 import { updateCursor } from '../../utils/firestore';
 import CanvasGrid from './CanvasGrid';
 import CanvasPreview from './CanvasPreview';
@@ -71,24 +71,6 @@ const CanvasStage = React.memo(({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Calculate cursor based on active modes
-  const cursor = useMemo(() => {
-    const modes = {
-      isPanMode,
-      isAddMode,
-      isDeleteMode,
-      isSelectMode,
-      isDraggingCanvas
-    };
-    const calculatedCursor = getCursorForMode(modes);
-    
-    // Debug log to verify modes are changing
-    if (isDevMode) {
-      console.log('Cursor modes:', modes, '→ Cursor:', calculatedCursor);
-    }
-    
-    return calculatedCursor;
-  }, [isPanMode, isAddMode, isDeleteMode, isSelectMode, isDraggingCanvas, isDevMode]);
 
   return (
     <div 
@@ -113,9 +95,6 @@ const CanvasStage = React.memo(({
         scaleY={stageScale}
         x={stageX}
         y={stageY}
-        style={{ 
-          cursor: cursor
-        }}
       >
         <Layer>
           {/* Grid background */}

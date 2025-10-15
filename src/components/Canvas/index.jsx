@@ -21,7 +21,6 @@ const Canvas = () => {
   // Tool change handler - maps toolbar selections to canvas modes
   // Ensures only ONE mode is active at a time
   const handleToolChange = useCallback((toolId) => {
-    console.log('🔧 Tool change requested:', toolId);
     setSelectedTool(toolId);
     
     // Map toolbar tools to canvas modes (mutual exclusivity)
@@ -36,10 +35,8 @@ const Canvas = () => {
         
       case 'pan':
         // Activate pan mode, deactivate all others
-        console.log('👉 Setting pan mode: selectMode=false, panMode=true');
         canvasState.setIsSelectMode(false);
         canvasState.setIsPanMode(true);
-        console.log('✅ After setting: isPanMode=', canvasState.isPanMode, 'isSelectMode=', canvasState.isSelectMode);
         if (canvasState.isAddMode) handlers.toggleAddMode();
         if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         // Deselect all shapes when entering pan mode

@@ -5,7 +5,7 @@ import {
   deleteShape as deleteShapeInFirestore
 } from '../../utils/firestore';
 import { getUserColor } from '../../utils/colors';
-import { CURSOR_UPDATE_THROTTLE, getCursorForMode } from '../../utils/canvas';
+import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
 import SelectionBox from './SelectionBox';
 
 const CanvasShapes = React.memo(({ 
@@ -29,8 +29,6 @@ const CanvasShapes = React.memo(({
   marqueePreviewShapes,
   onShapeSelect
 }) => {
-  // Create modes object for cursor helper
-  const modes = { isSelectMode, isAddMode, isDeleteMode, isPanMode, isDraggingCanvas };
   const handleShapeClick = async (e, shapeId) => {
     if (isDeleteMode) {
       try {
@@ -157,19 +155,6 @@ const CanvasShapes = React.memo(({
               y: e.target.y(),
             });
           }}
-          onMouseEnter={(e) => {
-            // No cursor changes in select mode - cursor stays default
-            // Only change cursor in delete mode for visual feedback
-            if (isDeleteMode) {
-              e.target.getStage().container().style.cursor = 'pointer';
-            }
-          }}
-          onMouseLeave={(e) => {
-            // Restore cursor based on active mode instead of hardcoding
-            if (isDeleteMode) {
-              e.target.getStage().container().style.cursor = getCursorForMode(modes);
-            }
-          }}
           onClick={(e) => handleShapeClick(e, shape.id)}
         />
       ))}
@@ -178,7 +163,7 @@ const CanvasShapes = React.memo(({
       {isSelectMode && selectedShapes && selectedShapes.map((shapeId) => {
         const shape = shapes.find(s => s.id === shapeId);
         if (!shape) return null;
-        return <SelectionBox key={`selection-${shapeId}`} shape={shape} modes={modes} />;
+        return <SelectionBox key={`selection-${shapeId}`} shape={shape} />;
       })}
 
       {/* Render preview selection boxes during marquee drag */}
@@ -188,7 +173,7 @@ const CanvasShapes = React.memo(({
         
         const shape = shapes.find(s => s.id === shapeId);
         if (!shape) return null;
-        return <SelectionBox key={`preview-${shapeId}`} shape={shape} modes={modes} />;
+        return <SelectionBox key={`preview-${shapeId}`} shape={shape} />;
       })}
     </>
   );
