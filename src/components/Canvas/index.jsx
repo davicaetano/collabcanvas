@@ -19,31 +19,57 @@ const Canvas = () => {
   const [selectedTool, setSelectedTool] = useState('select');
   
   // Tool change handler - maps toolbar selections to canvas modes
+  // Ensures only ONE mode is active at a time
   const handleToolChange = useCallback((toolId) => {
     setSelectedTool(toolId);
     
-    // Map toolbar tools to canvas modes
+    // Map toolbar tools to canvas modes (mutual exclusivity)
     switch (toolId) {
       case 'select':
-      case 'pan':
-        // Default state - no special modes active
+        // Activate select mode, deactivate all others
+        canvasState.setIsSelectMode(true);
+        canvasState.setIsPanMode(false);
         if (canvasState.isAddMode) handlers.toggleAddMode();
         if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         break;
+        
+      case 'pan':
+        // Activate pan mode, deactivate all others
+        canvasState.setIsSelectMode(false);
+        canvasState.setIsPanMode(true);
+        if (canvasState.isAddMode) handlers.toggleAddMode();
+        if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
+        // Deselect all shapes when entering pan mode
+        if (canvasState.selectedShapes.length > 0) {
+          canvasState.setSelectedShapes([]);
+        }
+        break;
+        
       case 'rectangle':
-        // Activate add mode for rectangle drawing
+        // Activate add mode, deactivate all others
+        canvasState.setIsSelectMode(false);
+        canvasState.setIsPanMode(false);
         if (!canvasState.isAddMode) handlers.toggleAddMode();
         if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         break;
+        
       case 'delete':
-        // Activate delete mode
+        // Activate delete mode, deactivate all others
+        canvasState.setIsSelectMode(false);
+        canvasState.setIsPanMode(false);
         if (!canvasState.isDeleteMode) handlers.toggleDeleteMode();
         if (canvasState.isAddMode) handlers.toggleAddMode();
         break;
+        
       default:
         console.warn('Unknown tool selected:', toolId);
     }
-  }, [canvasState.isAddMode, canvasState.isDeleteMode, handlers]);
+  }, [canvasState, handlers]);
+
+  // Shape selection handler
+  const handleShapeSelect = useCallback((shapeIds) => {
+    canvasState.setSelectedShapes(shapeIds);
+  }, [canvasState]);
 
   // Sync toolbar selection when canvas modes change externally (e.g., header buttons)
   useEffect(() => {
@@ -51,13 +77,12 @@ const Canvas = () => {
       setSelectedTool('rectangle');
     } else if (canvasState.isDeleteMode) {
       setSelectedTool('delete');
-    } else {
-      // Default to select tool when no modes are active
-      if (selectedTool !== 'select' && selectedTool !== 'pan') {
-        setSelectedTool('select');
-      }
+    } else if (canvasState.isPanMode) {
+      setSelectedTool('pan');
+    } else if (canvasState.isSelectMode) {
+      setSelectedTool('select');
     }
-  }, [canvasState.isAddMode, canvasState.isDeleteMode, selectedTool]);
+  }, [canvasState.isSelectMode, canvasState.isAddMode, canvasState.isDeleteMode, canvasState.isPanMode]);
   
   // Real-time multiplayer features
   useMultiplayer(
@@ -93,6 +118,7 @@ const Canvas = () => {
             canvasState={canvasState}
             handlers={handlers}
             currentUser={currentUser}
+            onShapeSelect={handleShapeSelect}
           />
           
           <FloatingToolbar 
@@ -102,7 +128,10 @@ const Canvas = () => {
         </div>
         
         {/* Right properties panel - starts below header */}
-        <PropertiesToolbar />
+        <PropertiesToolbar 
+          selectedShapes={canvasState.selectedShapes}
+          shapes={canvasState.shapes}
+        />
       </div>
     </div>
   );

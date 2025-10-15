@@ -11,15 +11,25 @@ export const useCanvasState = () => {
   // Shapes state
   const [shapes, setShapes] = useState([]);
   
-  // UI state
+  // UI state - Tool modes (only one can be active at a time)
+  const [isSelectMode, setIsSelectMode] = useState(true); // Default mode
   const [isAddMode, setIsAddMode] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [isPanMode, setIsPanMode] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawStartPos, setDrawStartPos] = useState(null);
   const [previewRect, setPreviewRect] = useState(null);
   
   // Shape creation state
   const [selectedColor, setSelectedColor] = useState('#3B82F6'); // Default blue
+  
+  // Selection state
+  const [selectedShapes, setSelectedShapes] = useState([]);
+  
+  // Marquee selection state
+  const [isMarqueeSelecting, setIsMarqueeSelecting] = useState(false);
+  const [marqueeStart, setMarqueeStart] = useState(null);
+  const [marqueeEnd, setMarqueeEnd] = useState(null);
   
   // Multiplayer state
   const [cursors, setCursors] = useState({});
@@ -40,10 +50,14 @@ export const useCanvasState = () => {
     shapes,
     setShapes,
     // UI state
+    isSelectMode,
+    setIsSelectMode,
     isAddMode,
     setIsAddMode,
     isDeleteMode,
     setIsDeleteMode,
+    isPanMode,
+    setIsPanMode,
     isDrawing,
     setIsDrawing,
     drawStartPos,
@@ -53,6 +67,16 @@ export const useCanvasState = () => {
     // Shape creation state
     selectedColor,
     setSelectedColor,
+    // Selection state
+    selectedShapes,
+    setSelectedShapes,
+    // Marquee selection state
+    isMarqueeSelecting,
+    setIsMarqueeSelecting,
+    marqueeStart,
+    setMarqueeStart,
+    marqueeEnd,
+    setMarqueeEnd,
     // Multiplayer state
     cursors,
     setCursors,

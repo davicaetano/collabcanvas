@@ -7,7 +7,7 @@ const CanvasCursors = React.memo(({ cursors, currentUser }) => {
       {Object.entries(cursors)
         .filter(([userId]) => userId !== currentUser?.uid)
         .map(([userId, cursor]) => (
-          <Group key={userId} x={cursor.x} y={cursor.y}>
+          <Group key={userId} x={cursor.x} y={cursor.y} listening={false}>
             {/* Cursor arrow - line with arrowhead */}
             <Line
               points={[0, 0, -12, -12]}

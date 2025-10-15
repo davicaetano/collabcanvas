@@ -14,6 +14,7 @@ const CanvasGrid = React.memo(() => {
         fill="transparent"
         stroke="red"
         strokeWidth={10}
+        listening={false}
       />
       
       {/* Vertical grid lines */}
@@ -25,6 +26,7 @@ const CanvasGrid = React.memo(() => {
           width={1}
           height={CANVAS_HEIGHT}
           fill="#e5e5e5"
+          listening={false}
         />
       ))}
       
@@ -37,6 +39,7 @@ const CanvasGrid = React.memo(() => {
           width={CANVAS_WIDTH}
           height={1}
           fill="#e5e5e5"
+          listening={false}
         />
       ))}
     </>

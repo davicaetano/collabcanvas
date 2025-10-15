@@ -6,11 +6,14 @@ import {
 } from '../../utils/firestore';
 import { getUserColor } from '../../utils/colors';
 import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
+import SelectionBox from './SelectionBox';
 
 const CanvasShapes = React.memo(({ 
-  shapes, 
+  shapes,
+  isSelectMode,
   isAddMode, 
-  isDeleteMode, 
+  isDeleteMode,
+  isPanMode,
   onShapeDragStart, 
   onShapeDragEnd,
   currentUser,
@@ -20,9 +23,11 @@ const CanvasShapes = React.memo(({
   stageScale,
   updateCursor,
   onDeleteModeExit,
-  onShapeDelete
+  onShapeDelete,
+  selectedShapes,
+  onShapeSelect
 }) => {
-  const handleShapeClick = async (shapeId) => {
+  const handleShapeClick = async (e, shapeId) => {
     if (isDeleteMode) {
       try {
         await deleteShapeInFirestore(shapeId);
@@ -36,11 +41,27 @@ const CanvasShapes = React.memo(({
       } catch (error) {
         console.error('Failed to delete shape:', shapeId, error);
       }
+    } else if (isSelectMode && onShapeSelect) {
+      // Handle selection only in select mode
+      const isMultiSelect = e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey;
+      
+      if (isMultiSelect) {
+        // Multi-select: toggle shape in selection
+        const isAlreadySelected = selectedShapes.includes(shapeId);
+        if (isAlreadySelected) {
+          onShapeSelect(selectedShapes.filter(id => id !== shapeId));
+        } else {
+          onShapeSelect([...selectedShapes, shapeId]);
+        }
+      } else {
+        // Single select: replace selection with this shape
+        onShapeSelect([shapeId]);
+      }
     }
   };
 
   const handleShapeDragMove = (e, shape) => {
-    if (isAddMode || isDeleteMode) return;
+    if (!isSelectMode) return;
     
     // Stop event propagation to prevent canvas dragging
     e.evt.stopPropagation();
@@ -101,6 +122,7 @@ const CanvasShapes = React.memo(({
 
   return (
     <>
+      {/* Render all shapes */}
       {shapes.map((shape) => (
         <Rect
           key={shape.id}
@@ -111,9 +133,9 @@ const CanvasShapes = React.memo(({
           fill={shape.fill}
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}
-          draggable={!isAddMode && !isDeleteMode}
+          draggable={isSelectMode}
           onDragStart={(e) => {
-            if (isAddMode || isDeleteMode) {
+            if (!isSelectMode) {
               e.evt.preventDefault();
               return false;
             }
@@ -123,7 +145,7 @@ const CanvasShapes = React.memo(({
           }}
           onDragMove={(e) => handleShapeDragMove(e, shape)}
           onDragEnd={(e) => {
-            if (isAddMode || isDeleteMode) return;
+            if (!isSelectMode) return;
             // Stop event propagation to prevent canvas dragging
             e.evt.stopPropagation();
             onShapeDragEnd(e, shape.id, {
@@ -132,20 +154,28 @@ const CanvasShapes = React.memo(({
             });
           }}
           onMouseEnter={(e) => {
+            // No cursor changes in select mode - cursor stays default
+            // Only change cursor in delete mode for visual feedback
             if (isDeleteMode) {
               e.target.getStage().container().style.cursor = 'pointer';
             }
-            // Keep normal cursor when not in delete mode
           }}
           onMouseLeave={(e) => {
+            // Reset cursor only if it was changed (delete mode)
             if (isDeleteMode) {
               e.target.getStage().container().style.cursor = 'not-allowed';
             }
-            // Keep normal cursor when not in delete mode
           }}
-          onClick={() => handleShapeClick(shape.id)}
+          onClick={(e) => handleShapeClick(e, shape.id)}
         />
       ))}
+
+      {/* Render selection boxes on top of selected shapes (only in select mode) */}
+      {isSelectMode && selectedShapes && selectedShapes.map((shapeId) => {
+        const shape = shapes.find(s => s.id === shapeId);
+        if (!shape) return null;
+        return <SelectionBox key={`selection-${shapeId}`} shape={shape} />;
+      })}
     </>
   );
 });

@@ -9,8 +9,13 @@ import {
   Z_INDEX_PROPERTIES_TOOLBAR
 } from '../../utils/canvas';
 
-const PropertiesToolbar = () => {
+const PropertiesToolbar = ({ selectedShapes = [], shapes = [] }) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
+  
+  // Get the actual shape objects from the selected IDs
+  const selectedShapeObjects = selectedShapes
+    .map(id => shapes.find(shape => shape.id === id))
+    .filter(Boolean);
   
   return (
     <div
@@ -63,26 +68,37 @@ const PropertiesToolbar = () => {
             className="space-y-2"
             style={{ marginBottom: `${PROPERTIES_SECTION_SPACING}px` }}
           >
-            <div className="text-gray-500 text-sm italic">
-              Select a shape to edit its properties
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Position (X, Y)
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Size (Width, Height)
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Fill color
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Stroke color
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Stroke width
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Opacity
+            {selectedShapeObjects.length === 0 ? (
+              <div className="text-gray-500 text-sm italic">
+                Select a shape to edit its properties
+              </div>
+            ) : selectedShapeObjects.length === 1 ? (
+              // Single shape selected - show actual properties
+              <>
+                <div className="text-gray-300 text-sm">
+                  <span className="text-gray-500">Position:</span> X: {Math.round(selectedShapeObjects[0].x)}, Y: {Math.round(selectedShapeObjects[0].y)}
+                </div>
+                <div className="text-gray-300 text-sm">
+                  <span className="text-gray-500">Size:</span> {Math.round(selectedShapeObjects[0].width)} × {Math.round(selectedShapeObjects[0].height)}
+                </div>
+                <div className="text-gray-300 text-sm">
+                  <span className="text-gray-500">Fill:</span> {selectedShapeObjects[0].fill}
+                </div>
+                <div className="text-gray-300 text-sm">
+                  <span className="text-gray-500">Stroke:</span> {selectedShapeObjects[0].stroke}
+                </div>
+                <div className="text-gray-300 text-sm">
+                  <span className="text-gray-500">Stroke Width:</span> {selectedShapeObjects[0].strokeWidth}px
+                </div>
+              </>
+            ) : (
+              // Multiple shapes selected
+              <div className="text-gray-300 text-sm">
+                {selectedShapeObjects.length} shapes selected
+              </div>
+            )}
+            <div className="text-gray-400 text-sm mt-3">
+              <em>Editable controls coming soon...</em>
             </div>
           </div>
         </div>
@@ -96,17 +112,17 @@ const PropertiesToolbar = () => {
             className="space-y-2"
             style={{ marginBottom: `${PROPERTIES_SECTION_SPACING}px` }}
           >
-            <div className="text-gray-500 text-sm italic">
-              No shapes selected
-            </div>
+            {selectedShapeObjects.length === 0 ? (
+              <div className="text-gray-500 text-sm italic">
+                No shapes selected
+              </div>
+            ) : (
+              <div className="text-gray-300 text-sm">
+                <span className="text-blue-400 font-medium">{selectedShapeObjects.length}</span> shape{selectedShapeObjects.length !== 1 ? 's' : ''} selected
+              </div>
+            )}
             <div className="text-gray-400 text-sm">
-              • Multi-select operations
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Alignment tools
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Group/ungroup
+              <em>Multi-select operations coming soon...</em>
             </div>
           </div>
         </div>

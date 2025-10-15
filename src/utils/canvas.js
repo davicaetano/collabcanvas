@@ -74,3 +74,19 @@ export const PROPERTIES_PANEL_TEXT_COLOR = 'text-white'; // text color for dark 
 export const PROPERTIES_SECTION_SPACING = 16; // px - space between property sections
 export const PROPERTIES_INPUT_HEIGHT = 32; // px - standard input height
 export const PROPERTIES_LABEL_COLOR = 'text-gray-300'; // label color for dark theme
+
+// Selection constants
+export const SELECTION_STROKE_WIDTH = 2; // px - selection border
+export const SELECTION_STROKE_COLOR = '#3B82F6'; // blue border for selected shapes
+export const SELECTION_DASH_PATTERN = []; // solid line for selection
+export const SELECTION_HANDLE_SIZE = 8; // px - size of corner/edge handles
+export const SELECTION_HANDLE_FILL = '#FFFFFF'; // white fill for handles
+export const SELECTION_HANDLE_STROKE = '#3B82F6'; // blue stroke for handles
+export const SELECTION_HANDLE_STROKE_WIDTH = 2; // px - handle border width
+
+// Marquee selection constants
+export const MARQUEE_STROKE_COLOR = '#3B82F6'; // blue border for marquee
+export const MARQUEE_STROKE_WIDTH = 1.5; // px - thinner than selection border
+export const MARQUEE_FILL_COLOR = 'rgba(59, 130, 246, 0.1)'; // semi-transparent blue fill
+export const MARQUEE_DASH_PATTERN = [5, 5]; // dashed line for marquee
+export const Z_INDEX_MARQUEE = 500; // above shapes, below floating toolbar

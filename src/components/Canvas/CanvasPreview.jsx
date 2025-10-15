@@ -22,6 +22,7 @@ const CanvasPreview = React.memo(({ isAddMode, previewRect, selectedColor }) => 
       stroke={selectedColor}
       strokeWidth={2}
       dash={[5, 5]}
+      listening={false}
     />
   );
 });
