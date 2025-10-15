@@ -10,6 +10,7 @@ import {
   getDocs
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { FIRESTORE_BATCH_SIZE } from './canvas';
 
 // Canvas ID - for MVP, we'll use a single canvas
 const CANVAS_ID = 'main-canvas';
@@ -107,9 +108,9 @@ export const removePresence = async (userId) => {
 // Batch write multiple shapes at once for better performance
 export const addShapesBatch = async (shapes) => {
   const shapesRef = collection(db, 'canvases', CANVAS_ID, 'shapes');
-  const BATCH_SIZE = 500; // Firestore batch limit
+  const BATCH_SIZE = FIRESTORE_BATCH_SIZE; // Firestore batch limit
   
-  // Split shapes into batches of 500
+  // Split shapes into batches
   const batches = [];
   for (let i = 0; i < shapes.length; i += BATCH_SIZE) {
     const batch = writeBatch(db);
@@ -137,7 +138,7 @@ export const deleteAllShapes = async () => {
   
   if (snapshot.empty) return; // No shapes to delete
   
-  const BATCH_SIZE = 500; // Firestore batch limit
+  const BATCH_SIZE = FIRESTORE_BATCH_SIZE; // Firestore batch limit
   const docs = snapshot.docs;
   
   // Split deletes into batches of 500

@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { getUserColor, getUserInitials } from '../../utils/colors';
-import { AVATAR_SIZE, AVATAR_FONT_SIZE } from '../../utils/canvas';
+import { 
+  AVATAR_SIZE, 
+  AVATAR_FONT_SIZE, 
+  Z_INDEX_INITIALS, 
+  Z_INDEX_AVATAR_IMAGE,
+  AVATAR_TRANSITION_DURATION 
+} from '../../utils/canvas';
 
 // Current User Avatar component
 export const CurrentUserAvatar = React.memo(({ user }) => {
@@ -32,7 +38,7 @@ export const CurrentUserAvatar = React.memo(({ user }) => {
             fontSize: `${AVATAR_FONT_SIZE}px`,
             fontWeight: '500',
             lineHeight: `${AVATAR_SIZE}px`,
-            zIndex: 10,
+            zIndex: Z_INDEX_INITIALS,
           }}
         >
           {initials}
@@ -46,9 +52,9 @@ export const CurrentUserAvatar = React.memo(({ user }) => {
           alt={user.displayName}
           className="w-full h-full rounded-full object-cover absolute inset-0"
           style={{ 
-            zIndex: 20,
+            zIndex: Z_INDEX_AVATAR_IMAGE,
             opacity: imageLoaded ? 1 : 0,
-            transition: 'opacity 0.2s ease-in-out'
+            transition: `opacity ${AVATAR_TRANSITION_DURATION}ms ease-in-out`
           }}
           onError={(e) => {
             setImageError(true);
@@ -94,7 +100,7 @@ export const AvatarComponent = React.memo(({ user }) => {
             fontSize: `${AVATAR_FONT_SIZE}px`,
             fontWeight: '500',
             lineHeight: `${AVATAR_SIZE}px`,
-            zIndex: 10,
+            zIndex: Z_INDEX_INITIALS,
           }}
         >
           {initials}
@@ -108,9 +114,9 @@ export const AvatarComponent = React.memo(({ user }) => {
           alt={user.name}
           className="w-full h-full rounded-full object-cover absolute inset-0"
           style={{ 
-            zIndex: 20,
+            zIndex: Z_INDEX_AVATAR_IMAGE,
             opacity: imageLoaded ? 1 : 0,
-            transition: 'opacity 0.2s ease-in-out'
+            transition: `opacity ${AVATAR_TRANSITION_DURATION}ms ease-in-out`
           }}
           onError={(e) => {
             setImageError(true);

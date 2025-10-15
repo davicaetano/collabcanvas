@@ -1,10 +1,9 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, enableNetwork, disableNetwork } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
-// TODO: Create .env file with your actual Firebase config values
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "your-api-key",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "your-project-id.firebaseapp.com",
@@ -28,13 +27,8 @@ export const db = getFirestore(app);
 // This allows the app to work offline and sync when back online
 try {
   // Note: In Firestore v9+, offline persistence is enabled by default
-  // But you can explicitly control it if needed
-  console.log('Firestore offline persistence is enabled by default');
 } catch (error) {
   console.error('Failed to enable offline persistence:', error);
 }
-
-// Export functions to manually control network state if needed
-export { enableNetwork, disableNetwork };
 
 export default app;

@@ -1,6 +1,7 @@
 import React from 'react';
 import UserPresence from './UserPresence';
 import { CurrentUserAvatar } from '../shared/Avatar';
+import { STATE_UPDATE_DELAY, HEADER_MIN_HEIGHT } from '../../utils/canvas';
 
 const CanvasHeader = ({ 
   // Toolbar props
@@ -69,7 +70,7 @@ const CanvasHeader = ({
                 if (isAddMode) onToggleAddMode();
                 if (isDeleteMode) onToggleDeleteMode();
                 // Wait a bit to ensure state is updated
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, STATE_UPDATE_DELAY));
                 // Then execute the action
                 onAdd500Rectangles();
               }}
@@ -97,7 +98,7 @@ const CanvasHeader = ({
       </div>
       
       {/* Second row - contextual options (always reserve space for consistent height) */}
-      <div className="mt-4 min-h-[52px]">
+      <div className={`mt-4 min-h-[${HEADER_MIN_HEIGHT}px]`}>
         {(isAddMode || isDeleteMode) && (
           <div className="inline-block border border-gray-300 rounded-lg bg-gray-700 p-3">
             {isAddMode && (

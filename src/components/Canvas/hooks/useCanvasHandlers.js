@@ -10,7 +10,17 @@ import { getUserColor } from '../../../utils/colors';
 import { 
   ZOOM_MIN, 
   ZOOM_MAX, 
-  CURSOR_UPDATE_THROTTLE 
+  CURSOR_UPDATE_THROTTLE,
+  DEFAULT_SHAPE_WIDTH,
+  DEFAULT_SHAPE_HEIGHT,
+  SHAPE_STROKE_WIDTH,
+  STRESS_TEST_SHAPE_COUNT,
+  MIN_DRAG_DISTANCE,
+  MIN_SHAPE_SIZE,
+  ZOOM_INTENSITY_MOUSE,
+  ZOOM_SENSITIVITY_TRACKPAD,
+  MOUSE_WHEEL_THRESHOLD,
+  STATE_UPDATE_DELAY
 } from '../../../utils/canvas';
 
 export const useCanvasHandlers = (canvasState, currentUser) => {
@@ -41,7 +51,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
   } = canvasState;
 
   // Create shape at specific position
-  const createShapeAt = useCallback(async (x, y, width = 100, height = 100) => {
+  const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
     if (!currentUser) return;
     
     const newShape = {
@@ -52,7 +62,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       height,
       fill: selectedColor,
       stroke: selectedColor,
-      strokeWidth: 2,
+      strokeWidth: SHAPE_STROKE_WIDTH,
     };
     
     await createShapeInFirestore(newShape, currentUser.uid);
@@ -63,13 +73,13 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     await deleteAllShapesInFirestore();
   }, []);
 
-  // Add 500 rectangles for stress testing
+  // Add rectangles for stress testing
   const add500Rectangles = useCallback(async () => {
     if (!currentUser) return;
     const shapes = [];
     const baseTimestamp = Date.now();
     
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < STRESS_TEST_SHAPE_COUNT; i++) {
       // Generate random positions across the canvas
       const x = Math.random() * 2500; // Spread across canvas width
       const y = Math.random() * 2500; // Spread across canvas height
@@ -133,7 +143,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     // Mouse wheels typically have larger deltaY values (100+)
     // Trackpads have smaller, more granular deltaY values (1-10)
     const deltaY = e.evt.deltaY;
-    const isMouse = Math.abs(deltaY) > 50; // Likely mouse wheel if large delta
+    const isMouse = Math.abs(deltaY) > MOUSE_WHEEL_THRESHOLD; // Likely mouse wheel if large delta
     
     // Adjust zoom factor based on input device and delta magnitude
     let zoomIntensity;
