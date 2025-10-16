@@ -2,9 +2,7 @@ import React from 'react';
 import {
   PROPERTIES_PANEL_WIDTH,
   PROPERTIES_PANEL_BACKGROUND,
-  PROPERTIES_PANEL_TEXT_COLOR,
   PROPERTIES_SECTION_SPACING,
-  PROPERTIES_LABEL_COLOR,
   Z_INDEX_PROPERTIES_TOOLBAR
 } from '../../utils/canvas';
 import NumericInput from './properties/NumericInput';
@@ -75,13 +73,6 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
         backgroundColor: '#1f2937',
       }}
     >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-700">
-        <h2 className={`${PROPERTIES_PANEL_TEXT_COLOR} text-lg font-semibold`}>
-          Properties
-        </h2>
-      </div>
-
       {/* Actions Section */}
       <div className="p-4 border-b border-gray-700">
         <h3 className="text-gray-400 text-xs font-medium mb-3 uppercase tracking-wider">
@@ -105,7 +96,7 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
               borderRadius: '8px',
               cursor: 'default',
             }}
-            title={hasSelection ? `Delete ${selectedShapes.length} shape${selectedShapes.length > 1 ? 's' : ''}` : 'No shapes selected'}
+            title="Delete (Backspace)"
             onMouseEnter={(e) => {
               if (hasSelection) {
                 e.currentTarget.style.transform = 'scale(1.05)';
@@ -132,7 +123,7 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
               height: '40px',
               borderRadius: '8px',
             }}
-            title="Coming soon"
+            title="Copy (⌘C / Ctrl+C)"
           >
             <ClipboardDocumentIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
           </button>
@@ -146,7 +137,7 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
               height: '40px',
               borderRadius: '8px',
             }}
-            title="Coming soon"
+            title="Paste (⌘V / Ctrl+V)"
           >
             <ClipboardIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
           </button>
@@ -160,20 +151,18 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
               height: '40px',
               borderRadius: '8px',
             }}
-            title="Coming soon"
+            title="Duplicate (⌘D / Ctrl+D)"
           >
             <DocumentDuplicateIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
           </button>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="p-4 space-y-6">
-        {/* Shape Properties Section */}
-        <div>
-          <h3 className={`${PROPERTIES_LABEL_COLOR} text-sm font-medium mb-4`}>
-            Shape Properties
-          </h3>
+      {/* Properties Section */}
+      <div className="p-4 border-b border-gray-700">
+        <h3 className="text-gray-400 text-xs font-medium mb-3 uppercase tracking-wider">
+          Properties
+        </h3>
           <div 
             className="space-y-4"
             style={{ marginBottom: `${PROPERTIES_SECTION_SPACING}px` }}
@@ -277,28 +266,6 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
               </div>
             )}
           </div>
-        </div>
-
-        {/* Selection Info Section */}
-        <div>
-          <h3 className={`${PROPERTIES_LABEL_COLOR} text-sm font-medium mb-3`}>
-            Selection
-          </h3>
-          <div 
-            className="space-y-2"
-            style={{ marginBottom: `${PROPERTIES_SECTION_SPACING}px` }}
-          >
-            {selectedShapeObjects.length === 0 ? (
-              <div className="text-gray-500 text-sm italic">
-                No shapes selected
-              </div>
-            ) : (
-              <div className="text-gray-300 text-sm">
-                <span className="text-blue-400 font-medium">{selectedShapeObjects.length}</span> shape{selectedShapeObjects.length !== 1 ? 's' : ''} selected
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );

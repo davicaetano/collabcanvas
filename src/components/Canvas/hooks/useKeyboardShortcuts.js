@@ -5,11 +5,17 @@ import { useEffect } from 'react';
  * Currently handles:
  * - ESC: Exit current mode and deselect shapes
  * - Backspace/Delete: Delete selected shapes
+ * - V: Select tool
+ * - H: Pan tool
+ * - R: Rectangle tool
+ * - C: Circle tool
+ * - T: Text tool
  * 
  * @param {Object} canvasState - Canvas state object from useCanvasState
  * @param {Object} shapeManager - Shape manager from useShapeManager
+ * @param {Function} onToolChange - Function to change the current tool
  */
-export const useKeyboardShortcuts = (canvasState, shapeManager) => {
+export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) => {
   const {
     addMode,
     setAddMode,
@@ -24,6 +30,40 @@ export const useKeyboardShortcuts = (canvasState, shapeManager) => {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Don't process tool shortcuts if user is typing in an input field
+      const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+      
+      // Tool shortcuts (V, H, R, C, T)
+      if (!isTyping && onToolChange) {
+        const key = e.key.toLowerCase();
+        
+        if (key === 'v') {
+          e.preventDefault();
+          onToolChange('select');
+          return;
+        }
+        if (key === 'h') {
+          e.preventDefault();
+          onToolChange('pan');
+          return;
+        }
+        if (key === 'r') {
+          e.preventDefault();
+          onToolChange('rectangle');
+          return;
+        }
+        if (key === 'c') {
+          e.preventDefault();
+          onToolChange('circle');
+          return;
+        }
+        if (key === 't') {
+          e.preventDefault();
+          onToolChange('text');
+          return;
+        }
+      }
+      
       // ESC key: Exit current mode and deselect shapes
       if (e.key === 'Escape') {
         // Remove focus from any focused element (e.g., toolbar buttons)
@@ -72,6 +112,7 @@ export const useKeyboardShortcuts = (canvasState, shapeManager) => {
     addMode, 
     isPanMode,
     shapeManager,
+    onToolChange,
     setAddMode, 
     setIsPanMode,
     setIsSelectMode,

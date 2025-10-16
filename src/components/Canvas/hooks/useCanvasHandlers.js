@@ -7,7 +7,7 @@ import { useShapeOperations } from './useShapeOperations';
 import { useDrawing } from './useDrawing';
 import { useShapeSelection } from './useShapeSelection';
 
-export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeManager, cursorManager) => {
+export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeManager, cursorManager, handleToolChange) => {
   const {
     stageRef,
     stageX,
@@ -17,7 +17,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
   } = canvasState;
 
   // Keyboard shortcuts handler
-  useKeyboardShortcuts(canvasState, shapeManager);
+  useKeyboardShortcuts(canvasState, shapeManager, handleToolChange);
 
   // Mode management
   const { setAddModeWithShape } = useModeManagement(canvasState);

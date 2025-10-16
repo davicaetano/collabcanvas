@@ -24,27 +24,27 @@ const FloatingToolbar = ({ selectedTool, onToolChange }) => {
     {
       id: 'select',
       icon: MousePointer2,
-      tooltip: 'Select Tool',
+      tooltip: 'Select (V)',
     },
     {
       id: 'pan',
       icon: Hand,
-      tooltip: 'Pan Tool',
+      tooltip: 'Pan (H)',
     },
     {
       id: 'rectangle',
       icon: Square,
-      tooltip: 'Rectangle Tool',
+      tooltip: 'Rectangle (R)',
     },
     {
       id: 'circle',
       icon: Circle,
-      tooltip: 'Circle Tool',
+      tooltip: 'Circle (C)',
     },
     {
       id: 'text',
       icon: Type,
-      tooltip: 'Text Tool',
+      tooltip: 'Text (T)',
     },
   ];
 
