@@ -1,0 +1,105 @@
+import { useCallback } from 'react';
+
+/**
+ * Hook to handle rectangle drawing in Add Mode
+ * Manages the drawing state and preview while user drags to create shapes
+ * 
+ * @param {Object} canvasState - Canvas state object from useCanvasState
+ * @param {Function} createShapeAt - Function to create shape (from useShapeOperations)
+ * @returns {Object} - Drawing handlers and state
+ */
+export const useDrawing = (canvasState, createShapeAt) => {
+  const {
+    stageRef,
+    stageX,
+    stageY,
+    stageScale,
+    isAddMode,
+    setIsAddMode,
+    isDrawing,
+    setIsDrawing,
+    drawStartPos,
+    setDrawStartPos,
+    previewRect,
+    setPreviewRect,
+  } = canvasState;
+
+  // Handle mouse down to start drawing
+  const handleDrawingMouseDown = useCallback((e, canvasPos) => {
+    if (!isAddMode) return false;
+    
+    e.evt.stopPropagation();
+    setIsDrawing(true);
+    setDrawStartPos(canvasPos);
+    setPreviewRect({
+      x: canvasPos.x,
+      y: canvasPos.y,
+      width: 0,
+      height: 0,
+    });
+    return true; // Handled
+  }, [isAddMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
+
+  // Handle mouse move to update drawing preview
+  const handleDrawingMouseMove = useCallback((canvasPos) => {
+    if (!isAddMode || !isDrawing || !drawStartPos) return false;
+    
+    setPreviewRect({
+      x: Math.min(drawStartPos.x, canvasPos.x),
+      y: Math.min(drawStartPos.y, canvasPos.y),
+      width: Math.abs(canvasPos.x - drawStartPos.x),
+      height: Math.abs(canvasPos.y - drawStartPos.y),
+    });
+    return true; // Handled
+  }, [isAddMode, isDrawing, drawStartPos, setPreviewRect]);
+
+  // Handle mouse up to finish drawing and create shape
+  const handleDrawingMouseUp = useCallback(async () => {
+    if (!isAddMode || !isDrawing || !drawStartPos || !previewRect) return false;
+    
+    const dragDistance = Math.sqrt(
+      Math.pow(previewRect.width, 2) + Math.pow(previewRect.height, 2)
+    );
+    
+    // Exit add mode immediately (before async operations)
+    setIsAddMode(false);
+    
+    if (dragDistance < 10) {
+      // Small drag or click - create default size rectangle
+      try {
+        await createShapeAt(drawStartPos.x, drawStartPos.y);
+      } catch (error) {
+        console.error('Failed to create shape (offline?):', error);
+      }
+    } else if (previewRect.width > 5 && previewRect.height > 5) {
+      // Actual drag - create rectangle with drawn dimensions
+      try {
+        await createShapeAt(
+          previewRect.x,
+          previewRect.y,
+          previewRect.width,
+          previewRect.height
+        );
+      } catch (error) {
+        console.error('Failed to create shape (offline?):', error);
+      }
+    }
+    
+    return true; // Handled
+  }, [isAddMode, isDrawing, drawStartPos, previewRect, createShapeAt, setIsAddMode]);
+
+  // Reset drawing state (called after mouse up)
+  const resetDrawingState = useCallback(() => {
+    setIsDrawing(false);
+    setDrawStartPos(null);
+    setPreviewRect(null);
+  }, [setIsDrawing, setDrawStartPos, setPreviewRect]);
+
+  return {
+    handleDrawingMouseDown,
+    handleDrawingMouseMove,
+    handleDrawingMouseUp,
+    resetDrawingState,
+  };
+};
+

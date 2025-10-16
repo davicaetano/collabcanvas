@@ -9,6 +9,7 @@ import { useModeManagement } from './useModeManagement';
 import { useShapeDrag } from './useShapeDrag';
 import { useZoomPan } from './useZoomPan';
 import { useShapeOperations } from './useShapeOperations';
+import { useDrawing } from './useDrawing';
 import { 
   CURSOR_UPDATE_THROTTLE
 } from '../../../utils/canvas';
@@ -66,6 +67,14 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
   // Shape operations (CRUD)
   const { createShapeAt, deleteAllShapes, add500Rectangles } = useShapeOperations(currentUser, selectedColor);
 
+  // Drawing handlers (Add Mode)
+  const { 
+    handleDrawingMouseDown, 
+    handleDrawingMouseMove, 
+    handleDrawingMouseUp, 
+    resetDrawingState 
+  } = useDrawing(canvasState, createShapeAt);
+
   // Handle mouse movement
   const handleMouseMove = useCallback((e) => {
     if (!currentUser) return;
@@ -81,14 +90,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     };
     
     // Update drawing preview in add mode
-    if (isAddMode && isDrawing && drawStartPos) {
-      setPreviewRect({
-        x: Math.min(drawStartPos.x, canvasPos.x),
-        y: Math.min(drawStartPos.y, canvasPos.y),
-        width: Math.abs(canvasPos.x - drawStartPos.x),
-        height: Math.abs(canvasPos.y - drawStartPos.y),
-      });
-    }
+    handleDrawingMouseMove(canvasPos);
     
     // Update marquee selection in select mode
     if (isSelectMode && isMarqueeSelecting && marqueeStart) {
@@ -133,11 +135,8 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     stageRef, 
     stageX, 
     stageY, 
-    stageScale, 
-    isAddMode, 
-    isDrawing, 
-    drawStartPos, 
-    setPreviewRect,
+    stageScale,
+    handleDrawingMouseMove,
     isSelectMode,
     isMarqueeSelecting,
     marqueeStart,
@@ -158,18 +157,8 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     };
     
     // Handle add mode (rectangle drawing)
-    if (isAddMode) {
-      e.evt.stopPropagation();
-      setIsDrawing(true);
-      setDrawStartPos(canvasPos);
-      setPreviewRect({
-        x: canvasPos.x,
-        y: canvasPos.y,
-        width: 0,
-        height: 0,
-      });
-      return;
-    }
+    const drawingHandled = handleDrawingMouseDown(e, canvasPos);
+    if (drawingHandled) return;
     
     // Handle select mode (marquee selection)
     // Only start marquee if clicking on empty canvas (not on a shape)
@@ -188,15 +177,12 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       e.target._marqueeModifierKey = hasModifierKey;
     }
   }, [
-    isAddMode, 
+    handleDrawingMouseDown,
     isSelectMode,
     stageRef, 
     stageX, 
     stageY, 
-    stageScale, 
-    setIsDrawing, 
-    setDrawStartPos, 
-    setPreviewRect,
+    stageScale,
     setIsMarqueeSelecting,
     setMarqueeStart,
     setMarqueeEnd,
@@ -207,35 +193,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
   // Handle canvas mouse up
   const handleCanvasMouseUp = useCallback(async () => {
     // Handle add mode (rectangle creation)
-    if (isAddMode && isDrawing && drawStartPos && previewRect) {
-      const dragDistance = Math.sqrt(
-        Math.pow(previewRect.width, 2) + Math.pow(previewRect.height, 2)
-      );
-      
-      // Exit add mode immediately (before async operations)
-      setIsAddMode(false);
-      
-      if (dragDistance < 10) {
-        // Small drag or click - create default size rectangle
-        try {
-          await createShapeAt(drawStartPos.x, drawStartPos.y);
-        } catch (error) {
-          console.error('Failed to create shape (offline?):', error);
-        }
-      } else if (previewRect.width > 5 && previewRect.height > 5) {
-        // Actual drag - create rectangle with drawn dimensions
-        try {
-          await createShapeAt(
-            previewRect.x,
-            previewRect.y,
-            previewRect.width,
-            previewRect.height
-          );
-        } catch (error) {
-          console.error('Failed to create shape (offline?):', error);
-        }
-      }
-    }
+    await handleDrawingMouseUp();
     
     // Handle marquee selection
     if (isSelectMode && isMarqueeSelecting && marqueeStart && marqueeEnd) {
@@ -286,19 +244,10 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     }
     
     // Reset drawing state
-    setIsDrawing(false);
-    setDrawStartPos(null);
-    setPreviewRect(null);
+    resetDrawingState();
   }, [
-    isAddMode, 
-    isDrawing, 
-    drawStartPos, 
-    previewRect, 
-    createShapeAt, 
-    setIsDrawing, 
-    setDrawStartPos, 
-    setPreviewRect, 
-    setIsAddMode,
+    handleDrawingMouseUp,
+    resetDrawingState,
     isSelectMode,
     isMarqueeSelecting,
     marqueeStart,
