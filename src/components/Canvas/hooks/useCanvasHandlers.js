@@ -11,20 +11,13 @@ import { rectanglesIntersect } from '../../../utils/geometry';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useModeManagement } from './useModeManagement';
 import { useShapeDrag } from './useShapeDrag';
+import { useZoomPan } from './useZoomPan';
 import { 
-  ZOOM_MIN, 
-  ZOOM_MAX, 
   CURSOR_UPDATE_THROTTLE,
   DEFAULT_SHAPE_WIDTH,
   DEFAULT_SHAPE_HEIGHT,
   SHAPE_STROKE_WIDTH,
-  STRESS_TEST_SHAPE_COUNT,
-  MIN_DRAG_DISTANCE,
-  MIN_SHAPE_SIZE,
-  ZOOM_INTENSITY_MOUSE,
-  ZOOM_SENSITIVITY_TRACKPAD,
-  MOUSE_WHEEL_THRESHOLD,
-  STATE_UPDATE_DELAY
+  STRESS_TEST_SHAPE_COUNT
 } from '../../../utils/canvas';
 
 export const useCanvasHandlers = (canvasState, currentUser) => {
@@ -73,6 +66,9 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
 
   // Shape drag handlers
   const { handleShapeDragStart, handleShapeDragEnd } = useShapeDrag(canvasState);
+
+  // Zoom and pan handlers
+  const { handleWheel, handleStageDragStart, handleDragEnd } = useZoomPan(canvasState);
 
   // Create shape at specific position
   const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
@@ -132,69 +128,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     // Use batch write for much faster performance
     await addShapesBatch(shapes);
   }, [currentUser]);
-
-  // Handle wheel zoom
-  const handleWheel = useCallback((e) => {
-    e.evt.preventDefault();
-    
-    const stage = stageRef.current;
-    const oldScale = stageScale;
-    const pointer = stage.getPointerPosition();
-    
-    // Improve zoom sensitivity for different input devices
-    // Mouse wheels typically have larger deltaY values (100+)
-    // Trackpads have smaller, more granular deltaY values (1-10)
-    const deltaY = e.evt.deltaY;
-    const isMouse = Math.abs(deltaY) > MOUSE_WHEEL_THRESHOLD; // Likely mouse wheel if large delta
-    
-    // Adjust zoom factor based on input device and delta magnitude
-    let zoomIntensity;
-    if (isMouse) {
-      // For mouse wheels: use a more aggressive zoom factor
-      zoomIntensity = deltaY > 0 ? 0.9 : 1.1; // 10% zoom per scroll
-    } else {
-      // For trackpads: use the existing smooth zoom factor but scale with deltaY
-      const scaleFactor = 1 + (Math.abs(deltaY) * 0.01); // Scale with deltaY magnitude
-      zoomIntensity = deltaY > 0 ? 1 / scaleFactor : scaleFactor;
-    }
-    
-    const newScale = Math.min(Math.max(oldScale * zoomIntensity, ZOOM_MIN), ZOOM_MAX);
-    
-    setStageScale(newScale);
-    
-    const mousePointTo = {
-      x: (pointer.x - stageX) / oldScale,
-      y: (pointer.y - stageY) / oldScale,
-    };
-    
-    const newPos = {
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    };
-    
-    setStageX(newPos.x);
-    setStageY(newPos.y);
-  }, [stageRef, stageScale, stageX, stageY, setStageScale, setStageX, setStageY]);
-
-  // Handle stage drag
-  const handleStageDragStart = useCallback((e) => {
-    // Prevent stage dragging if we're dragging a shape, drawing, in add mode, or in delete mode
-    if (isDraggingShape || isDrawing || isAddMode || isDeleteMode) {
-      e.evt.preventDefault();
-      return false;
-    }
-    setIsDraggingShape(false);
-    setIsDraggingCanvas(true); // Set canvas dragging state
-  }, [isDraggingShape, isDrawing, isAddMode, isDeleteMode, setIsDraggingShape, setIsDraggingCanvas]);
-
-  const handleDragEnd = useCallback((e) => {
-    // Only update stage position if it's actually the stage being dragged
-    if (e.target === e.target.getStage()) {
-      setStageX(e.target.x());
-      setStageY(e.target.y());
-    }
-    setIsDraggingCanvas(false); // Reset canvas dragging state
-  }, [setStageX, setStageY, setIsDraggingCanvas]);
 
   // Handle mouse movement
   const handleMouseMove = useCallback((e) => {
