@@ -12,10 +12,20 @@ import {
 const SelectionBox = ({ shape }) => {
   if (!shape) return null;
 
-  const { x, y, width, height } = shape;
+  const { x, y, width, height, strokeWidth = 0 } = shape;
   const halfHandle = SELECTION_HANDLE_SIZE / 2;
+  
+  // Add offset to account for shape's stroke so selection box doesn't cover it
+  // Selection box should be outside the shape's stroke
+  const offset = Math.max(strokeWidth / 2, 3); // At least 3px offset for visibility
+  
+  // Adjusted dimensions to show selection outside the stroke
+  const selectionX = x - offset;
+  const selectionY = y - offset;
+  const selectionWidth = width + (offset * 2);
+  const selectionHeight = height + (offset * 2);
 
-  // Handle positions (centered on corners and edges)
+  // Handle positions (centered on corners and edges) - based on original shape
   const handles = [
     // Corners
     { x: x - halfHandle, y: y - halfHandle, cursor: 'nwse-resize' }, // Top-left
@@ -31,12 +41,12 @@ const SelectionBox = ({ shape }) => {
 
   return (
     <Group>
-      {/* Selection border */}
+      {/* Selection border - offset to not cover shape's stroke */}
       <Rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
+        x={selectionX}
+        y={selectionY}
+        width={selectionWidth}
+        height={selectionHeight}
         stroke={SELECTION_STROKE_COLOR}
         strokeWidth={SELECTION_STROKE_WIDTH}
         fill="transparent"

@@ -27,10 +27,10 @@ export const useShapeOperations = (currentUser, selectedColor) => {
     
     const newShape = {
       id: Date.now().toString(),
-      x,
-      y,
-      width,
-      height,
+      x: Math.round(x), // Round to integer
+      y: Math.round(y), // Round to integer
+      width: Math.round(width), // Round to integer
+      height: Math.round(height), // Round to integer
       fill: selectedColor,
       stroke: selectedColor,
       strokeWidth: SHAPE_STROKE_WIDTH,
@@ -51,11 +51,11 @@ export const useShapeOperations = (currentUser, selectedColor) => {
     const baseTimestamp = Date.now();
     
     for (let i = 0; i < STRESS_TEST_SHAPE_COUNT; i++) {
-      // Generate random positions across the canvas
-      const x = Math.random() * 2500; // Spread across canvas width
-      const y = Math.random() * 2500; // Spread across canvas height
-      const width = 50 + Math.random() * 100; // Random width between 50-150
-      const height = 50 + Math.random() * 100; // Random height between 50-150
+      // Generate random positions across the canvas (rounded to integers)
+      const x = Math.round(Math.random() * 2500); // Spread across canvas width
+      const y = Math.round(Math.random() * 2500); // Spread across canvas height
+      const width = Math.round(50 + Math.random() * 100); // Random width between 50-150
+      const height = Math.round(50 + Math.random() * 100); // Random height between 50-150
       
       // Generate random color using the same system as cursors
       const randomUserId = `user-${Math.floor(Math.random() * 1000)}`;

@@ -131,6 +131,7 @@ const Canvas = () => {
         <PropertiesToolbar 
           selectedShapes={canvasState.selectedShapes}
           shapes={canvasState.shapes}
+          onShapesChange={canvasState.setShapes}
         />
       </div>
     </div>

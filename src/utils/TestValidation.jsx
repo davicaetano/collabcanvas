@@ -46,6 +46,9 @@ const TestValidation = () => {
       { prop: 'x', value: 100, expected: true },
       { prop: 'x', value: 0, expected: true },
       { prop: 'x', value: 3000, expected: true },
+      { prop: 'x', value: 234.789, expected: true }, // Decimals should round to 235
+      { prop: 'x', value: 100.4, expected: true }, // Rounds down to 100
+      { prop: 'x', value: 100.6, expected: true }, // Rounds up to 101
       { prop: 'x', value: -10, expected: false }, // Below min
       { prop: 'x', value: 5000, expected: false }, // Above max
       { prop: 'x', value: 'abc', expected: false }, // Not a number
@@ -61,7 +64,10 @@ const TestValidation = () => {
       { prop: 'width', value: 100, expected: true },
       { prop: 'width', value: 1, expected: true }, // Min valid
       { prop: 'width', value: 3000, expected: true }, // Max valid
+      { prop: 'width', value: 150.789, expected: true }, // Decimals should round to 151
+      { prop: 'width', value: 99.3, expected: true }, // Rounds down to 99
       { prop: 'width', value: 0, expected: false }, // Too small
+      { prop: 'width', value: 0.4, expected: false }, // Rounds to 0, too small
       { prop: 'width', value: -10, expected: false },
       { prop: 'width', value: 5000, expected: false },
       
@@ -149,7 +155,7 @@ const TestValidation = () => {
             onClick={runAllTests}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
           >
-            Run All Tests ({totalCount > 0 ? totalCount : '42'} tests)
+            Run All Tests ({totalCount > 0 ? totalCount : '49'} tests)
           </button>
           
           {testResults.length > 0 && (
@@ -222,11 +228,12 @@ const TestValidation = () => {
             🧪 Test Coverage
           </h3>
           <ul className="text-blue-200 text-sm space-y-2">
-            <li>• <strong>Position (x, y)</strong>: Tests valid range (0-3000), negative values, out of bounds</li>
-            <li>• <strong>Size (width, height)</strong>: Tests min (1), max (3000), zero, negative</li>
+            <li>• <strong>Position (x, y)</strong>: Tests valid range (0-3000), decimals (auto-round), negative values, out of bounds</li>
+            <li>• <strong>Size (width, height)</strong>: Tests min (1), max (3000), decimals (auto-round), zero, negative</li>
             <li>• <strong>Stroke Width</strong>: Tests valid range (0-100), negative, out of bounds</li>
             <li>• <strong>Colors (fill, stroke)</strong>: Tests hex format, missing #, wrong length, invalid chars</li>
             <li>• <strong>Invalid inputs</strong>: Tests non-numeric strings, NaN, color names</li>
+            <li>• <strong>Rounding</strong>: All numeric values automatically rounded to integers (no decimals)</li>
           </ul>
         </div>
       </div>

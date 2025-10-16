@@ -2,20 +2,63 @@ import React from 'react';
 import {
   PROPERTIES_PANEL_WIDTH,
   PROPERTIES_PANEL_BACKGROUND,
-  PROPERTIES_PANEL_BORDER,
   PROPERTIES_PANEL_TEXT_COLOR,
   PROPERTIES_SECTION_SPACING,
   PROPERTIES_LABEL_COLOR,
   Z_INDEX_PROPERTIES_TOOLBAR
 } from '../../utils/canvas';
+import NumericInput from './properties/NumericInput';
+import ColorInput from './properties/ColorInput';
+import { validateProperty } from '../../utils/propertyValidation';
+import { updateShape as updateShapeInFirestore } from '../../utils/firestore';
 
-const PropertiesToolbar = ({ selectedShapes = [], shapes = [] }) => {
+const PropertiesToolbar = ({ selectedShapes = [], shapes = [], onShapesChange }) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
   
   // Get the actual shape objects from the selected IDs
   const selectedShapeObjects = selectedShapes
     .map(id => shapes.find(shape => shape.id === id))
     .filter(Boolean);
+  
+  // Get the single selected shape (if only one is selected)
+  const selectedShape = selectedShapeObjects.length === 1 ? selectedShapeObjects[0] : null;
+
+  /**
+   * Handle property update for a shape
+   * 1. Validate the new value
+   * 2. If valid: update local state optimistically
+   * 3. Sync to Firestore
+   * 4. If invalid: keep previous value (do nothing)
+   */
+  const handlePropertyUpdate = async (shapeId, propertyName, newValue) => {
+    try {
+      // 1. Validate the new value
+      const validatedValue = validateProperty(propertyName, newValue);
+      
+      // If validation fails, keep the current value (do nothing)
+      if (validatedValue === null) {
+        console.log(`Invalid value for ${propertyName}: ${newValue} - keeping current value`);
+        return;
+      }
+      
+      // 2. Optimistic update (update local state immediately)
+      const updatedShapes = shapes.map(shape => 
+        shape.id === shapeId 
+          ? { ...shape, [propertyName]: validatedValue }
+          : shape
+      );
+      onShapesChange(updatedShapes);
+      
+      // 3. Sync to Firestore
+      await updateShapeInFirestore(shapeId, {
+        [propertyName]: validatedValue
+      });
+      
+    } catch (error) {
+      console.error('Failed to update property:', error);
+      // Keep current value on error - Firestore will sync back if needed
+    }
+  };
   
   return (
     <div
@@ -25,8 +68,8 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [] }) => {
         minWidth: `${PROPERTIES_PANEL_WIDTH}px`,
         maxWidth: `${PROPERTIES_PANEL_WIDTH}px`,
         zIndex: Z_INDEX_PROPERTIES_TOOLBAR,
-        ...(isDevMode && { border: '5px solid red' }), // DEV MODE: Red border for debugging
-        backgroundColor: '#1f2937', // Ensure dark background is visible
+        ...(isDevMode && { border: '5px solid red' }),
+        backgroundColor: '#1f2937',
       }}
     >
       {/* Header */}
@@ -37,35 +80,14 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [] }) => {
       </div>
 
       {/* Content Area */}
-      <div className="p-4 space-y-4">
-        {/* Canvas Properties Section */}
-        <div>
-          <h3 className={`${PROPERTIES_LABEL_COLOR} text-sm font-medium mb-3`}>
-            Canvas Properties
-          </h3>
-          <div 
-            className="space-y-2"
-            style={{ marginBottom: `${PROPERTIES_SECTION_SPACING}px` }}
-          >
-            <div className="text-gray-400 text-sm">
-              • Background color
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Grid settings
-            </div>
-            <div className="text-gray-400 text-sm">
-              • Zoom controls
-            </div>
-          </div>
-        </div>
-
+      <div className="p-4 space-y-6">
         {/* Shape Properties Section */}
         <div>
-          <h3 className={`${PROPERTIES_LABEL_COLOR} text-sm font-medium mb-3`}>
+          <h3 className={`${PROPERTIES_LABEL_COLOR} text-sm font-medium mb-4`}>
             Shape Properties
           </h3>
           <div 
-            className="space-y-2"
+            className="space-y-4"
             style={{ marginBottom: `${PROPERTIES_SECTION_SPACING}px` }}
           >
             {selectedShapeObjects.length === 0 ? (
@@ -73,37 +95,103 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [] }) => {
                 Select a shape to edit its properties
               </div>
             ) : selectedShapeObjects.length === 1 ? (
-              // Single shape selected - show actual properties
-              <>
-                <div className="text-gray-300 text-sm">
-                  <span className="text-gray-500">Position:</span> X: {Math.round(selectedShapeObjects[0].x)}, Y: {Math.round(selectedShapeObjects[0].y)}
+              // Single shape selected - show editable properties
+              <div className="space-y-4">
+                {/* Position Section */}
+                <div>
+                  <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">
+                    Position
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <NumericInput
+                      label="X"
+                      value={selectedShape.x}
+                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'x', value)}
+                      min={0}
+                      max={3000}
+                      step={1}
+                      unit="px"
+                    />
+                    <NumericInput
+                      label="Y"
+                      value={selectedShape.y}
+                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'y', value)}
+                      min={0}
+                      max={3000}
+                      step={1}
+                      unit="px"
+                    />
+                  </div>
                 </div>
-                <div className="text-gray-300 text-sm">
-                  <span className="text-gray-500">Size:</span> {Math.round(selectedShapeObjects[0].width)} × {Math.round(selectedShapeObjects[0].height)}
+
+                {/* Size Section */}
+                <div>
+                  <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">
+                    Size
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <NumericInput
+                      label="Width"
+                      value={selectedShape.width}
+                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'width', value)}
+                      min={1}
+                      max={3000}
+                      step={1}
+                      unit="px"
+                    />
+                    <NumericInput
+                      label="Height"
+                      value={selectedShape.height}
+                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'height', value)}
+                      min={1}
+                      max={3000}
+                      step={1}
+                      unit="px"
+                    />
+                  </div>
                 </div>
-                <div className="text-gray-300 text-sm">
-                  <span className="text-gray-500">Fill:</span> {selectedShapeObjects[0].fill}
+
+                {/* Appearance Section */}
+                <div>
+                  <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">
+                    Appearance
+                  </div>
+                  <div className="space-y-3">
+                    <ColorInput
+                      label="Fill Color"
+                      value={selectedShape.fill}
+                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'fill', value)}
+                    />
+                    <ColorInput
+                      label="Stroke Color"
+                      value={selectedShape.stroke}
+                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'stroke', value)}
+                    />
+                    <NumericInput
+                      label="Stroke Width"
+                      value={selectedShape.strokeWidth}
+                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'strokeWidth', value)}
+                      min={0}
+                      max={100}
+                      step={1}
+                      unit="px"
+                    />
+                  </div>
                 </div>
-                <div className="text-gray-300 text-sm">
-                  <span className="text-gray-500">Stroke:</span> {selectedShapeObjects[0].stroke}
-                </div>
-                <div className="text-gray-300 text-sm">
-                  <span className="text-gray-500">Stroke Width:</span> {selectedShapeObjects[0].strokeWidth}px
-                </div>
-              </>
+              </div>
             ) : (
               // Multiple shapes selected
               <div className="text-gray-300 text-sm">
-                {selectedShapeObjects.length} shapes selected
+                <span className="text-blue-400 font-medium">{selectedShapeObjects.length}</span> shapes selected
+                <div className="text-gray-500 text-xs mt-2">
+                  Multi-select editing coming soon...
+                </div>
               </div>
             )}
-            <div className="text-gray-400 text-sm mt-3">
-              <em>Editable controls coming soon...</em>
-            </div>
           </div>
         </div>
 
-        {/* Selection Properties Section */}
+        {/* Selection Info Section */}
         <div>
           <h3 className={`${PROPERTIES_LABEL_COLOR} text-sm font-medium mb-3`}>
             Selection
@@ -121,19 +209,6 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [] }) => {
                 <span className="text-blue-400 font-medium">{selectedShapeObjects.length}</span> shape{selectedShapeObjects.length !== 1 ? 's' : ''} selected
               </div>
             )}
-            <div className="text-gray-400 text-sm">
-              <em>Multi-select operations coming soon...</em>
-            </div>
-          </div>
-        </div>
-
-        {/* Placeholder for future sections */}
-        <div>
-          <h3 className={`${PROPERTIES_LABEL_COLOR} text-sm font-medium mb-3`}>
-            Advanced
-          </h3>
-          <div className="text-gray-500 text-sm italic">
-            Coming soon...
           </div>
         </div>
       </div>
