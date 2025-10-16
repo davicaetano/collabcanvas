@@ -24,7 +24,7 @@ const Canvas = () => {
   const cursorManager = useCursorManager(currentUser, sessionId);
   
   // Custom hooks for state management
-  const canvasState = useCanvasState();
+  const canvasState = useCanvasState(currentUser, sessionId);
   
   // Floating toolbar state - lifted up to sync with canvas modes
   const [selectedTool, setSelectedTool] = useState('select');
@@ -150,6 +150,7 @@ const Canvas = () => {
           selectedShapes={shapeManager.selectedShapeIds}
           shapes={shapeManager.shapes}
           shapeManager={shapeManager}
+          canvasState={canvasState}
         />
       </div>
     </div>

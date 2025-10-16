@@ -17,6 +17,7 @@ const CanvasStage = React.memo(({
 }) => {
   const {
     stageRef,
+    canvasBackgroundColor,
     stageScale,
     stageX,
     stageY,
@@ -72,8 +73,9 @@ const CanvasStage = React.memo(({
 
   return (
     <div 
-      className="flex-1 overflow-hidden bg-white"
+      className="flex-1 overflow-hidden"
       style={{
+        backgroundColor: canvasBackgroundColor || '#ffffff',
         ...(isDevMode && { border: '5px solid blue' }), // DEV MODE: Blue border for canvas area
       }}
     >

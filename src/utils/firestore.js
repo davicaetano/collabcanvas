@@ -7,7 +7,8 @@ import {
   serverTimestamp,
   updateDoc,
   writeBatch,
-  getDocs
+  getDocs,
+  getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { FIRESTORE_BATCH_SIZE } from './canvas';
@@ -210,4 +211,38 @@ export const updateShapesBatch = async (shapeUpdates, sessionId) => {
   
   // Execute all batches in parallel
   await Promise.all(batches);
+};
+
+// ==================== CANVAS SETTINGS ====================
+
+/**
+ * Subscribe to canvas settings changes in real-time
+ */
+export const subscribeToCanvasSettings = (callback) => {
+  const settingsRef = doc(db, 'canvases', CANVAS_ID, 'settings', 'config');
+  
+  return onSnapshot(settingsRef, (docSnap) => {
+    if (docSnap.exists()) {
+      callback(docSnap.data());
+    } else {
+      // Return default settings if none exist
+      callback({
+        backgroundColor: '#ffffff',
+      });
+    }
+  });
+};
+
+/**
+ * Update canvas background color
+ */
+export const updateCanvasBackgroundColor = async (backgroundColor, userId, sessionId) => {
+  const settingsRef = doc(db, 'canvases', CANVAS_ID, 'settings', 'config');
+  
+  await setDoc(settingsRef, {
+    backgroundColor,
+    userId,
+    sessionId,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
 };

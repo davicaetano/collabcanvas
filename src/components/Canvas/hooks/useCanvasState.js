@@ -1,7 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { subscribeToCanvasSettings, updateCanvasBackgroundColor } from '../../../utils/firestore';
 
-export const useCanvasState = () => {
+export const useCanvasState = (currentUser, sessionId) => {
   const stageRef = useRef();
+  
+  // Canvas background color
+  const [canvasBackgroundColor, setCanvasBackgroundColor] = useState('#ffffff');
   
   // Canvas state
   const [stageScale, setStageScale] = useState(1);
@@ -30,8 +34,33 @@ export const useCanvasState = () => {
   const [isDraggingShape, setIsDraggingShape] = useState(false);
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
 
+  // Subscribe to canvas settings changes
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const unsubscribe = subscribeToCanvasSettings((settings) => {
+      setCanvasBackgroundColor(settings.backgroundColor || '#ffffff');
+    });
+    
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Update canvas background color in Firestore
+  const updateBackgroundColor = useCallback(async (color) => {
+    if (!currentUser || !sessionId) return;
+    
+    try {
+      await updateCanvasBackgroundColor(color, currentUser.uid, sessionId);
+    } catch (error) {
+      console.error('Failed to update canvas background color:', error);
+    }
+  }, [currentUser, sessionId]);
+
   return {
     stageRef,
+    // Canvas background
+    canvasBackgroundColor,
+    updateBackgroundColor,
     // Canvas state
     stageScale,
     setStageScale,

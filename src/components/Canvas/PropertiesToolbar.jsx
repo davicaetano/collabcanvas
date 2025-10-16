@@ -14,7 +14,7 @@ import {
   ClipboardIcon 
 } from '@heroicons/react/24/outline';
 
-const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) => {
+const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, canvasState }) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
   
   // Get the actual shape objects from the selected IDs
@@ -168,8 +168,18 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
             style={{ marginBottom: `${PROPERTIES_SECTION_SPACING}px` }}
           >
             {selectedShapeObjects.length === 0 ? (
-              <div className="text-gray-500 text-sm italic">
-                Select a shape to edit its properties
+              // No shapes selected - show canvas properties
+              <div className="space-y-4">
+                <div>
+                  <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">
+                    Background Color
+                  </div>
+                  <ColorInput
+                    label="Canvas Background"
+                    value={canvasState?.canvasBackgroundColor || '#ffffff'}
+                    onChange={(value) => canvasState?.updateBackgroundColor(value)}
+                  />
+                </div>
               </div>
             ) : selectedShapeObjects.length === 1 ? (
               // Single shape selected - show editable properties
