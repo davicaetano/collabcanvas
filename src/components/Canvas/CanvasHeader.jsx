@@ -13,30 +13,33 @@ const CanvasHeader = ({
   onlineUsers,
   onLogout
 }) => {
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
   return (
     <header className="bg-gray-800 text-white px-6 py-3">
       {/* Main header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-6">
           <h1 className="text-xl font-bold">CollabCanvas</h1>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={onDeleteAllShapes}
-              disabled={shapesCount === 0}
-              className="px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none hover:ring-2 hover:ring-blue-400 hover:ring-opacity-50 disabled:hover:ring-0"
-              title={shapesCount === 0 ? "No shapes to delete" : `Delete all ${shapesCount} shapes`}
-            >
-              Clear All
-            </button>
-            
-            <button
-              onClick={onAdd500Rectangles}
-              className="px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 bg-blue-600 hover:bg-blue-700 hover:ring-2 hover:ring-blue-400 hover:ring-opacity-50"
-              title="Add 500 rectangles for stress testing"
-            >
-              Add 500
-            </button>
-          </div>
+          {isDevMode && (
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={onDeleteAllShapes}
+                disabled={shapesCount === 0}
+                className="px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none hover:ring-2 hover:ring-blue-400 hover:ring-opacity-50 disabled:hover:ring-0"
+                title={shapesCount === 0 ? "No shapes to delete" : `Delete all ${shapesCount} shapes`}
+              >
+                Clear All
+              </button>
+              
+              <button
+                onClick={onAdd500Rectangles}
+                className="px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 bg-blue-600 hover:bg-blue-700 hover:ring-2 hover:ring-blue-400 hover:ring-opacity-50"
+                title="Add 500 rectangles for stress testing"
+              >
+                Add 500
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center space-x-6">
