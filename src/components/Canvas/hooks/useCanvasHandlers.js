@@ -3,13 +3,13 @@ import {
   updateCursor
 } from '../../../utils/firestore';
 import { getUserColor } from '../../../utils/colors';
-import { rectanglesIntersect } from '../../../utils/geometry';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useModeManagement } from './useModeManagement';
 import { useShapeDrag } from './useShapeDrag';
 import { useZoomPan } from './useZoomPan';
 import { useShapeOperations } from './useShapeOperations';
 import { useDrawing } from './useDrawing';
+import { useShapeSelection } from './useShapeSelection';
 import { 
   CURSOR_UPDATE_THROTTLE
 } from '../../../utils/canvas';
@@ -75,6 +75,14 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     resetDrawingState 
   } = useDrawing(canvasState, createShapeAt);
 
+  // Selection handlers (Select Mode with Marquee)
+  const {
+    handleSelectionMouseDown,
+    handleSelectionMouseMove,
+    handleSelectionMouseUp,
+    handleSelectionClick,
+  } = useShapeSelection(canvasState);
+
   // Handle mouse movement
   const handleMouseMove = useCallback((e) => {
     if (!currentUser) return;
@@ -93,31 +101,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     handleDrawingMouseMove(canvasPos);
     
     // Update marquee selection in select mode
-    if (isSelectMode && isMarqueeSelecting && marqueeStart) {
-      setMarqueeEnd(canvasPos);
-      
-      // Calculate marquee bounds for preview
-      const marqueeRect = {
-        x: Math.min(marqueeStart.x, canvasPos.x),
-        y: Math.min(marqueeStart.y, canvasPos.y),
-        width: Math.abs(canvasPos.x - marqueeStart.x),
-        height: Math.abs(canvasPos.y - marqueeStart.y),
-      };
-      
-      // Find shapes that intersect with marquee in real-time
-      const intersectingShapes = shapes.filter(shape => {
-        const shapeRect = {
-          x: shape.x,
-          y: shape.y,
-          width: shape.width,
-          height: shape.height,
-        };
-        return rectanglesIntersect(marqueeRect, shapeRect);
-      });
-      
-      // Update preview shapes (IDs only)
-      setMarqueePreviewShapes(intersectingShapes.map(shape => shape.id));
-    }
+    handleSelectionMouseMove(canvasPos);
     
     // Throttle cursor updates
     const now = Date.now();
@@ -137,12 +121,7 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     stageY, 
     stageScale,
     handleDrawingMouseMove,
-    isSelectMode,
-    isMarqueeSelecting,
-    marqueeStart,
-    setMarqueeEnd,
-    shapes,
-    setMarqueePreviewShapes
+    handleSelectionMouseMove
   ]);
 
   // Handle canvas mouse down for drawing and marquee selection
@@ -161,33 +140,14 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     if (drawingHandled) return;
     
     // Handle select mode (marquee selection)
-    // Only start marquee if clicking on empty canvas (not on a shape)
-    if (isSelectMode && e.target === e.target.getStage()) {
-      const hasModifierKey = e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey;
-      
-      // If no modifier key, clear selection immediately to avoid conflict with click event
-      if (!hasModifierKey && selectedShapes.length > 0) {
-        setSelectedShapes([]);
-      }
-      
-      setIsMarqueeSelecting(true);
-      setMarqueeStart(canvasPos);
-      setMarqueeEnd(canvasPos);
-      // Store modifier key state for later use in mouse up
-      e.target._marqueeModifierKey = hasModifierKey;
-    }
+    handleSelectionMouseDown(e, canvasPos);
   }, [
     handleDrawingMouseDown,
-    isSelectMode,
+    handleSelectionMouseDown,
     stageRef, 
     stageX, 
     stageY, 
-    stageScale,
-    setIsMarqueeSelecting,
-    setMarqueeStart,
-    setMarqueeEnd,
-    selectedShapes,
-    setSelectedShapes
+    stageScale
   ]);
 
   // Handle canvas mouse up
@@ -196,98 +156,18 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     await handleDrawingMouseUp();
     
     // Handle marquee selection
-    if (isSelectMode && isMarqueeSelecting && marqueeStart && marqueeEnd) {
-      // Calculate marquee bounds
-      const marqueeRect = {
-        x: Math.min(marqueeStart.x, marqueeEnd.x),
-        y: Math.min(marqueeStart.y, marqueeEnd.y),
-        width: Math.abs(marqueeEnd.x - marqueeStart.x),
-        height: Math.abs(marqueeEnd.y - marqueeStart.y),
-      };
-      
-      // Find shapes that intersect with marquee
-      const intersectingShapes = shapes.filter(shape => {
-        const shapeRect = {
-          x: shape.x,
-          y: shape.y,
-          width: shape.width,
-          height: shape.height,
-        };
-        return rectanglesIntersect(marqueeRect, shapeRect);
-      });
-      
-      // Check if modifier key was held during marquee selection
-      const stage = stageRef.current;
-      const wasModifierKeyHeld = stage?._marqueeModifierKey || false;
-      
-      // Update selection
-      if (wasModifierKeyHeld) {
-        // ADD to selection: merge with existing selection
-        const newShapeIds = intersectingShapes.map(shape => shape.id);
-        const mergedSelection = [...new Set([...selectedShapes, ...newShapeIds])];
-        setSelectedShapes(mergedSelection);
-      } else {
-        // REPLACE selection
-        setSelectedShapes(intersectingShapes.map(shape => shape.id));
-      }
-      
-      // Clear modifier key flag
-      if (stage) {
-        stage._marqueeModifierKey = false;
-      }
-      
-      // Reset marquee state
-      setIsMarqueeSelecting(false);
-      setMarqueeStart(null);
-      setMarqueeEnd(null);
-      setMarqueePreviewShapes([]); // Clear preview shapes
-    }
+    handleSelectionMouseUp();
     
     // Reset drawing state
     resetDrawingState();
   }, [
     handleDrawingMouseUp,
-    resetDrawingState,
-    isSelectMode,
-    isMarqueeSelecting,
-    marqueeStart,
-    marqueeEnd,
-    shapes,
-    selectedShapes,
-    setSelectedShapes,
-    setIsMarqueeSelecting,
-    setMarqueeStart,
-    setMarqueeEnd,
-    setMarqueePreviewShapes,
-    stageRef
+    handleSelectionMouseUp,
+    resetDrawingState
   ]);
 
-  // Handle canvas click
-  const handleCanvasClick = useCallback((e) => {
-    const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
-    
-    if (isDevMode) {
-      console.log('Canvas click:', {
-        targetClassName: e.target.className,
-        isStage: e.target === e.target.getStage(),
-        selectedShapes
-      });
-    }
-    
-    // Only handle clicks on empty canvas (not on shapes)
-    if (e.target === e.target.getStage()) {
-      if (isAddMode && !isDrawing) {
-        // Quick click without drag - handled by mouse up
-        return;
-      }
-      
-      // Deselect all shapes when clicking on empty canvas
-      if (selectedShapes && selectedShapes.length > 0) {
-        if (isDevMode) console.log('Deselecting shapes');
-        setSelectedShapes([]);
-      }
-    }
-  }, [isAddMode, isDrawing, selectedShapes, setSelectedShapes]);
+  // Handle canvas click (delegated to selection handler)
+  const handleCanvasClick = handleSelectionClick;
 
   return {
     createShapeAt,
