@@ -3,7 +3,8 @@ import { Rect } from 'react-konva';
 import { 
   updateShape as updateShapeInFirestore,
   deleteShape as deleteShapeInFirestore,
-  updateShapesBatch
+  updateShapesBatch,
+  updateCursor
 } from '../../utils/firestore';
 import { getUserColor } from '../../utils/colors';
 import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';

@@ -1,59 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { onSnapshot, collection } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
 /**
  * ConnectionStatus Component
  * 
  * Displays a small indicator showing Firestore connection status.
- * Useful for testing offline persistence and debugging sync issues.
+ * Uses a real-time listener on the shapes collection to detect connectivity.
  * 
  * States:
- * - Connected (green): Firestore is online and syncing
- * - Disconnected (red): Firestore is offline (changes queued locally)
+ * - Connected (green): Successfully receiving Firestore updates
  * - Connecting (yellow): Initial connection or reconnecting
+ * - Disconnected (red): No connection to Firestore (changes queued locally)
  */
-const ConnectionStatus = () => {
-  const [isConnected, setIsConnected] = useState(true);
+const ConnectionStatus = React.memo(() => {
+  console.log('[ConnectionStatus] 🔄 Component rendering');
+  
+  const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
 
   useEffect(() => {
-    // Monitor connection by listening to the shapes collection
-    // Successful snapshots indicate connection is working
-    let timeoutId;
-    let lastUpdate = Date.now();
+    console.log('[ConnectionStatus] 🚀 Component mounted, setting up Firestore listener');
     
+    setIsConnecting(true);
+    
+    // Listen to shapes collection to detect Firestore connectivity
+    const shapesRef = collection(db, 'canvases', 'main-canvas', 'shapes');
     const unsubscribe = onSnapshot(
-      collection(db, 'canvases', 'main-canvas', 'shapes'),
-      () => {
-        // Successful snapshot = connected
-        lastUpdate = Date.now();
+      shapesRef,
+      (snapshot) => {
+        console.log('[ConnectionStatus] 🟢 Firestore snapshot received');
         setIsConnected(true);
         setIsConnecting(false);
       },
       (error) => {
-        // Error = likely disconnected
-        console.warn('Firestore connection issue:', error);
+        console.error('[ConnectionStatus] 🔴 Firestore error:', error);
         setIsConnected(false);
         setIsConnecting(false);
       }
     );
 
-    // Check connection every 5 seconds
-    const intervalId = setInterval(() => {
-      const timeSinceLastUpdate = Date.now() - lastUpdate;
-      if (timeSinceLastUpdate > 30000) {
-        // No updates for 30 seconds, might be disconnected
-        setIsConnecting(true);
-      }
-    }, 5000);
-
     return () => {
+      console.log('[ConnectionStatus] 💀 Component unmounting, cleaning up Firestore listener');
       unsubscribe();
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
     };
   }, []);
+
+  // Log state changes
+  useEffect(() => {
+    console.log('[ConnectionStatus] 📊 State changed - isConnected:', isConnected, 'isConnecting:', isConnecting);
+  }, [isConnected, isConnecting]);
 
   // Don't render anything in production (optional)
   // Uncomment the line below to hide in production
@@ -65,27 +61,28 @@ const ConnectionStatus = () => {
   };
 
   const getStatusText = () => {
-    if (isConnecting) return 'Connecting...';
-    return isConnected ? 'Online' : 'Offline';
+    if (isConnecting) return 'Connecting';
+    return isConnected ? 'Connected' : 'Disconnected';
   };
 
   const getStatusIcon = () => {
-    if (isConnecting) return '⏳';
+    if (isConnecting) return '◐';
     return isConnected ? '●' : '○';
   };
 
   return (
     <div 
-      className="fixed bottom-4 left-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/90 border border-gray-700 shadow-lg backdrop-blur-sm"
+      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-700/80 border border-gray-600"
       title={`Firestore Status: ${getStatusText()}`}
     >
-      <div className={`w-2 h-2 rounded-full ${getStatusColor()} animate-pulse`} />
+      <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
       <span className="text-xs text-gray-300 font-medium">
         {getStatusIcon()} {getStatusText()}
       </span>
     </div>
   );
-};
+});
+
+ConnectionStatus.displayName = 'ConnectionStatus';
 
 export default ConnectionStatus;
-

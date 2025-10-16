@@ -1,5 +1,6 @@
 import React from 'react';
 import UserPresence from './UserPresence';
+import ConnectionStatus from './ConnectionStatus';
 import { CurrentUserAvatar } from '../shared/Avatar';
 import { STATE_UPDATE_DELAY, HEADER_MIN_HEIGHT } from '../../utils/canvas';
 
@@ -83,6 +84,7 @@ const CanvasHeader = ({
         </div>
         
         <div className="flex items-center space-x-6">
+          <ConnectionStatus />
           <UserPresence onlineUsers={onlineUsers} />
           <div className="flex items-center space-x-3 ml-8">
             <CurrentUserAvatar user={currentUser} />
