@@ -1,8 +1,6 @@
 import { useCallback } from 'react';
 import { 
-  createShape as createShapeInFirestore,
   deleteAllShapes as deleteAllShapesInFirestore,
-  addShapesBatch
 } from '../../../utils/firestore';
 import { getUserColor } from '../../../utils/colors';
 import { 
@@ -18,15 +16,15 @@ import {
  * 
  * @param {Object} currentUser - Current authenticated user
  * @param {string} selectedColor - Currently selected color for new shapes
+ * @param {Object} shapeManager - Shape manager instance from useShapeManager
  * @returns {Object} - Shape operation functions
  */
-export const useShapeOperations = (currentUser, selectedColor, sessionId) => {
+export const useShapeOperations = (currentUser, selectedColor, shapeManager) => {
   // Create shape at specific position
   const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
-    if (!currentUser) return;
+    if (!currentUser || !shapeManager) return;
     
-    const newShape = {
-      id: Date.now().toString(),
+    const shapeData = {
       x: x,
       y: y,
       width: width,
@@ -36,8 +34,8 @@ export const useShapeOperations = (currentUser, selectedColor, sessionId) => {
       strokeWidth: SHAPE_STROKE_WIDTH,
     };
     
-    await createShapeInFirestore(newShape, currentUser.uid, sessionId);
-  }, [currentUser, selectedColor, sessionId]);
+    await shapeManager.createShape(shapeData);
+  }, [currentUser, selectedColor, shapeManager]);
 
   // Delete all shapes
   const deleteAllShapes = useCallback(async () => {
@@ -46,9 +44,8 @@ export const useShapeOperations = (currentUser, selectedColor, sessionId) => {
 
   // Add rectangles for stress testing
   const add500Rectangles = useCallback(async () => {
-    if (!currentUser) return;
-    const shapes = [];
-    const baseTimestamp = Date.now();
+    if (!currentUser || !shapeManager) return;
+    const shapesData = [];
     
     for (let i = 0; i < STRESS_TEST_SHAPE_COUNT; i++) {
       // Generate random positions across the canvas (rounded to integers)
@@ -61,8 +58,7 @@ export const useShapeOperations = (currentUser, selectedColor, sessionId) => {
       const randomUserId = `user-${Math.floor(Math.random() * 1000)}`;
       const randomColor = getUserColor(randomUserId);
       
-      const newShape = {
-        id: `${baseTimestamp}-${i}`,
+      const shapeData = {
         x,
         y,
         width,
@@ -70,15 +66,14 @@ export const useShapeOperations = (currentUser, selectedColor, sessionId) => {
         fill: randomColor,
         stroke: randomColor,
         strokeWidth: 2,
-        userId: currentUser.uid,
       };
       
-      shapes.push(newShape);
+      shapesData.push(shapeData);
     }
     
-    // Use batch write for much faster performance
-    await addShapesBatch(shapes);
-  }, [currentUser]);
+    // Use batch create for much faster performance
+    await shapeManager.createShapeBatch(shapesData);
+  }, [currentUser, shapeManager]);
 
   return {
     createShapeAt,

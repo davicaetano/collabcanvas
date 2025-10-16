@@ -9,10 +9,8 @@ import {
 } from '../../utils/canvas';
 import NumericInput from './properties/NumericInput';
 import ColorInput from './properties/ColorInput';
-import { validateProperty } from '../../utils/propertyValidation';
-import { updateShape as updateShapeInFirestore } from '../../utils/firestore';
 
-const PropertiesToolbar = ({ selectedShapes = [], shapes = [], onShapesChange }) => {
+const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
   
   // Get the actual shape objects from the selected IDs
@@ -25,38 +23,20 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], onShapesChange })
 
   /**
    * Handle property update for a shape
-   * 1. Validate the new value
-   * 2. If valid: update local state optimistically
-   * 3. Sync to Firestore
-   * 4. If invalid: keep previous value (do nothing)
+   * Uses shapeManager for optimistic updates and Firestore sync
    */
   const handlePropertyUpdate = async (shapeId, propertyName, newValue) => {
+    if (!shapeManager) return;
+    
     try {
-      // 1. Validate the new value
-      const validatedValue = validateProperty(propertyName, newValue);
-      
-      // If validation fails, keep the current value (do nothing)
-      if (validatedValue === null) {
-        console.log(`Invalid value for ${propertyName}: ${newValue} - keeping current value`);
-        return;
-      }
-      
-      // 2. Optimistic update (update local state immediately)
-      const updatedShapes = shapes.map(shape => 
-        shape.id === shapeId 
-          ? { ...shape, [propertyName]: validatedValue }
-          : shape
-      );
-      onShapesChange(updatedShapes);
-      
-      // 3. Sync to Firestore
-      await updateShapeInFirestore(shapeId, {
-        [propertyName]: validatedValue
+      // shapeManager handles validation, optimistic update, and Firestore sync
+      await shapeManager.updateShape(shapeId, {
+        [propertyName]: newValue
       });
       
     } catch (error) {
       console.error('Failed to update property:', error);
-      // Keep current value on error - Firestore will sync back if needed
+      // shapeManager handles rollback if needed
     }
   };
   

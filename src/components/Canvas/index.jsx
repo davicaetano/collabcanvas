@@ -21,7 +21,7 @@ const Canvas = () => {
   
   // Custom hooks for state management
   const canvasState = useCanvasState();
-  const handlers = useCanvasHandlers(canvasState, currentUser, sessionId);
+  const handlers = useCanvasHandlers(canvasState, currentUser, sessionId, shapeManager);
   
   // Floating toolbar state - lifted up to sync with canvas modes
   const [selectedTool, setSelectedTool] = useState('select');
@@ -158,7 +158,7 @@ const Canvas = () => {
         <PropertiesToolbar 
           selectedShapes={canvasState.selectedShapes}
           shapes={canvasState.shapes}
-          onShapesChange={canvasState.setShapes}
+          shapeManager={shapeManager}
         />
       </div>
     </div>

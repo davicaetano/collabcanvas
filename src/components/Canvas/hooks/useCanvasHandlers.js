@@ -8,7 +8,7 @@ import { useDrawing } from './useDrawing';
 import { useShapeSelection } from './useShapeSelection';
 import { useCursorTracking } from './useCursorTracking';
 
-export const useCanvasHandlers = (canvasState, currentUser, sessionId) => {
+export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeManager) => {
   const {
     stageRef,
     stageX,
@@ -30,7 +30,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId) => {
   const { handleWheel, handleStageDragStart, handleDragEnd } = useZoomPan(canvasState);
 
   // Shape operations (CRUD)
-  const { createShapeAt, deleteAllShapes, add500Rectangles } = useShapeOperations(currentUser, selectedColor, sessionId);
+  const { createShapeAt, deleteAllShapes, add500Rectangles } = useShapeOperations(currentUser, selectedColor, shapeManager);
 
   // Drawing handlers (Add Mode)
   const { 
