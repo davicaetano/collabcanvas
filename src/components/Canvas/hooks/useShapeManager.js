@@ -6,6 +6,7 @@ import {
   deleteShape as deleteShapeInFirestore,
   updateShapesBatch as updateShapesBatchInFirestore,
   addShapesBatch as addShapesBatchInFirestore,
+  deleteShapesBatch as deleteShapesBatchInFirestore,
   deleteAllShapes as deleteAllShapesInFirestore,
 } from '../../../utils/firestore';
 import { 
@@ -306,6 +307,40 @@ export const useShapeManager = (currentUser, sessionId) => {
   }, [shapes, isDevMode]);
   
   /**
+   * Delete multiple shapes in a batch operation
+   * Optimistically removes shapes from local state and syncs to Firestore
+   * 
+   * @param {string[]} shapeIds - Array of shape IDs to delete
+   * @returns {Promise<void>}
+   */
+  const deleteShapeBatch = useCallback(async (shapeIds) => {
+    if (!shapeIds || shapeIds.length === 0) return;
+    
+    if (isDevMode) {
+      console.log('[ShapeManager] deleteShapeBatch: Deleting shapes', shapeIds);
+    }
+    
+    // Optimistic update - remove shapes immediately
+    setShapes(prev => prev.filter(shape => !shapeIds.includes(shape.id)));
+    
+    // Clear selection
+    setSelectedShapeIds([]);
+    
+    // Sync to Firestore
+    try {
+      await deleteShapesBatchInFirestore(shapeIds);
+      
+      if (isDevMode) {
+        console.log('[ShapeManager] deleteShapeBatch: Successfully deleted from Firestore');
+      }
+    } catch (error) {
+      console.error('[ShapeManager] Error deleting shapes batch:', error);
+      // Note: We don't revert optimistic update here
+      // Firestore listener will sync the correct state
+    }
+  }, [isDevMode]);
+  
+  /**
    * Delete all shapes in the canvas
    * @returns {Promise<void>}
    */
@@ -464,6 +499,7 @@ export const useShapeManager = (currentUser, sessionId) => {
     updateShape,
     updateShapeBatch,
     deleteShape,
+    deleteShapeBatch,
     deleteAllShapes,
     
     // Query operations
@@ -488,6 +524,7 @@ export const useShapeManager = (currentUser, sessionId) => {
     updateShape,
     updateShapeBatch,
     deleteShape,
+    deleteShapeBatch,
     deleteAllShapes,
     getShape,
     getAllShapes,

@@ -25,7 +25,6 @@ export const useZoomPan = (canvasState) => {
     setIsDraggingShape,
     isDrawing,
     addMode,
-    isDeleteMode,
     setIsDraggingCanvas,
   } = canvasState;
 
@@ -74,14 +73,14 @@ export const useZoomPan = (canvasState) => {
 
   // Handle stage drag start (pan)
   const handleStageDragStart = useCallback((e) => {
-    // Prevent stage dragging if we're dragging a shape, drawing, in add mode, or in delete mode
-    if (isDraggingShape || isDrawing || addMode !== 'none' || isDeleteMode) {
+    // Prevent stage dragging if we're dragging a shape, drawing, or in add mode
+    if (isDraggingShape || isDrawing || addMode !== 'none') {
       e.evt.preventDefault();
       return false;
     }
     setIsDraggingShape(false);
     setIsDraggingCanvas(true); // Set canvas dragging state
-  }, [isDraggingShape, isDrawing, addMode, isDeleteMode, setIsDraggingShape, setIsDraggingCanvas]);
+  }, [isDraggingShape, isDrawing, addMode, setIsDraggingShape, setIsDraggingCanvas]);
 
   // Handle drag end (pan)
   const handleDragEnd = useCallback((e) => {

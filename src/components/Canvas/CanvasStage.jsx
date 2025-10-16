@@ -22,7 +22,6 @@ const CanvasStage = React.memo(({
     stageY,
     isSelectMode,
     addMode,
-    isDeleteMode,
     isPanMode,
     isDraggingShape,
     isDraggingCanvas,
@@ -32,7 +31,6 @@ const CanvasStage = React.memo(({
     marqueeStart,
     marqueeEnd,
     marqueePreviewShapes,
-    setIsDeleteMode,
     setIsSelectMode,
     setAddMode,
   } = canvasState;
@@ -100,8 +98,6 @@ const CanvasStage = React.memo(({
             ? (isDraggingCanvas ? 'grabbing' : 'grab')
             : addMode !== 'none'
             ? 'crosshair'
-            : isDeleteMode 
-            ? 'not-allowed'
             : isSelectMode
             ? 'url(/select-cursor.svg) 3 3, auto'
             : 'default'
@@ -124,7 +120,6 @@ const CanvasStage = React.memo(({
             shapes={shapeManager.shapes}
             isSelectMode={isSelectMode}
             addMode={addMode}
-            isDeleteMode={isDeleteMode}
             isPanMode={isPanMode}
             isDraggingCanvas={isDraggingCanvas}
             onShapeDragStart={handleShapeDragStart}
@@ -137,11 +132,6 @@ const CanvasStage = React.memo(({
             sessionId={sessionId}
             shapeManager={shapeManager}
             cursorManager={cursorManager}
-            onDeleteModeExit={() => {
-              setIsDeleteMode(false);
-              setAddMode('none');
-              setIsSelectMode(true);
-            }}
             selectedShapes={shapeManager.selectedShapeIds}
             marqueePreviewShapes={marqueePreviewShapes}
             onShapeSelect={onShapeSelect}

@@ -42,7 +42,6 @@ const Canvas = () => {
         canvasState.setIsSelectMode(true);
         canvasState.setIsPanMode(false);
         canvasState.setAddMode('none');
-        if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         break;
         
       case 'pan':
@@ -50,7 +49,6 @@ const Canvas = () => {
         canvasState.setIsSelectMode(false);
         canvasState.setIsPanMode(true);
         canvasState.setAddMode('none');
-        if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         // Deselect all shapes when entering pan mode
         if (shapeManager.selectedShapeIds.length > 0) {
           shapeManager.clearSelection();
@@ -62,7 +60,6 @@ const Canvas = () => {
         canvasState.setIsSelectMode(false);
         canvasState.setIsPanMode(false);
         canvasState.setAddMode('rectangle');
-        if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         break;
         
       case 'circle':
@@ -70,7 +67,6 @@ const Canvas = () => {
         canvasState.setIsSelectMode(false);
         canvasState.setIsPanMode(false);
         canvasState.setAddMode('circle');
-        if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         break;
         
       case 'text':
@@ -78,15 +74,6 @@ const Canvas = () => {
         canvasState.setIsSelectMode(false);
         canvasState.setIsPanMode(false);
         canvasState.setAddMode('text');
-        if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
-        break;
-        
-      case 'delete':
-        // Activate delete mode, deactivate all others
-        canvasState.setIsSelectMode(false);
-        canvasState.setIsPanMode(false);
-        canvasState.setAddMode('none');
-        if (!canvasState.isDeleteMode) handlers.toggleDeleteMode();
         break;
         
       default:
@@ -108,15 +95,13 @@ const Canvas = () => {
       setSelectedTool('circle');
     } else if (canvasState.addMode === 'text') {
       setSelectedTool('text');
-    } else if (canvasState.isDeleteMode) {
-      setSelectedTool('delete');
     } else if (canvasState.isPanMode) {
       setSelectedTool('pan');
     } else {
       // Default to select mode when no other mode is active
       setSelectedTool('select');
     }
-  }, [canvasState.isSelectMode, canvasState.addMode, canvasState.isDeleteMode, canvasState.isPanMode]);
+  }, [canvasState.isSelectMode, canvasState.addMode, canvasState.isPanMode]);
   
   // Real-time multiplayer features
   useMultiplayer(

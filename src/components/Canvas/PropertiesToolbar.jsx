@@ -9,6 +9,12 @@ import {
 } from '../../utils/canvas';
 import NumericInput from './properties/NumericInput';
 import ColorInput from './properties/ColorInput';
+import { 
+  TrashIcon, 
+  DocumentDuplicateIcon, 
+  ClipboardDocumentIcon,
+  ClipboardIcon 
+} from '@heroicons/react/24/outline';
 
 const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
@@ -20,6 +26,9 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
   
   // Get the single selected shape (if only one is selected)
   const selectedShape = selectedShapeObjects.length === 1 ? selectedShapeObjects[0] : null;
+  
+  // Check if there are shapes selected
+  const hasSelection = selectedShapes.length > 0;
 
   /**
    * Handle property update for a shape
@@ -40,6 +49,20 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
     }
   };
   
+  /**
+   * Handle delete action
+   * Deletes all selected shapes using batch operation
+   */
+  const handleDelete = () => {
+    if (!hasSelection || !shapeManager) return;
+    
+    if (isDevMode) {
+      console.log('[PropertiesToolbar] Deleting shapes:', selectedShapes);
+    }
+    
+    shapeManager.deleteShapeBatch(selectedShapes);
+  };
+  
   return (
     <div
       className={`${PROPERTIES_PANEL_BACKGROUND} border-l overflow-y-auto flex-shrink-0 flex flex-col`}
@@ -57,6 +80,91 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager }) =
         <h2 className={`${PROPERTIES_PANEL_TEXT_COLOR} text-lg font-semibold`}>
           Properties
         </h2>
+      </div>
+
+      {/* Actions Section */}
+      <div className="p-4 border-b border-gray-700">
+        <h3 className="text-gray-400 text-xs font-medium mb-3 uppercase tracking-wider">
+          Actions
+        </h3>
+        <div className="flex items-center justify-evenly">
+          {/* Delete Button */}
+          <button
+            onClick={handleDelete}
+            disabled={!hasSelection}
+            className={`
+              flex items-center justify-center border transition-all duration-200 ease-out group
+              ${hasSelection 
+                ? 'bg-white/5 border-gray-600 hover:bg-blue-100/10 hover:border-blue-400/60' 
+                : 'bg-gray-800 border-gray-700 opacity-50'
+              }
+            `}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+              cursor: 'default',
+            }}
+            title={hasSelection ? `Delete ${selectedShapes.length} shape${selectedShapes.length > 1 ? 's' : ''}` : 'No shapes selected'}
+            onMouseEnter={(e) => {
+              if (hasSelection) {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <TrashIcon 
+              className={`w-5 h-5 transition-colors duration-200 ${
+                hasSelection ? 'text-gray-300 group-hover:text-blue-400' : 'text-gray-600'
+              }`}
+              strokeWidth={1.5}
+            />
+          </button>
+
+          {/* Copy Button - Placeholder */}
+          <button
+            disabled={true}
+            className="flex items-center justify-center bg-gray-800 border border-gray-700 cursor-default opacity-50"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+            }}
+            title="Coming soon"
+          >
+            <ClipboardDocumentIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+          </button>
+
+          {/* Paste Button - Placeholder */}
+          <button
+            disabled={true}
+            className="flex items-center justify-center bg-gray-800 border border-gray-700 cursor-default opacity-50"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+            }}
+            title="Coming soon"
+          >
+            <ClipboardIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+          </button>
+
+          {/* Duplicate Button - Placeholder */}
+          <button
+            disabled={true}
+            className="flex items-center justify-center bg-gray-800 border border-gray-700 cursor-default opacity-50"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+            }}
+            title="Coming soon"
+          >
+            <DocumentDuplicateIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
 
       {/* Content Area */}

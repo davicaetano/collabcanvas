@@ -44,6 +44,30 @@ export const deleteShape = async (shapeId) => {
   await deleteDoc(shapeRef);
 };
 
+// Delete multiple shapes in a batch operation
+export const deleteShapesBatch = async (shapeIds) => {
+  if (!shapeIds || shapeIds.length === 0) return;
+  
+  const BATCH_SIZE = FIRESTORE_BATCH_SIZE; // Firestore batch limit (500)
+  
+  // Split deletes into batches
+  const batches = [];
+  for (let i = 0; i < shapeIds.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    const batchIds = shapeIds.slice(i, i + BATCH_SIZE);
+    
+    batchIds.forEach((shapeId) => {
+      const shapeRef = doc(db, 'canvases', CANVAS_ID, 'shapes', shapeId);
+      batch.delete(shapeRef);
+    });
+    
+    batches.push(batch.commit());
+  }
+  
+  // Execute all batches in parallel
+  await Promise.all(batches);
+};
+
 // Subscribe to shapes
 export const subscribeToShapes = (callback) => {
   const shapesRef = collection(db, 'canvases', CANVAS_ID, 'shapes');

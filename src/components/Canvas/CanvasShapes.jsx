@@ -7,7 +7,6 @@ const CanvasShapes = React.memo(({
   shapes,
   isSelectMode,
   addMode, 
-  isDeleteMode,
   isPanMode,
   isDraggingCanvas,
   onShapeDragStart, 
@@ -17,7 +16,6 @@ const CanvasShapes = React.memo(({
   stageX,
   stageY,
   stageScale,
-  onDeleteModeExit,
   selectedShapes,
   marqueePreviewShapes,
   onShapeSelect,
@@ -29,16 +27,7 @@ const CanvasShapes = React.memo(({
   const [localPositions, setLocalPositions] = useState({});
 
   const handleShapeClick = async (e, shapeId) => {
-    if (isDeleteMode) {
-      try {
-        await shapeManager.deleteShape(shapeId);
-        
-        // Auto-exit delete mode after deleting a shape
-        onDeleteModeExit();
-      } catch (error) {
-        console.error('Failed to delete shape:', shapeId, error);
-      }
-    } else if (isSelectMode && onShapeSelect) {
+    if (isSelectMode && onShapeSelect) {
       // Handle selection only in select mode
       const isMultiSelect = e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey;
       

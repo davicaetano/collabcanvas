@@ -1,5 +1,5 @@
 import React from 'react';
-import { MousePointer2, Hand, Square, Circle, Type, Trash2 } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Type } from 'lucide-react';
 import {
   TOOLBAR_BUTTON_SIZE,
   TOOLBAR_ICON_SIZE,
@@ -45,11 +45,6 @@ const FloatingToolbar = ({ selectedTool, onToolChange }) => {
       id: 'text',
       icon: Type,
       tooltip: 'Text Tool',
-    },
-    {
-      id: 'delete',
-      icon: Trash2,
-      tooltip: 'Delete Tool',
     },
   ];
 
