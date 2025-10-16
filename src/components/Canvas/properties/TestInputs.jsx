@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import NumericInput from './NumericInput';
 import ColorInput from './ColorInput';
 
@@ -8,12 +8,30 @@ import ColorInput from './ColorInput';
  */
 const TestInputs = () => {
   const [xPos, setXPos] = useState(100);
+
   const [yPos, setYPos] = useState(200);
   const [width, setWidth] = useState(150);
   const [height, setHeight] = useState(100);
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [fillColor, setFillColor] = useState('#3B82F6');
   const [strokeColor, setStrokeColor] = useState('#000000');
+
+  // Enable scroll for this test page by overriding root styles
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (root) {
+      root.style.overflow = 'auto';
+      root.style.height = 'auto';
+    }
+    
+    // Cleanup: restore original styles when component unmounts
+    return () => {
+      if (root) {
+        root.style.overflow = 'hidden';
+        root.style.height = '100vh';
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-900 p-8">
