@@ -57,13 +57,13 @@ const FloatingToolbar = ({ selectedTool, onToolChange }) => {
     <div
       className="fixed left-1/2 transform -translate-x-1/2"
       style={{
-        bottom: `${TOOLBAR_BOTTOM_OFFSET}px`,
+        top: '88px', // Header height (~64px) + spacing (24px)
         zIndex: Z_INDEX_FLOATING_TOOLBAR,
       }}
     >
-      {/* Glass effect container */}
+      {/* Dark toolbar container */}
       <div
-        className="flex items-center bg-white/80 backdrop-blur-md border border-white/20 shadow-lg"
+        className="flex items-center bg-gray-800/95 backdrop-blur-md border border-gray-700 shadow-lg"
         style={{
           borderRadius: `${TOOLBAR_BORDER_RADIUS}px`,
           padding: `${TOOLBAR_PADDING}px`,
@@ -78,10 +78,10 @@ const FloatingToolbar = ({ selectedTool, onToolChange }) => {
             <button
               key={button.id}
               onClick={() => handleButtonClick(button.id)}
-              className={`flex items-center justify-center hover:bg-blue-100/80 border hover:border-blue-300/60 transition-all duration-200 ease-out group ${
+              className={`flex items-center justify-center hover:bg-blue-600/20 border hover:border-blue-500 transition-all duration-200 ease-out group ${
                 isSelected 
-                  ? `${TOOLBAR_SELECTED_BG} ${TOOLBAR_SELECTED_BORDER}` 
-                  : `${TOOLBAR_DEFAULT_BG} ${TOOLBAR_DEFAULT_BORDER}`
+                  ? 'bg-blue-600/30 border-blue-500' 
+                  : 'bg-transparent border-gray-700'
               }`}
               style={{
                 width: `${TOOLBAR_BUTTON_SIZE}px`,
@@ -99,8 +99,8 @@ const FloatingToolbar = ({ selectedTool, onToolChange }) => {
             >
               <IconComponent
                 size={TOOLBAR_ICON_SIZE}
-                className={`group-hover:text-blue-600 transition-colors duration-200 ${
-                  isSelected ? TOOLBAR_SELECTED_ICON_COLOR : TOOLBAR_DEFAULT_ICON_COLOR
+                className={`group-hover:text-blue-400 transition-colors duration-200 ${
+                  isSelected ? 'text-blue-400' : 'text-gray-300'
                 }`}
                 strokeWidth={1.5}
               />
