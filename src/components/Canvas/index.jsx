@@ -104,6 +104,17 @@ const Canvas = () => {
       setSelectedTool('select');
     }
   }, [canvasState.isSelectMode, canvasState.addMode, canvasState.isPanMode]);
+
+  // Cancel marquee selection when changing modes (leaving select mode)
+  useEffect(() => {
+    if (!canvasState.isSelectMode && canvasState.isMarqueeSelecting) {
+      // User switched away from select mode while marquee selecting
+      canvasState.setIsMarqueeSelecting(false);
+      canvasState.setMarqueeStart(null);
+      canvasState.setMarqueeEnd(null);
+      canvasState.setMarqueePreviewShapes([]);
+    }
+  }, [canvasState.isSelectMode, canvasState.isMarqueeSelecting, canvasState]);
   
   // Real-time multiplayer features
   useMultiplayer(

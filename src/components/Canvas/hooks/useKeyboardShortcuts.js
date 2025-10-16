@@ -25,6 +25,11 @@ export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) =>
     setIsDrawing,
     setDrawStartPos,
     setPreviewRect,
+    isMarqueeSelecting,
+    setIsMarqueeSelecting,
+    setMarqueeStart,
+    setMarqueeEnd,
+    setMarqueePreviewShapes,
   } = canvasState;
 
   // Handle keyboard shortcuts
@@ -72,6 +77,15 @@ export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) =>
           document.activeElement.blur();
         }
         
+        // Cancel marquee selection if active
+        if (isMarqueeSelecting) {
+          setIsMarqueeSelecting(false);
+          setMarqueeStart(null);
+          setMarqueeEnd(null);
+          setMarqueePreviewShapes([]);
+          return; // Don't process other ESC actions
+        }
+        
         // Exit any active mode and return to select tool
         if (addMode !== 'none') {
           setAddMode('none');
@@ -111,6 +125,7 @@ export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) =>
   }, [
     addMode, 
     isPanMode,
+    isMarqueeSelecting,
     shapeManager,
     onToolChange,
     setAddMode, 
@@ -118,7 +133,11 @@ export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) =>
     setIsSelectMode,
     setIsDrawing, 
     setDrawStartPos, 
-    setPreviewRect
+    setPreviewRect,
+    setIsMarqueeSelecting,
+    setMarqueeStart,
+    setMarqueeEnd,
+    setMarqueePreviewShapes
   ]);
 };
 
