@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Rect } from 'react-konva';
 import { 
-  updateShapesBatch,
   updateCursor
 } from '../../utils/firestore';
 import { getUserColor } from '../../utils/colors';
@@ -122,8 +121,10 @@ const CanvasShapes = React.memo(({
           }
         });
         
-        // Batch update all shapes in Firestore
-        updateShapesBatch(updates, sessionId);
+        // Batch update all shapes through shapeManager
+        shapeManager.updateShapeBatch(updates).catch(() => {
+          // Ignore errors during drag - Firestore might be temporarily busy
+        });
         
       } else {
         // Single shape movement - use shape manager
@@ -225,7 +226,7 @@ const CanvasShapes = React.memo(({
                   };
                 }
               });
-              updateShapesBatch(updates, sessionId);
+              shapeManager.updateShapeBatch(updates);
             } else {
               shapeManager.updateShape(shape.id, finalPosition);
             }

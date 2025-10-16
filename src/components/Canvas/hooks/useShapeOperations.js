@@ -1,7 +1,4 @@
 import { useCallback } from 'react';
-import { 
-  deleteAllShapes as deleteAllShapesInFirestore,
-} from '../../../utils/firestore';
 import { getUserColor } from '../../../utils/colors';
 import { 
   DEFAULT_SHAPE_WIDTH,
@@ -39,8 +36,8 @@ export const useShapeOperations = (currentUser, selectedColor, shapeManager) => 
 
   // Delete all shapes
   const deleteAllShapes = useCallback(async () => {
-    await deleteAllShapesInFirestore();
-  }, []);
+    await shapeManager.deleteAllShapes();
+  }, [shapeManager]);
 
   // Add rectangles for stress testing
   const add500Rectangles = useCallback(async () => {
