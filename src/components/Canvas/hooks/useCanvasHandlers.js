@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { 
   createShape as createShapeInFirestore,
   deleteShape as deleteShapeInFirestore,
@@ -7,6 +7,8 @@ import {
   deleteAllShapes as deleteAllShapesInFirestore
 } from '../../../utils/firestore';
 import { getUserColor } from '../../../utils/colors';
+import { rectanglesIntersect } from '../../../utils/geometry';
+import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { 
   ZOOM_MIN, 
   ZOOM_MAX, 
@@ -61,15 +63,8 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     setIsDraggingCanvas,
   } = canvasState;
 
-  // Helper function to check if two rectangles intersect
-  const rectanglesIntersect = useCallback((rect1, rect2) => {
-    return !(
-      rect1.x + rect1.width < rect2.x ||
-      rect2.x + rect2.width < rect1.x ||
-      rect1.y + rect1.height < rect2.y ||
-      rect2.y + rect2.height < rect1.y
-    );
-  }, []);
+  // Keyboard shortcuts handler
+  useKeyboardShortcuts(canvasState);
 
   // Create shape at specific position
   const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
@@ -302,7 +297,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     marqueeStart,
     setMarqueeEnd,
     shapes,
-    rectanglesIntersect,
     setMarqueePreviewShapes
   ]);
 
@@ -464,7 +458,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     marqueeStart,
     marqueeEnd,
     shapes,
-    rectanglesIntersect,
     selectedShapes,
     setSelectedShapes,
     setIsMarqueeSelecting,
@@ -500,30 +493,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
       }
     }
   }, [isAddMode, isDrawing, selectedShapes, setSelectedShapes]);
-
-  // Handle escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (isAddMode) {
-          setIsAddMode(false);
-          // Reset drawing state when exiting add mode
-          setIsDrawing(false);
-          setDrawStartPos(null);
-          setPreviewRect(null);
-        }
-        if (isDeleteMode) setIsDeleteMode(false);
-        
-        // Deselect all shapes
-        if (selectedShapes && selectedShapes.length > 0) {
-          setSelectedShapes([]);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAddMode, isDeleteMode, selectedShapes, setIsAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect, setSelectedShapes]);
 
   return {
     createShapeAt,
