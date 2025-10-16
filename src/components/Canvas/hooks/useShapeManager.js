@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { validateProperty } from '../../../utils/propertyValidation';
 import { 
   createShape as createShapeInFirestore,
@@ -49,13 +49,17 @@ export const useShapeManager = (currentUser, sessionId) => {
   // Timestamp when last Firestore sync happened
   const lastSyncTimestamp = useRef(0);
   
-  if (isDevMode) {
-    console.log('[ShapeManager] Initialized', {
-      shapesCount: shapes.length,
-      selectedCount: selectedShapeIds.length,
-      pendingChanges: pendingChanges.current.size,
-    });
-  }
+  // Log on mount only (for debugging)
+  useEffect(() => {
+    if (isDevMode) {
+      console.log('[ShapeManager] Mounted');
+    }
+    return () => {
+      if (isDevMode) {
+        console.log('[ShapeManager] Unmounted');
+      }
+    };
+  }, [isDevMode]);
   
   // ==================== CRUD OPERATIONS ====================
   
@@ -169,10 +173,6 @@ export const useShapeManager = (currentUser, sessionId) => {
    * @returns {Promise<void>}
    */
   const updateShape = useCallback(async (shapeId, updates) => {
-    if (isDevMode) {
-      console.log('[ShapeManager] updateShape: Updating shape', shapeId, updates);
-    }
-    
     // Validate all updates
     const validatedUpdates = {};
     for (const [key, value] of Object.entries(updates)) {
@@ -205,10 +205,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     // Sync to Firestore
     try {
       await updateShapeInFirestore(shapeId, validatedUpdates, sessionId);
-      
-      if (isDevMode) {
-        console.log('[ShapeManager] updateShape: Successfully synced to Firestore', shapeId);
-      }
       
       // Clear pending change after successful sync (with delay to ensure Firestore listener has fired)
       setTimeout(() => {
@@ -446,13 +442,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     const now = Date.now();
     lastSyncTimestamp.current = now;
     
-    if (isDevMode) {
-      console.log('[ShapeManager] syncFromFirestore: Received shapes from Firestore', {
-        count: firestoreShapes.length,
-        pendingChanges: pendingChanges.current.size,
-      });
-    }
-    
     setShapes(prev => {
       // Merge Firestore shapes with local shapes
       // Strategy: Don't overwrite shapes with pending changes (< 2 seconds old)
@@ -472,13 +461,6 @@ export const useShapeManager = (currentUser, sessionId) => {
           if (index >= 0) {
             // Replace Firestore version with local version
             merged[index] = localShape;
-            
-            if (isDevMode) {
-              console.log('[ShapeManager] syncFromFirestore: Keeping local version due to pending change', {
-                shapeId: localShape.id,
-                pendingAge,
-              });
-            }
           } else {
             // Local shape doesn't exist in Firestore yet, keep it
             merged.push(localShape);
@@ -492,7 +474,9 @@ export const useShapeManager = (currentUser, sessionId) => {
   
   // ==================== PUBLIC API ====================
   
-  return {
+  // Memoize the returned object to prevent unnecessary re-renders
+  // Only recreate when actual dependencies change
+  return useMemo(() => ({
     // State
     shapes,
     selectedShapeIds,
@@ -517,6 +501,24 @@ export const useShapeManager = (currentUser, sessionId) => {
     
     // Firestore synchronization
     syncFromFirestore,
-  };
+  }), [
+    // State dependencies
+    shapes,
+    selectedShapeIds,
+    
+    // Function dependencies (all useCallback functions)
+    createShape,
+    createShapeBatch,
+    updateShape,
+    updateShapeBatch,
+    deleteShape,
+    deleteAllShapes,
+    getShape,
+    getAllShapes,
+    getSelectedShapes,
+    selectShapes,
+    clearSelection,
+    syncFromFirestore,
+  ]);
 };
 

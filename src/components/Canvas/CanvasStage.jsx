@@ -12,7 +12,8 @@ const CanvasStage = React.memo(({
   canvasState, 
   handlers, 
   currentUser,
-  onShapeSelect
+  onShapeSelect,
+  shapeManager
 }) => {
   const {
     stageRef,
@@ -139,6 +140,7 @@ const CanvasStage = React.memo(({
             stageScale={stageScale}
             updateCursor={updateCursor}
             sessionId={sessionId}
+            shapeManager={shapeManager}
             onDeleteModeExit={() => {
               setIsDeleteMode(false);
               setAddMode('none');

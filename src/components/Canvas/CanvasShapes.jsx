@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Rect } from 'react-konva';
 import { 
-  updateShape as updateShapeInFirestore,
   deleteShape as deleteShapeInFirestore,
   updateShapesBatch,
   updateCursor
@@ -30,7 +29,8 @@ const CanvasShapes = React.memo(({
   selectedShapes,
   marqueePreviewShapes,
   onShapeSelect,
-  sessionId
+  sessionId,
+  shapeManager
 }) => {
   // Track local positions during drag for smooth SelectionBox movement
   const [localPositions, setLocalPositions] = useState({});
@@ -132,12 +132,13 @@ const CanvasShapes = React.memo(({
         updateShapesBatch(updates, sessionId);
         
       } else {
-        // Single shape movement - use existing logic
-        updateShapeInFirestore(shape.id, {
-          ...shape,
+        // Single shape movement - use shape manager
+        shapeManager.updateShape(shape.id, {
           x: newPosition.x,
           y: newPosition.y,
-        }, sessionId);
+        }).catch(() => {
+          // Ignore errors during drag - Firestore might be temporarily busy
+        });
       }
       
       e.target._lastShapeUpdate = now;
@@ -232,10 +233,7 @@ const CanvasShapes = React.memo(({
               });
               updateShapesBatch(updates, sessionId);
             } else {
-              updateShapeInFirestore(shape.id, {
-                ...shape,
-                ...finalPosition,
-              }, sessionId);
+              shapeManager.updateShape(shape.id, finalPosition);
             }
             
             // Clear local positions after a small delay to allow Firebase sync
