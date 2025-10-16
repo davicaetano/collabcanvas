@@ -35,6 +35,7 @@ const CanvasStage = React.memo(({
     marqueePreviewShapes,
     cursors,
     setIsDeleteMode,
+    setIsSelectMode,
     setShapes,
   } = canvasState;
 
@@ -135,7 +136,10 @@ const CanvasStage = React.memo(({
             stageY={stageY}
             stageScale={stageScale}
             updateCursor={updateCursor}
-            onDeleteModeExit={() => setIsDeleteMode(false)}
+            onDeleteModeExit={() => {
+              setIsDeleteMode(false);
+              setIsSelectMode(true);
+            }}
             onShapeDelete={setShapes}
             selectedShapes={selectedShapes}
             marqueePreviewShapes={marqueePreviewShapes}

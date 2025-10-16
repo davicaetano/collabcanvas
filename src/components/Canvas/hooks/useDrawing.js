@@ -16,6 +16,7 @@ export const useDrawing = (canvasState, createShapeAt) => {
     stageScale,
     isAddMode,
     setIsAddMode,
+    setIsSelectMode,
     isDrawing,
     setIsDrawing,
     drawStartPos,
@@ -61,8 +62,9 @@ export const useDrawing = (canvasState, createShapeAt) => {
       Math.pow(previewRect.width, 2) + Math.pow(previewRect.height, 2)
     );
     
-    // Exit add mode immediately (before async operations)
+    // Exit add mode and return to select mode immediately (before async operations)
     setIsAddMode(false);
+    setIsSelectMode(true);
     
     if (dragDistance < 10) {
       // Small drag or click - create default size rectangle
@@ -86,7 +88,7 @@ export const useDrawing = (canvasState, createShapeAt) => {
     }
     
     return true; // Handled
-  }, [isAddMode, isDrawing, drawStartPos, previewRect, createShapeAt, setIsAddMode]);
+  }, [isAddMode, isDrawing, drawStartPos, previewRect, createShapeAt, setIsAddMode, setIsSelectMode]);
 
   // Reset drawing state (called after mouse up)
   const resetDrawingState = useCallback(() => {
