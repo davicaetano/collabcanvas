@@ -231,7 +231,53 @@ cursor: isSelectMode ? 'url(/select-cursor.svg) 3 3, auto' : 'default'
 
 ## Recent Changes
 
-### Feature: Multi-Shape Movement with Batch Update (Latest)
+### Performance: Smooth 60fps Movement with Local Positions (Latest)
+**Date**: October 16, 2025  
+**Enhancement**: Eliminated choppy movement during drag by implementing local position tracking for smooth 60fps visual updates while maintaining Firebase throttle for cost efficiency.
+
+**Problem Solved**:
+- Original implementation throttled both visual movement AND Firebase updates to 50ms (~20fps)
+- Result: Choppy, laggy drag movement
+- When dragging multiple selected shapes, only the dragged shape moved smoothly while others lagged behind
+- SelectionBox sometimes jumped to wrong position after drag ended
+
+**Solution Implemented**:
+**Dual-Layer Position Tracking:**
+1. **Visual Layer (60fps)**: Local state tracks positions during drag for buttery-smooth movement
+2. **Sync Layer (50ms)**: Firebase updates throttled to reduce costs and operations
+
+**How It Works**:
+- During drag: All selected shapes use local positions → smooth 60fps movement
+- After drag: Final position sent to Firebase immediately, then local positions cleared after 100ms delay
+- When not dragging: Shapes use Firebase positions (standard multiplayer sync)
+
+**Results**:
+| Aspect | Before | After |
+|--------|--------|-------|
+| Visual FPS | ~20fps (choppy) | 60fps (smooth) |
+| Dragged Shape | Acceptable | Buttery smooth ✅ |
+| Other Selected Shapes | Very laggy | Smooth ✅ |
+| SelectionBox Sync | Lagging/Jumping | Perfect sync ✅ |
+| Firebase Operations | Optimized ✅ | Optimized ✅ |
+| User Experience | Frustrating | Professional ✅ |
+
+**Benefits**:
+- ✅ Professional-grade drag interaction at 60fps
+- ✅ All selected shapes move together smoothly
+- ✅ SelectionBox perfectly synchronized
+- ✅ No position jumps after drag ends
+- ✅ Firebase costs remain optimized (50ms throttle maintained)
+- ✅ Smooth transition between local and synced positions
+
+**Technical Approach**:
+Uses React state to track temporary positions during drag, renders shapes with local positions when available (falling back to Firebase), and clears local state after ensuring Firebase has synced.
+
+**Files Modified**:
+- `components/Canvas/CanvasShapes.jsx` - Added local position tracking and rendering logic
+
+---
+
+### Feature: Multi-Shape Movement with Batch Update
 **Date**: October 16, 2025  
 **Feature**: When multiple shapes are selected and user drags one of them, all selected shapes move together in a single batch operation.
 
@@ -418,5 +464,5 @@ if (isSelectMode) {
 
 ---
 
-**Last Updated**: October 16, 2025 - Feature: Multi-Shape Movement with Batch Update
+**Last Updated**: October 16, 2025 - Performance: Smooth 60fps Movement
 

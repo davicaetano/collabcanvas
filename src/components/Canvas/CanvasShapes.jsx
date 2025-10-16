@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Rect } from 'react-konva';
 import { 
   updateShape as updateShapeInFirestore,
@@ -30,6 +30,9 @@ const CanvasShapes = React.memo(({
   marqueePreviewShapes,
   onShapeSelect
 }) => {
+  // Track local positions during drag for smooth SelectionBox movement
+  const [localPositions, setLocalPositions] = useState({});
+
   const handleShapeClick = async (e, shapeId) => {
     if (isDeleteMode) {
       try {
@@ -69,26 +72,45 @@ const CanvasShapes = React.memo(({
     // Stop event propagation to prevent canvas dragging
     e.evt.stopPropagation();
     
-    // Throttle both local and remote updates to match cursor speed
+    // Get the current local position (always, for smooth SelectionBox)
+    const newPosition = {
+      x: e.target.x(),
+      y: e.target.y(),
+    };
+    
+    // Calculate the delta (how much the shape moved)
+    const delta = {
+      dx: newPosition.x - shape.x,
+      dy: newPosition.y - shape.y,
+    };
+    
+    // Check if multiple shapes are selected and this shape is one of them
+    const isMultipleSelection = selectedShapes.length > 1 && selectedShapes.includes(shape.id);
+    
+    // Update local positions for smooth SelectionBox (60fps)
+    if (isMultipleSelection) {
+      // Update local positions for all selected shapes
+      const newLocalPositions = {};
+      selectedShapes.forEach(shapeId => {
+        const selectedShape = shapes.find(s => s.id === shapeId);
+        if (selectedShape) {
+          newLocalPositions[shapeId] = {
+            x: selectedShape.x + delta.dx,
+            y: selectedShape.y + delta.dy,
+          };
+        }
+      });
+      setLocalPositions(newLocalPositions);
+    } else {
+      // Single shape - update only this shape's local position
+      setLocalPositions({ [shape.id]: newPosition });
+    }
+    
+    // Throttle Firebase updates only (not local visual movement)
     const now = Date.now();
     const shouldUpdate = now - (e.target._lastShapeUpdate || 0) > CURSOR_UPDATE_THROTTLE;
     
     if (shouldUpdate) {
-      // Get the current position of the dragged shape
-      const newPosition = {
-        x: e.target.x(),
-        y: e.target.y(),
-      };
-      
-      // Calculate the delta (how much the shape moved)
-      const delta = {
-        dx: newPosition.x - shape.x,
-        dy: newPosition.y - shape.y,
-      };
-      
-      // Check if multiple shapes are selected and this shape is one of them
-      const isMultipleSelection = selectedShapes.length > 1 && selectedShapes.includes(shape.id);
-      
       if (isMultipleSelection) {
         // Move all selected shapes together
         const updates = {};
@@ -136,37 +158,28 @@ const CanvasShapes = React.memo(({
           });
         }
       }
-    } else {
-      // If not time to update, reset position to last updated position to throttle local movement
-      if (e.target._lastPosition) {
-        e.target.x(e.target._lastPosition.x);
-        e.target.y(e.target._lastPosition.y);
-      }
-    }
-    
-    // Store the last updated position
-    if (shouldUpdate) {
-      e.target._lastPosition = {
-        x: e.target.x(),
-        y: e.target.y(),
-      };
     }
   };
 
   return (
     <>
       {/* Render all shapes */}
-      {shapes.map((shape) => (
-        <Rect
-          key={shape.id}
-          x={shape.x}
-          y={shape.y}
-          width={shape.width}
-          height={shape.height}
-          fill={shape.fill}
-          stroke={shape.stroke}
-          strokeWidth={shape.strokeWidth}
-          draggable={isSelectMode}
+      {shapes.map((shape) => {
+        // Use local position if available (during drag), otherwise use Firebase position
+        const displayX = localPositions[shape.id]?.x ?? shape.x;
+        const displayY = localPositions[shape.id]?.y ?? shape.y;
+        
+        return (
+          <Rect
+            key={shape.id}
+            x={displayX}
+            y={displayY}
+            width={shape.width}
+            height={shape.height}
+            fill={shape.fill}
+            stroke={shape.stroke}
+            strokeWidth={shape.strokeWidth}
+            draggable={isSelectMode}
           onDragStart={(e) => {
             if (!isSelectMode) {
               e.evt.preventDefault();
@@ -188,20 +201,63 @@ const CanvasShapes = React.memo(({
             if (!isSelectMode) return;
             // Stop event propagation to prevent canvas dragging
             e.evt.stopPropagation();
-            onShapeDragEnd(e, shape.id, {
+            
+            const finalPosition = {
               x: e.target.x(),
               y: e.target.y(),
-            });
+            };
+            
+            // Calculate delta for multi-shape movement
+            const delta = {
+              dx: finalPosition.x - shape.x,
+              dy: finalPosition.y - shape.y,
+            };
+            
+            const isMultipleSelection = selectedShapes.length > 1 && selectedShapes.includes(shape.id);
+            
+            // Immediate final update to Firebase (no throttle)
+            if (isMultipleSelection) {
+              const updates = {};
+              selectedShapes.forEach(shapeId => {
+                const selectedShape = shapes.find(s => s.id === shapeId);
+                if (selectedShape) {
+                  updates[shapeId] = {
+                    x: selectedShape.x + delta.dx,
+                    y: selectedShape.y + delta.dy,
+                  };
+                }
+              });
+              updateShapesBatch(updates);
+            } else {
+              updateShapeInFirestore(shape.id, {
+                ...shape,
+                ...finalPosition,
+              });
+            }
+            
+            // Clear local positions after a small delay to allow Firebase sync
+            setTimeout(() => {
+              setLocalPositions({});
+            }, 100);
+            
+            onShapeDragEnd(e, shape.id, finalPosition);
           }}
           onClick={(e) => handleShapeClick(e, shape.id)}
-        />
-      ))}
+          />
+        );
+      })}
 
       {/* Render selection boxes on top of selected shapes (only in select mode) */}
       {isSelectMode && selectedShapes && selectedShapes.map((shapeId) => {
         const shape = shapes.find(s => s.id === shapeId);
         if (!shape) return null;
-        return <SelectionBox key={`selection-${shapeId}`} shape={shape} />;
+        
+        // Use local position if available (during drag), otherwise use Firebase position
+        const displayShape = localPositions[shapeId] 
+          ? { ...shape, ...localPositions[shapeId] }
+          : shape;
+        
+        return <SelectionBox key={`selection-${shapeId}`} shape={displayShape} />;
       })}
 
       {/* Render preview selection boxes during marquee drag */}
