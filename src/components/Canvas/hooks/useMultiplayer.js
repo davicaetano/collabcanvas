@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { 
   subscribeToShapes, 
   subscribeToCursors,
@@ -9,6 +9,10 @@ import {
 } from '../../../utils/firestore';
 
 export const useMultiplayer = (currentUser, setShapes, setCursors, setOnlineUsers, sessionId, isDraggingShape) => {
+  // Keep track of previous data to avoid unnecessary updates
+  const previousCursorsRef = useRef(null);
+  const previousOnlineUsersRef = useRef(null);
+  
   // Subscribe to real-time data
   useEffect(() => {
     if (!currentUser) return;
@@ -25,14 +29,32 @@ export const useMultiplayer = (currentUser, setShapes, setCursors, setOnlineUser
       }
     });
 
-    // Subscribe to cursors
+    // Subscribe to cursors (filter out own cursor to prevent unnecessary re-renders)
     const unsubscribeCursors = subscribeToCursors((cursorsData) => {
-      setCursors(cursorsData);
+      // Remove own cursor from the data - we don't need to see our own cursor!
+      const { [currentUser.uid]: _, ...otherCursors } = cursorsData;
+      
+      // Only update if cursors actually changed (deep comparison)
+      // This prevents re-renders when Firestore sends duplicate data
+      const cursorsChanged = !previousCursorsRef.current || 
+        JSON.stringify(otherCursors) !== JSON.stringify(previousCursorsRef.current);
+      
+      if (cursorsChanged) {
+        previousCursorsRef.current = otherCursors;
+        setCursors(otherCursors);
+      }
     });
 
     // Subscribe to presence
     const unsubscribePresence = subscribeToPresence((presenceData) => {
-      setOnlineUsers(presenceData);
+      // Only update if presence data actually changed (deep comparison)
+      const presenceChanged = !previousOnlineUsersRef.current || 
+        JSON.stringify(presenceData) !== JSON.stringify(previousOnlineUsersRef.current);
+      
+      if (presenceChanged) {
+        previousOnlineUsersRef.current = presenceData;
+        setOnlineUsers(presenceData);
+      }
     });
 
     // Update presence when component mounts
