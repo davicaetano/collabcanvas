@@ -31,7 +31,6 @@ export const createShape = async (shape, userId, sessionId) => {
 };
 
 export const updateShape = async (shapeId, updates, sessionId) => {
-  console.log('[FIREBASE] 📤 updateShape:', { shapeId, x: updates.x, y: updates.y, sessionId });
   const shapeRef = doc(db, 'canvases', CANVAS_ID, 'shapes', shapeId);
   await updateDoc(shapeRef, {
     ...updates,
@@ -47,14 +46,8 @@ export const deleteShape = async (shapeId) => {
 
 // Subscribe to shapes
 export const subscribeToShapes = (callback) => {
-  console.log('[FIREBASE] subscribeToShapes - Setting up listener');
   const shapesRef = collection(db, 'canvases', CANVAS_ID, 'shapes');
   return onSnapshot(shapesRef, (snapshot) => {
-    console.log('[FIREBASE] 📥 SNAPSHOT RECEIVED:', { 
-      numShapes: snapshot.size,
-      numChanges: snapshot.docChanges().length,
-      timestamp: new Date().toISOString()
-    });
     const shapes = [];
     snapshot.forEach((doc) => {
       shapes.push({ id: doc.id, ...doc.data() });
@@ -169,11 +162,6 @@ export const deleteAllShapes = async () => {
 
 // Batch update multiple shapes at once for better performance
 export const updateShapesBatch = async (shapeUpdates, sessionId) => {
-  console.log('[FIREBASE] 📤 updateShapesBatch:', { 
-    numShapes: Object.keys(shapeUpdates).length,
-    shapeIds: Object.keys(shapeUpdates),
-    sessionId
-  });
   const BATCH_SIZE = FIRESTORE_BATCH_SIZE; // Firestore batch limit (500)
   
   // Split updates into batches

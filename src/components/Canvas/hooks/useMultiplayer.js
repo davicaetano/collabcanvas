@@ -16,19 +16,9 @@ export const useMultiplayer = (currentUser, setShapes, setCursors, setOnlineUser
     // Subscribe to shapes
     // During drag, filter out updates from this session to prevent feedback loop
     const unsubscribeShapes = subscribeToShapes((shapesData) => {
-      console.log('[MULTIPLAYER] 📥 Shapes update received:', { 
-        numShapes: shapesData.length, 
-        isDragging: isDraggingShape,
-        sessionId 
-      });
-      
       // If dragging, filter out shapes from this session
       if (isDraggingShape) {
         const filteredShapes = shapesData.filter(shape => shape.sessionId !== sessionId);
-        console.log('[MULTIPLAYER] 🔍 Filtering during drag:', { 
-          original: shapesData.length, 
-          filtered: filteredShapes.length 
-        });
         setShapes(filteredShapes);
       } else {
         setShapes(shapesData);

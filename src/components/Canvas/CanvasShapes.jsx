@@ -70,8 +70,6 @@ const CanvasShapes = React.memo(({
   const handleShapeDragMove = (e, shape) => {
     if (!isSelectMode) return;
     
-    console.log('[DRAG] 🖱️  handleShapeDragMove:', { shapeId: shape.id });
-    
     // Stop event propagation to prevent canvas dragging
     e.evt.stopPropagation();
     
