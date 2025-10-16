@@ -157,3 +157,30 @@ export const deleteAllShapes = async () => {
   // Execute all batches in parallel
   await Promise.all(batches);
 };
+
+// Batch update multiple shapes at once for better performance
+export const updateShapesBatch = async (shapeUpdates) => {
+  const BATCH_SIZE = FIRESTORE_BATCH_SIZE; // Firestore batch limit (500)
+  
+  // Split updates into batches
+  const batches = [];
+  const updateArray = Object.entries(shapeUpdates); // Convert to array of [shapeId, updates]
+  
+  for (let i = 0; i < updateArray.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    const batchUpdates = updateArray.slice(i, i + BATCH_SIZE);
+    
+    batchUpdates.forEach(([shapeId, updates]) => {
+      const shapeRef = doc(db, 'canvases', CANVAS_ID, 'shapes', shapeId);
+      batch.update(shapeRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+    });
+    
+    batches.push(batch.commit());
+  }
+  
+  // Execute all batches in parallel
+  await Promise.all(batches);
+};

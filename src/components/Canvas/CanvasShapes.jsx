@@ -2,7 +2,8 @@ import React from 'react';
 import { Rect } from 'react-konva';
 import { 
   updateShape as updateShapeInFirestore,
-  deleteShape as deleteShapeInFirestore
+  deleteShape as deleteShapeInFirestore,
+  updateShapesBatch
 } from '../../utils/firestore';
 import { getUserColor } from '../../utils/colors';
 import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
@@ -73,18 +74,48 @@ const CanvasShapes = React.memo(({
     const shouldUpdate = now - (e.target._lastShapeUpdate || 0) > CURSOR_UPDATE_THROTTLE;
     
     if (shouldUpdate) {
-      // Get the current position
+      // Get the current position of the dragged shape
       const newPosition = {
         x: e.target.x(),
         y: e.target.y(),
       };
       
-      // Update shape position in Firestore
-      updateShapeInFirestore(shape.id, {
-        ...shape,
-        x: newPosition.x,
-        y: newPosition.y,
-      });
+      // Calculate the delta (how much the shape moved)
+      const delta = {
+        dx: newPosition.x - shape.x,
+        dy: newPosition.y - shape.y,
+      };
+      
+      // Check if multiple shapes are selected and this shape is one of them
+      const isMultipleSelection = selectedShapes.length > 1 && selectedShapes.includes(shape.id);
+      
+      if (isMultipleSelection) {
+        // Move all selected shapes together
+        const updates = {};
+        
+        // Apply delta to all selected shapes
+        selectedShapes.forEach(shapeId => {
+          const selectedShape = shapes.find(s => s.id === shapeId);
+          if (selectedShape) {
+            updates[shapeId] = {
+              x: selectedShape.x + delta.dx,
+              y: selectedShape.y + delta.dy,
+            };
+          }
+        });
+        
+        // Batch update all shapes in Firestore
+        updateShapesBatch(updates);
+        
+      } else {
+        // Single shape movement - use existing logic
+        updateShapeInFirestore(shape.id, {
+          ...shape,
+          x: newPosition.x,
+          y: newPosition.y,
+        });
+      }
+      
       e.target._lastShapeUpdate = now;
       
       // Update cursor position at the same time for better sync

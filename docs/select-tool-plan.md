@@ -59,7 +59,7 @@ The Select Tool is the primary interaction mode for selecting and manipulating s
 ### Dragging Shapes
 - **Drag selected shape**: Moves the shape and updates Firestore
 - **Drag unselected shape**: Automatically selects and drags it
-- **Multiple shapes selected**: Only drags the shape being clicked
+- **Multiple shapes selected**: Drags ALL selected shapes together (synchronized movement with batch update)
 
 ### Visual Feedback
 
@@ -97,6 +97,7 @@ When user switches to Select Tool:
 - [x] **Mutual exclusivity of modes** (only one mode active at a time)
 - [x] **Custom cursor** (navigation arrow matching toolbar icon)
 - [x] **Marquee selection** (drag box to select multiple shapes)
+- [x] **Multi-shape movement** (drag multiple selected shapes together with batch update)
 - [x] Basic selection logic (single and multi-select)
 - [x] SelectionBox component with handles
 - [x] Deselection on canvas click
@@ -230,7 +231,81 @@ cursor: isSelectMode ? 'url(/select-cursor.svg) 3 3, auto' : 'default'
 
 ## Recent Changes
 
-### Bug Fix: Marquee Selection Deselection Issue (Latest)
+### Feature: Multi-Shape Movement with Batch Update (Latest)
+**Date**: October 16, 2025  
+**Feature**: When multiple shapes are selected and user drags one of them, all selected shapes move together in a single batch operation.
+
+**Implementation**:
+
+**1. New Firestore Function** (`firestore.js`):
+```javascript
+export const updateShapesBatch = async (shapeUpdates) => {
+  const BATCH_SIZE = FIRESTORE_BATCH_SIZE; // 500
+  const batches = [];
+  const updateArray = Object.entries(shapeUpdates);
+  
+  for (let i = 0; i < updateArray.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    const batchUpdates = updateArray.slice(i, i + BATCH_SIZE);
+    
+    batchUpdates.forEach(([shapeId, updates]) => {
+      const shapeRef = doc(db, 'canvases', CANVAS_ID, 'shapes', shapeId);
+      batch.update(shapeRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+    });
+    
+    batches.push(batch.commit());
+  }
+  
+  await Promise.all(batches);
+};
+```
+
+**2. Enhanced Drag Logic** (`CanvasShapes.jsx`):
+```javascript
+// In handleShapeDragMove
+const isMultipleSelection = selectedShapes.length > 1 && selectedShapes.includes(shape.id);
+
+if (isMultipleSelection) {
+  // Calculate delta movement
+  const delta = {
+    dx: newPosition.x - shape.x,
+    dy: newPosition.y - shape.y,
+  };
+  
+  // Apply delta to all selected shapes
+  const updates = {};
+  selectedShapes.forEach(shapeId => {
+    const selectedShape = shapes.find(s => s.id === shapeId);
+    if (selectedShape) {
+      updates[shapeId] = {
+        x: selectedShape.x + delta.dx,
+        y: selectedShape.y + delta.dy,
+      };
+    }
+  });
+  
+  // Batch update all shapes
+  updateShapesBatch(updates);
+}
+```
+
+**Benefits**:
+- ✅ **Performance**: Single batch write instead of N individual writes
+- ✅ **Atomicity**: All shapes update together or none update
+- ✅ **Scalability**: Supports 500+ shapes with automatic batch splitting
+- ✅ **UX**: Smooth synchronized movement of multiple shapes
+- ✅ **Cost**: Reduces Firestore write operations significantly
+
+**Files Modified**:
+- `utils/firestore.js` - Added `updateShapesBatch` function
+- `components/Canvas/CanvasShapes.jsx` - Enhanced drag handler for multi-shape movement
+
+---
+
+### Bug Fix: Marquee Selection Deselection Issue
 **Date**: October 15, 2025  
 **Issue**: When a shape was selected and user started a marquee selection, the shapes would be selected correctly but immediately deselected by the subsequent click event.
 
@@ -343,5 +418,5 @@ if (isSelectMode) {
 
 ---
 
-**Last Updated**: October 15, 2025 - Bug Fix: Marquee Selection Deselection Issue
+**Last Updated**: October 16, 2025 - Feature: Multi-Shape Movement with Batch Update
 
