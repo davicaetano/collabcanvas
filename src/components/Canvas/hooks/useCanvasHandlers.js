@@ -1,8 +1,4 @@
 import { useCallback } from 'react';
-import { 
-  updateCursor
-} from '../../../utils/firestore';
-import { getUserColor } from '../../../utils/colors';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useModeManagement } from './useModeManagement';
 import { useShapeDrag } from './useShapeDrag';
@@ -10,46 +6,15 @@ import { useZoomPan } from './useZoomPan';
 import { useShapeOperations } from './useShapeOperations';
 import { useDrawing } from './useDrawing';
 import { useShapeSelection } from './useShapeSelection';
-import { 
-  CURSOR_UPDATE_THROTTLE
-} from '../../../utils/canvas';
+import { useCursorTracking } from './useCursorTracking';
 
 export const useCanvasHandlers = (canvasState, currentUser) => {
   const {
     stageRef,
-    stageScale,
-    setStageScale,
     stageX,
-    setStageX,
     stageY,
-    setStageY,
-    shapes,
-    isSelectMode,
-    isAddMode,
-    setIsAddMode,
-    isDeleteMode,
-    setIsDeleteMode,
-    isDrawing,
-    setIsDrawing,
-    drawStartPos,
-    setDrawStartPos,
-    previewRect,
-    setPreviewRect,
+    stageScale,
     selectedColor,
-    selectedShapes,
-    setSelectedShapes,
-    isMarqueeSelecting,
-    setIsMarqueeSelecting,
-    marqueeStart,
-    setMarqueeStart,
-    marqueeEnd,
-    setMarqueeEnd,
-    marqueePreviewShapes,
-    setMarqueePreviewShapes,
-    isDraggingShape,
-    setIsDraggingShape,
-    isDraggingCanvas,
-    setIsDraggingCanvas,
   } = canvasState;
 
   // Keyboard shortcuts handler
@@ -83,6 +48,9 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     handleSelectionClick,
   } = useShapeSelection(canvasState);
 
+  // Cursor tracking for multiplayer
+  const trackCursor = useCursorTracking(currentUser);
+
   // Handle mouse movement
   const handleMouseMove = useCallback((e) => {
     if (!currentUser) return;
@@ -103,25 +71,16 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     // Update marquee selection in select mode
     handleSelectionMouseMove(canvasPos);
     
-    // Throttle cursor updates
-    const now = Date.now();
-    if (now - (handleMouseMove.lastUpdate || 0) > CURSOR_UPDATE_THROTTLE) {
-      updateCursor(currentUser.uid, {
-        x: canvasPos.x,
-        y: canvasPos.y,
-        name: currentUser.displayName,
-        color: getUserColor(currentUser.uid),
-      });
-      handleMouseMove.lastUpdate = now;
-    }
+    // Track cursor position for multiplayer
+    trackCursor(canvasPos);
   }, [
-    currentUser, 
     stageRef, 
     stageX, 
     stageY, 
     stageScale,
     handleDrawingMouseMove,
-    handleSelectionMouseMove
+    handleSelectionMouseMove,
+    trackCursor
   ]);
 
   // Handle canvas mouse down for drawing and marquee selection
