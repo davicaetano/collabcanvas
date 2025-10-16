@@ -4,6 +4,7 @@ import CanvasHeader from './CanvasHeader';
 import CanvasStage from './CanvasStage';
 import FloatingToolbar from './FloatingToolbar';
 import PropertiesToolbar from './PropertiesToolbar';
+import ConnectionStatus from './ConnectionStatus';
 import { useCanvasState } from './hooks/useCanvasState';
 import { useCanvasHandlers } from './hooks/useCanvasHandlers';
 import { useMultiplayer } from './hooks/useMultiplayer';
@@ -134,6 +135,9 @@ const Canvas = () => {
           onShapesChange={canvasState.setShapes}
         />
       </div>
+      
+      {/* Connection status indicator (for testing) */}
+      <ConnectionStatus />
     </div>
   );
 };
