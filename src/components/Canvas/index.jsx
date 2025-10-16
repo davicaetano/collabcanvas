@@ -33,7 +33,7 @@ const Canvas = () => {
         // Activate select mode, deactivate all others
         canvasState.setIsSelectMode(true);
         canvasState.setIsPanMode(false);
-        if (canvasState.isAddMode) handlers.toggleAddMode();
+        canvasState.setAddMode('none');
         if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         break;
         
@@ -41,7 +41,7 @@ const Canvas = () => {
         // Activate pan mode, deactivate all others
         canvasState.setIsSelectMode(false);
         canvasState.setIsPanMode(true);
-        if (canvasState.isAddMode) handlers.toggleAddMode();
+        canvasState.setAddMode('none');
         if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         // Deselect all shapes when entering pan mode
         if (canvasState.selectedShapes.length > 0) {
@@ -50,10 +50,26 @@ const Canvas = () => {
         break;
         
       case 'rectangle':
-        // Activate add mode, deactivate all others
+        // Activate add mode with rectangle, deactivate all others
         canvasState.setIsSelectMode(false);
         canvasState.setIsPanMode(false);
-        if (!canvasState.isAddMode) handlers.toggleAddMode();
+        canvasState.setAddMode('rectangle');
+        if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
+        break;
+        
+      case 'circle':
+        // Activate add mode with circle, deactivate all others
+        canvasState.setIsSelectMode(false);
+        canvasState.setIsPanMode(false);
+        canvasState.setAddMode('circle');
+        if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
+        break;
+        
+      case 'text':
+        // Activate add mode with text, deactivate all others
+        canvasState.setIsSelectMode(false);
+        canvasState.setIsPanMode(false);
+        canvasState.setAddMode('text');
         if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         break;
         
@@ -61,8 +77,8 @@ const Canvas = () => {
         // Activate delete mode, deactivate all others
         canvasState.setIsSelectMode(false);
         canvasState.setIsPanMode(false);
+        canvasState.setAddMode('none');
         if (!canvasState.isDeleteMode) handlers.toggleDeleteMode();
-        if (canvasState.isAddMode) handlers.toggleAddMode();
         break;
         
       default:
@@ -75,18 +91,24 @@ const Canvas = () => {
     canvasState.setSelectedShapes(shapeIds);
   }, [canvasState]);
 
-  // Sync toolbar selection when canvas modes change externally (e.g., header buttons)
+  // Sync toolbar selection when canvas modes change externally (e.g., ESC key)
   useEffect(() => {
-    if (canvasState.isAddMode) {
+    // Check modes in priority order and update toolbar selection
+    if (canvasState.addMode === 'rectangle') {
       setSelectedTool('rectangle');
+    } else if (canvasState.addMode === 'circle') {
+      setSelectedTool('circle');
+    } else if (canvasState.addMode === 'text') {
+      setSelectedTool('text');
     } else if (canvasState.isDeleteMode) {
       setSelectedTool('delete');
     } else if (canvasState.isPanMode) {
       setSelectedTool('pan');
-    } else if (canvasState.isSelectMode) {
+    } else {
+      // Default to select mode when no other mode is active
       setSelectedTool('select');
     }
-  }, [canvasState.isSelectMode, canvasState.isAddMode, canvasState.isDeleteMode, canvasState.isPanMode]);
+  }, [canvasState.isSelectMode, canvasState.addMode, canvasState.isDeleteMode, canvasState.isPanMode]);
   
   // Real-time multiplayer features
   useMultiplayer(
@@ -102,15 +124,9 @@ const Canvas = () => {
     <div className="fixed inset-0 flex flex-col overflow-hidden">
       {/* Header spans full width */}
       <CanvasHeader
-        isAddMode={canvasState.isAddMode}
-        isDeleteMode={canvasState.isDeleteMode}
-        onToggleAddMode={handlers.toggleAddMode}
-        onToggleDeleteMode={handlers.toggleDeleteMode}
         onDeleteAllShapes={handlers.deleteAllShapes}
         onAdd500Rectangles={handlers.add500Rectangles}
         shapesCount={canvasState.shapes.length}
-        selectedColor={canvasState.selectedColor}
-        onColorChange={canvasState.setSelectedColor}
         currentUser={currentUser}
         onlineUsers={canvasState.onlineUsers}
         onLogout={logout}

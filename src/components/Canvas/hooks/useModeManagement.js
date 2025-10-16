@@ -9,8 +9,8 @@ import { useCallback } from 'react';
  */
 export const useModeManagement = (canvasState) => {
   const {
-    isAddMode,
-    setIsAddMode,
+    addMode,
+    setAddMode,
     isDeleteMode,
     setIsDeleteMode,
     setIsDrawing,
@@ -18,31 +18,31 @@ export const useModeManagement = (canvasState) => {
     setPreviewRect,
   } = canvasState;
 
-  // Toggle add mode (for creating shapes)
-  const toggleAddMode = useCallback(() => {
-    setIsAddMode(prev => !prev);
+  // Set add mode with specific shape type ('rectangle', 'circle', 'text', or 'none')
+  const setAddModeWithShape = useCallback((shapeType) => {
+    setAddMode(shapeType);
     if (isDeleteMode) setIsDeleteMode(false);
     
-    // Reset drawing state when toggling add mode
+    // Reset drawing state when changing add mode
     setIsDrawing(false);
     setDrawStartPos(null);
     setPreviewRect(null);
-  }, [isDeleteMode, setIsAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
+  }, [isDeleteMode, setAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
 
   // Toggle delete mode (for deleting shapes)
   const toggleDeleteMode = useCallback(() => {
     setIsDeleteMode(prev => !prev);
-    if (isAddMode) {
-      setIsAddMode(false);
+    if (addMode !== 'none') {
+      setAddMode('none');
       // Reset drawing state when switching from add mode
       setIsDrawing(false);
       setDrawStartPos(null);
       setPreviewRect(null);
     }
-  }, [isAddMode, setIsAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
+  }, [addMode, setAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
 
   return {
-    toggleAddMode,
+    setAddModeWithShape,
     toggleDeleteMode,
   };
 };

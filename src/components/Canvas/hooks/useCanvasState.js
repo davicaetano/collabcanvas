@@ -13,7 +13,7 @@ export const useCanvasState = () => {
   
   // UI state - Tool modes (only one can be active at a time)
   const [isSelectMode, setIsSelectMode] = useState(true); // Default mode
-  const [isAddMode, setIsAddMode] = useState(false);
+  const [addMode, setAddMode] = useState('none'); // 'none', 'rectangle', 'circle', 'text'
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isPanMode, setIsPanMode] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -53,8 +53,8 @@ export const useCanvasState = () => {
     // UI state
     isSelectMode,
     setIsSelectMode,
-    isAddMode,
-    setIsAddMode,
+    addMode,
+    setAddMode,
     isDeleteMode,
     setIsDeleteMode,
     isPanMode,

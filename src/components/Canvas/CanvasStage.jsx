@@ -21,7 +21,7 @@ const CanvasStage = React.memo(({
     stageY,
     shapes,
     isSelectMode,
-    isAddMode,
+    addMode,
     isDeleteMode,
     isPanMode,
     isDraggingShape,
@@ -36,6 +36,7 @@ const CanvasStage = React.memo(({
     cursors,
     setIsDeleteMode,
     setIsSelectMode,
+    setAddMode,
     setShapes,
   } = canvasState;
 
@@ -100,7 +101,7 @@ const CanvasStage = React.memo(({
         style={{
           cursor: isPanMode 
             ? (isDraggingCanvas ? 'grabbing' : 'grab')
-            : isAddMode 
+            : addMode !== 'none'
             ? 'crosshair'
             : isDeleteMode 
             ? 'not-allowed'
@@ -113,8 +114,8 @@ const CanvasStage = React.memo(({
           {/* Grid background */}
           <CanvasGrid />
           
-          {/* Preview rectangle while drawing */}
-          <CanvasPreview isAddMode={isAddMode} previewRect={previewRect} selectedColor={selectedColor} />
+          {/* Preview shape while drawing */}
+          <CanvasPreview addMode={addMode} previewRect={previewRect} selectedColor={selectedColor} />
           
           {/* Marquee selection box */}
           {isMarqueeSelecting && (
@@ -125,7 +126,7 @@ const CanvasStage = React.memo(({
           <CanvasShapes
             shapes={shapes}
             isSelectMode={isSelectMode}
-            isAddMode={isAddMode}
+            addMode={addMode}
             isDeleteMode={isDeleteMode}
             isPanMode={isPanMode}
             isDraggingCanvas={isDraggingCanvas}
@@ -140,6 +141,7 @@ const CanvasStage = React.memo(({
             sessionId={sessionId}
             onDeleteModeExit={() => {
               setIsDeleteMode(false);
+              setAddMode('none');
               setIsSelectMode(true);
             }}
             onShapeDelete={setShapes}

@@ -14,8 +14,8 @@ export const useDrawing = (canvasState, createShapeAt) => {
     stageX,
     stageY,
     stageScale,
-    isAddMode,
-    setIsAddMode,
+    addMode,
+    setAddMode,
     setIsSelectMode,
     isDrawing,
     setIsDrawing,
@@ -27,7 +27,7 @@ export const useDrawing = (canvasState, createShapeAt) => {
 
   // Handle mouse down to start drawing
   const handleDrawingMouseDown = useCallback((e, canvasPos) => {
-    if (!isAddMode) return false;
+    if (addMode === 'none') return false;
     
     e.evt.stopPropagation();
     setIsDrawing(true);
@@ -39,11 +39,11 @@ export const useDrawing = (canvasState, createShapeAt) => {
       height: 0,
     });
     return true; // Handled
-  }, [isAddMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
+  }, [addMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
 
   // Handle mouse move to update drawing preview
   const handleDrawingMouseMove = useCallback((canvasPos) => {
-    if (!isAddMode || !isDrawing || !drawStartPos) return false;
+    if (addMode === 'none' || !isDrawing || !drawStartPos) return false;
     
     setPreviewRect({
       x: Math.min(drawStartPos.x, canvasPos.x),
@@ -52,18 +52,18 @@ export const useDrawing = (canvasState, createShapeAt) => {
       height: Math.abs(canvasPos.y - drawStartPos.y),
     });
     return true; // Handled
-  }, [isAddMode, isDrawing, drawStartPos, setPreviewRect]);
+  }, [addMode, isDrawing, drawStartPos, setPreviewRect]);
 
   // Handle mouse up to finish drawing and create shape
   const handleDrawingMouseUp = useCallback(async () => {
-    if (!isAddMode || !isDrawing || !drawStartPos || !previewRect) return false;
+    if (addMode === 'none' || !isDrawing || !drawStartPos || !previewRect) return false;
     
     const dragDistance = Math.sqrt(
       Math.pow(previewRect.width, 2) + Math.pow(previewRect.height, 2)
     );
     
     // Exit add mode and return to select mode immediately (before async operations)
-    setIsAddMode(false);
+    setAddMode('none');
     setIsSelectMode(true);
     
     if (dragDistance < 10) {
@@ -88,7 +88,7 @@ export const useDrawing = (canvasState, createShapeAt) => {
     }
     
     return true; // Handled
-  }, [isAddMode, isDrawing, drawStartPos, previewRect, createShapeAt, setIsAddMode, setIsSelectMode]);
+  }, [addMode, isDrawing, drawStartPos, previewRect, createShapeAt, setAddMode, setIsSelectMode]);
 
   // Reset drawing state (called after mouse up)
   const resetDrawingState = useCallback(() => {

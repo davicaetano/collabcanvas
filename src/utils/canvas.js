@@ -8,8 +8,7 @@ export const VIEWPORT_HEIGHT = window.innerHeight; // Account for expanded heade
 export const GRID_SIZE = 50;
 export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 5;
-export const LOCAL_UPDATE_THROTTLE = 17; // ms - 60 FPS for smooth local visual updates
-export const CURSOR_UPDATE_THROTTLE = 50; // ms - synchronized Firebase updates
+export const CURSOR_UPDATE_THROTTLE = 50; // ms - synchronized updates
 
 // Avatar constants
 export const AVATAR_SIZE = 40; // 10 * 4 (w-10 h-10 in Tailwind)
@@ -94,12 +93,12 @@ export const Z_INDEX_MARQUEE = 500; // above shapes, below floating toolbar
 
 // Helper function to get the appropriate cursor based on active mode
 export const getCursorForMode = (modes) => {
-  const { isPanMode, isAddMode, isDeleteMode, isSelectMode, isDraggingCanvas } = modes;
+  const { isPanMode, addMode, isDeleteMode, isSelectMode, isDraggingCanvas } = modes;
   
   if (isPanMode) {
     return isDraggingCanvas ? 'grabbing' : 'grab';
   }
-  if (isAddMode) return 'crosshair';
+  if (addMode !== 'none') return 'crosshair';
   if (isDeleteMode) return 'not-allowed';
   if (isSelectMode) return 'default'; // Using native CSS cursor instead of custom SVG
   return 'default';

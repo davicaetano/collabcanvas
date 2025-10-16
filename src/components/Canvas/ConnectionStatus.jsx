@@ -65,11 +65,6 @@ const ConnectionStatus = React.memo(() => {
     return isConnected ? 'Connected' : 'Disconnected';
   };
 
-  const getStatusIcon = () => {
-    if (isConnecting) return '◐';
-    return isConnected ? '●' : '○';
-  };
-
   return (
     <div 
       className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-700/80 border border-gray-600"
@@ -77,7 +72,7 @@ const ConnectionStatus = React.memo(() => {
     >
       <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
       <span className="text-xs text-gray-300 font-medium">
-        {getStatusIcon()} {getStatusText()}
+        {getStatusText()}
       </span>
     </div>
   );

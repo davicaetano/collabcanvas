@@ -21,7 +21,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId) => {
   useKeyboardShortcuts(canvasState);
 
   // Mode management
-  const { toggleAddMode, toggleDeleteMode } = useModeManagement(canvasState);
+  const { setAddModeWithShape, toggleDeleteMode } = useModeManagement(canvasState);
 
   // Shape drag handlers
   const { handleShapeDragStart, handleShapeDragEnd } = useShapeDrag(canvasState);
@@ -132,7 +132,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId) => {
     createShapeAt,
     deleteAllShapes,
     add500Rectangles,
-    toggleAddMode,
+    setAddModeWithShape,
     toggleDeleteMode,
     handleWheel,
     handleStageDragStart,

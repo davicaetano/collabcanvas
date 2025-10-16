@@ -1,8 +1,8 @@
 import React from 'react';
 import { Rect } from 'react-konva';
 
-const CanvasPreview = React.memo(({ isAddMode, previewRect, selectedColor }) => {
-  if (!isAddMode || !previewRect) return null;
+const CanvasPreview = React.memo(({ addMode, previewRect, selectedColor }) => {
+  if (addMode === 'none' || !previewRect) return null;
 
   // Convert hex color to rgba with opacity
   const hexToRgba = (hex, alpha = 0.3) => {

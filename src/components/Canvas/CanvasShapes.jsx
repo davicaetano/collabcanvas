@@ -13,7 +13,7 @@ import SelectionBox from './SelectionBox';
 const CanvasShapes = React.memo(({ 
   shapes,
   isSelectMode,
-  isAddMode, 
+  addMode, 
   isDeleteMode,
   isPanMode,
   isDraggingCanvas,

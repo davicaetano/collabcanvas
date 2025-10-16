@@ -15,7 +15,7 @@ export const useShapeSelection = (canvasState) => {
     stageY,
     stageScale,
     isSelectMode,
-    isAddMode,
+    addMode,
     isDrawing,
     shapes,
     selectedShapes,
@@ -163,7 +163,7 @@ export const useShapeSelection = (canvasState) => {
     
     // Only handle clicks on empty canvas (not on shapes)
     if (e.target === e.target.getStage()) {
-      if (isAddMode && !isDrawing) {
+      if (addMode !== 'none' && !isDrawing) {
         // Quick click without drag - handled by mouse up
         return;
       }
@@ -174,7 +174,7 @@ export const useShapeSelection = (canvasState) => {
         setSelectedShapes([]);
       }
     }
-  }, [isAddMode, isDrawing, selectedShapes, setSelectedShapes]);
+  }, [addMode, isDrawing, selectedShapes, setSelectedShapes]);
 
   return {
     handleSelectionMouseDown,
