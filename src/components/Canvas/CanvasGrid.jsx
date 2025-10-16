@@ -3,19 +3,23 @@ import { Rect } from 'react-konva';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, GRID_SIZE } from '../../utils/canvas';
 
 const CanvasGrid = React.memo(() => {
+  const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
+  
   return (
     <>
-      {/* TEMPORARY: Red border around entire canvas area for testing */}
-      <Rect
-        x={0}
-        y={0}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        fill="transparent"
-        stroke="red"
-        strokeWidth={10}
-        listening={false}
-      />
+      {/* Dev Mode Only: Red border around canvas for debugging */}
+      {isDevMode && (
+        <Rect
+          x={0}
+          y={0}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          fill="transparent"
+          stroke="red"
+          strokeWidth={10}
+          listening={false}
+        />
+      )}
       
       {/* Vertical grid lines */}
       {Array.from({ length: Math.ceil(CANVAS_WIDTH / GRID_SIZE) + 1 }, (_, i) => (
