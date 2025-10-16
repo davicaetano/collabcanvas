@@ -9,6 +9,7 @@ import {
 import { getUserColor } from '../../../utils/colors';
 import { rectanglesIntersect } from '../../../utils/geometry';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
+import { useModeManagement } from './useModeManagement';
 import { 
   ZOOM_MIN, 
   ZOOM_MAX, 
@@ -65,6 +66,9 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
 
   // Keyboard shortcuts handler
   useKeyboardShortcuts(canvasState);
+
+  // Mode management
+  const { toggleAddMode, toggleDeleteMode } = useModeManagement(canvasState);
 
   // Create shape at specific position
   const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
@@ -124,28 +128,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     // Use batch write for much faster performance
     await addShapesBatch(shapes);
   }, [currentUser]);
-
-  // Toggle modes
-  const toggleAddMode = useCallback(() => {
-    setIsAddMode(prev => !prev);
-    if (isDeleteMode) setIsDeleteMode(false);
-    
-    // Reset drawing state when toggling add mode
-    setIsDrawing(false);
-    setDrawStartPos(null);
-    setPreviewRect(null);
-  }, [isDeleteMode, setIsAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
-
-  const toggleDeleteMode = useCallback(() => {
-    setIsDeleteMode(prev => !prev);
-    if (isAddMode) {
-      setIsAddMode(false);
-      // Reset drawing state when switching from add mode
-      setIsDrawing(false);
-      setDrawStartPos(null);
-      setPreviewRect(null);
-    }
-  }, [isAddMode, setIsAddMode, setIsDeleteMode, setIsDrawing, setDrawStartPos, setPreviewRect]);
 
   // Handle wheel zoom
   const handleWheel = useCallback((e) => {
