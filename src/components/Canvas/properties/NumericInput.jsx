@@ -19,13 +19,14 @@ const NumericInput = ({
   unit = 'px',
   disabled = false 
 }) => {
-  const [localValue, setLocalValue] = useState(value);
+  const [localValue, setLocalValue] = useState(Math.round(value));
   const [isFocused, setIsFocused] = useState(false);
 
   // Sync with external value changes (e.g., from other users)
+  // Round to integer for display when not focused
   useEffect(() => {
     if (!isFocused) {
-      setLocalValue(value);
+      setLocalValue(Math.round(value));
     }
   }, [value, isFocused]);
 
@@ -61,7 +62,7 @@ const NumericInput = ({
       e.target.blur(); // Trigger blur to save
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      setLocalValue(value); // Reset to original
+      setLocalValue(Math.round(value)); // Reset to original rounded value
       e.target.blur();
     }
   };
