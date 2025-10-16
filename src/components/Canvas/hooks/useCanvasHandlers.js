@@ -10,6 +10,7 @@ import { getUserColor } from '../../../utils/colors';
 import { rectanglesIntersect } from '../../../utils/geometry';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useModeManagement } from './useModeManagement';
+import { useShapeDrag } from './useShapeDrag';
 import { 
   ZOOM_MIN, 
   ZOOM_MAX, 
@@ -69,6 +70,9 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
 
   // Mode management
   const { toggleAddMode, toggleDeleteMode } = useModeManagement(canvasState);
+
+  // Shape drag handlers
+  const { handleShapeDragStart, handleShapeDragEnd } = useShapeDrag(canvasState);
 
   // Create shape at specific position
   const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
@@ -191,16 +195,6 @@ export const useCanvasHandlers = (canvasState, currentUser) => {
     }
     setIsDraggingCanvas(false); // Reset canvas dragging state
   }, [setStageX, setStageY, setIsDraggingCanvas]);
-
-  // Handle shape drag
-  const handleShapeDragStart = useCallback((e) => {
-    setIsDraggingShape(true);
-  }, [setIsDraggingShape]);
-
-  const handleShapeDragEnd = useCallback(async (e, shapeId, newPosition) => {
-    setIsDraggingShape(false);
-    // Final position update is handled in CanvasShapes component
-  }, [setIsDraggingShape]);
 
   // Handle mouse movement
   const handleMouseMove = useCallback((e) => {
