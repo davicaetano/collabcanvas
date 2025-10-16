@@ -8,9 +8,6 @@ export const useCanvasState = () => {
   const [stageX, setStageX] = useState(0);
   const [stageY, setStageY] = useState(0);
   
-  // Shapes state
-  const [shapes, setShapes] = useState([]);
-  
   // UI state - Tool modes (only one can be active at a time)
   const [isSelectMode, setIsSelectMode] = useState(true); // Default mode
   const [addMode, setAddMode] = useState('none'); // 'none', 'rectangle', 'circle', 'text'
@@ -22,9 +19,6 @@ export const useCanvasState = () => {
   
   // Shape creation state
   const [selectedColor, setSelectedColor] = useState('#3B82F6'); // Default blue
-  
-  // Selection state
-  const [selectedShapes, setSelectedShapes] = useState([]);
   
   // Marquee selection state
   const [isMarqueeSelecting, setIsMarqueeSelecting] = useState(false);
@@ -47,9 +41,6 @@ export const useCanvasState = () => {
     setStageX,
     stageY,
     setStageY,
-    // Shapes state
-    shapes,
-    setShapes,
     // UI state
     isSelectMode,
     setIsSelectMode,
@@ -68,9 +59,6 @@ export const useCanvasState = () => {
     // Shape creation state
     selectedColor,
     setSelectedColor,
-    // Selection state
-    selectedShapes,
-    setSelectedShapes,
     // Marquee selection state
     isMarqueeSelecting,
     setIsMarqueeSelecting,

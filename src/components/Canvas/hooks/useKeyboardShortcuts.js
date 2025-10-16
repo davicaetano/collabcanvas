@@ -6,8 +6,9 @@ import { useEffect } from 'react';
  * - ESC: Exit current mode and deselect shapes
  * 
  * @param {Object} canvasState - Canvas state object from useCanvasState
+ * @param {Object} shapeManager - Shape manager from useShapeManager
  */
-export const useKeyboardShortcuts = (canvasState) => {
+export const useKeyboardShortcuts = (canvasState, shapeManager) => {
   const {
     addMode,
     setAddMode,
@@ -16,8 +17,6 @@ export const useKeyboardShortcuts = (canvasState) => {
     isPanMode,
     setIsPanMode,
     setIsSelectMode,
-    selectedShapes,
-    setSelectedShapes,
     setIsDrawing,
     setDrawStartPos,
     setPreviewRect,
@@ -48,8 +47,8 @@ export const useKeyboardShortcuts = (canvasState) => {
         setIsSelectMode(true);
         
         // Deselect all shapes
-        if (selectedShapes && selectedShapes.length > 0) {
-          setSelectedShapes([]);
+        if (shapeManager.selectedShapeIds && shapeManager.selectedShapeIds.length > 0) {
+          shapeManager.clearSelection();
         }
       }
     };
@@ -60,15 +59,14 @@ export const useKeyboardShortcuts = (canvasState) => {
     addMode, 
     isDeleteMode,
     isPanMode,
-    selectedShapes, 
+    shapeManager,
     setAddMode, 
     setIsDeleteMode,
     setIsPanMode,
     setIsSelectMode,
     setIsDrawing, 
     setDrawStartPos, 
-    setPreviewRect, 
-    setSelectedShapes
+    setPreviewRect
   ]);
 };
 

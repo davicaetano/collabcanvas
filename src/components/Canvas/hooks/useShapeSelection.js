@@ -6,9 +6,10 @@ import { rectanglesIntersect } from '../../../utils/geometry';
  * Manages selection state, marquee preview, and modifier keys for multi-select
  * 
  * @param {Object} canvasState - Canvas state object from useCanvasState
+ * @param {Object} shapeManager - Shape manager from useShapeManager
  * @returns {Object} - Selection handlers and state
  */
-export const useShapeSelection = (canvasState) => {
+export const useShapeSelection = (canvasState, shapeManager) => {
   const {
     stageRef,
     stageX,
@@ -17,9 +18,6 @@ export const useShapeSelection = (canvasState) => {
     isSelectMode,
     addMode,
     isDrawing,
-    shapes,
-    selectedShapes,
-    setSelectedShapes,
     isMarqueeSelecting,
     setIsMarqueeSelecting,
     marqueeStart,
@@ -40,8 +38,8 @@ export const useShapeSelection = (canvasState) => {
     const hasModifierKey = e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey;
     
     // If no modifier key, clear selection immediately to avoid conflict with click event
-    if (!hasModifierKey && selectedShapes.length > 0) {
-      setSelectedShapes([]);
+    if (!hasModifierKey && shapeManager.selectedShapeIds.length > 0) {
+      shapeManager.clearSelection();
     }
     
     setIsMarqueeSelecting(true);
@@ -51,7 +49,7 @@ export const useShapeSelection = (canvasState) => {
     e.target._marqueeModifierKey = hasModifierKey;
     
     return true; // Handled
-  }, [isSelectMode, selectedShapes, setSelectedShapes, setIsMarqueeSelecting, setMarqueeStart, setMarqueeEnd]);
+  }, [isSelectMode, shapeManager, setIsMarqueeSelecting, setMarqueeStart, setMarqueeEnd]);
 
   // Handle mouse move to update marquee selection preview
   const handleSelectionMouseMove = useCallback((canvasPos) => {
@@ -68,7 +66,7 @@ export const useShapeSelection = (canvasState) => {
     };
     
     // Find shapes that intersect with marquee in real-time
-    const intersectingShapes = shapes.filter(shape => {
+    const intersectingShapes = shapeManager.shapes.filter(shape => {
       const shapeRect = {
         x: shape.x,
         y: shape.y,
@@ -82,7 +80,7 @@ export const useShapeSelection = (canvasState) => {
     setMarqueePreviewShapes(intersectingShapes.map(shape => shape.id));
     
     return true; // Handled
-  }, [isSelectMode, isMarqueeSelecting, marqueeStart, setMarqueeEnd, shapes, setMarqueePreviewShapes]);
+  }, [isSelectMode, isMarqueeSelecting, marqueeStart, setMarqueeEnd, shapeManager, setMarqueePreviewShapes]);
 
   // Handle mouse up to finish marquee selection
   const handleSelectionMouseUp = useCallback(() => {
@@ -97,7 +95,7 @@ export const useShapeSelection = (canvasState) => {
     };
     
     // Find shapes that intersect with marquee
-    const intersectingShapes = shapes.filter(shape => {
+    const intersectingShapes = shapeManager.shapes.filter(shape => {
       const shapeRect = {
         x: shape.x,
         y: shape.y,
@@ -115,11 +113,10 @@ export const useShapeSelection = (canvasState) => {
     if (wasModifierKeyHeld) {
       // ADD to selection: merge with existing selection
       const newShapeIds = intersectingShapes.map(shape => shape.id);
-      const mergedSelection = [...new Set([...selectedShapes, ...newShapeIds])];
-      setSelectedShapes(mergedSelection);
+      shapeManager.selectShapes(newShapeIds, true); // additive = true
     } else {
       // REPLACE selection
-      setSelectedShapes(intersectingShapes.map(shape => shape.id));
+      shapeManager.selectShapes(intersectingShapes.map(shape => shape.id));
     }
     
     // Clear modifier key flag
@@ -139,9 +136,7 @@ export const useShapeSelection = (canvasState) => {
     isMarqueeSelecting,
     marqueeStart,
     marqueeEnd,
-    shapes,
-    selectedShapes,
-    setSelectedShapes,
+    shapeManager,
     setIsMarqueeSelecting,
     setMarqueeStart,
     setMarqueeEnd,
@@ -157,7 +152,7 @@ export const useShapeSelection = (canvasState) => {
       console.log('Canvas click:', {
         targetClassName: e.target.className,
         isStage: e.target === e.target.getStage(),
-        selectedShapes
+        selectedShapes: shapeManager.selectedShapeIds
       });
     }
     
@@ -169,12 +164,12 @@ export const useShapeSelection = (canvasState) => {
       }
       
       // Deselect all shapes when clicking on empty canvas
-      if (selectedShapes && selectedShapes.length > 0) {
+      if (shapeManager.selectedShapeIds && shapeManager.selectedShapeIds.length > 0) {
         if (isDevMode) console.log('Deselecting shapes');
-        setSelectedShapes([]);
+        shapeManager.clearSelection();
       }
     }
-  }, [addMode, isDrawing, selectedShapes, setSelectedShapes]);
+  }, [addMode, isDrawing, shapeManager]);
 
   return {
     handleSelectionMouseDown,

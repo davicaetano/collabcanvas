@@ -20,7 +20,6 @@ const CanvasStage = React.memo(({
     stageScale,
     stageX,
     stageY,
-    shapes,
     isSelectMode,
     addMode,
     isDeleteMode,
@@ -29,7 +28,6 @@ const CanvasStage = React.memo(({
     isDraggingCanvas,
     previewRect,
     selectedColor,
-    selectedShapes,
     isMarqueeSelecting,
     marqueeStart,
     marqueeEnd,
@@ -38,7 +36,6 @@ const CanvasStage = React.memo(({
     setIsDeleteMode,
     setIsSelectMode,
     setAddMode,
-    setShapes,
   } = canvasState;
 
   const {
@@ -125,7 +122,7 @@ const CanvasStage = React.memo(({
           
           {/* Shapes */}
           <CanvasShapes
-            shapes={shapes}
+            shapes={shapeManager.shapes}
             isSelectMode={isSelectMode}
             addMode={addMode}
             isDeleteMode={isDeleteMode}
@@ -146,8 +143,7 @@ const CanvasStage = React.memo(({
               setAddMode('none');
               setIsSelectMode(true);
             }}
-            onShapeDelete={setShapes}
-            selectedShapes={selectedShapes}
+            selectedShapes={shapeManager.selectedShapeIds}
             marqueePreviewShapes={marqueePreviewShapes}
             onShapeSelect={onShapeSelect}
           />

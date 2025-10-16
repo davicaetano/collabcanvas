@@ -42,13 +42,6 @@ export const useShapeManager = (currentUser, sessionId) => {
   // Selected shape IDs
   const [selectedShapeIds, setSelectedShapeIds] = useState([]);
   
-  // Track pending changes to avoid overwriting with stale Firestore data
-  // Map: shapeId -> timestamp of last local change
-  const pendingChanges = useRef(new Map());
-  
-  // Timestamp when last Firestore sync happened
-  const lastSyncTimestamp = useRef(0);
-  
   // Log on mount only (for debugging)
   useEffect(() => {
     if (isDevMode) {
@@ -194,9 +187,6 @@ export const useShapeManager = (currentUser, sessionId) => {
       return;
     }
     
-    // Track this change as pending
-    pendingChanges.current.set(shapeId, Date.now());
-    
     // Optimistic update - update local state immediately
     setShapes(prev => prev.map(shape =>
       shape.id === shapeId ? { ...shape, ...validatedUpdates } : shape
@@ -206,16 +196,12 @@ export const useShapeManager = (currentUser, sessionId) => {
     try {
       await updateShapeInFirestore(shapeId, validatedUpdates, sessionId);
       
-      // Clear pending change after successful sync (with delay to ensure Firestore listener has fired)
-      setTimeout(() => {
-        pendingChanges.current.delete(shapeId);
-      }, 1000);
+      if (isDevMode) {
+        console.log('[ShapeManager] updateShape: Successfully synced to Firestore', shapeId);
+      }
       
     } catch (error) {
       console.error('[ShapeManager] updateShape: Failed to sync to Firestore', error);
-      
-      // Clear pending change on error
-      pendingChanges.current.delete(shapeId);
       
       // Note: We don't rollback on error because Firestore might be temporarily offline
       // The next Firestore sync will correct the state if needed
@@ -257,12 +243,6 @@ export const useShapeManager = (currentUser, sessionId) => {
       return;
     }
     
-    // Track all changes as pending
-    const now = Date.now();
-    Object.keys(validatedUpdatesMap).forEach(shapeId => {
-      pendingChanges.current.set(shapeId, now);
-    });
-    
     // Optimistic update - update all shapes in local state immediately
     setShapes(prev => prev.map(shape => {
       const updates = validatedUpdatesMap[shape.id];
@@ -277,21 +257,8 @@ export const useShapeManager = (currentUser, sessionId) => {
         console.log('[ShapeManager] updateShapeBatch: Successfully synced to Firestore', Object.keys(validatedUpdatesMap).length);
       }
       
-      // Clear pending changes after successful sync
-      setTimeout(() => {
-        Object.keys(validatedUpdatesMap).forEach(shapeId => {
-          pendingChanges.current.delete(shapeId);
-        });
-      }, 1000);
-      
     } catch (error) {
       console.error('[ShapeManager] updateShapeBatch: Failed to sync to Firestore', error);
-      
-      // Clear pending changes on error
-      Object.keys(validatedUpdatesMap).forEach(shapeId => {
-        pendingChanges.current.delete(shapeId);
-      });
-      
       throw error;
     }
   }, [sessionId, isDevMode]);
@@ -302,29 +269,32 @@ export const useShapeManager = (currentUser, sessionId) => {
    * @returns {Promise<void>}
    */
   const deleteShape = useCallback(async (shapeId) => {
-    if (isDevMode) {
-      console.log('[ShapeManager] deleteShape: Deleting shape', shapeId);
-    }
+    const startTime = Date.now();
+    console.log(`[ShapeManager] ⏱️ DELETE START - Shape ${shapeId} at ${startTime}`);
     
     // Store deleted shape for potential rollback
     const deletedShape = shapes.find(s => s.id === shapeId);
     
     // Optimistic update - remove from local state immediately
-    setShapes(prev => prev.filter(s => s.id !== shapeId));
+    console.log(`[ShapeManager] ⚡ Optimistic delete - Removing shape ${shapeId} from local state`);
+    setShapes(prev => {
+      const filtered = prev.filter(s => s.id !== shapeId);
+      console.log(`[ShapeManager] ⚡ Local state updated - Shapes count: ${prev.length} → ${filtered.length}`);
+      return filtered;
+    });
     
     // Also remove from selection if selected
     setSelectedShapeIds(prev => prev.filter(id => id !== shapeId));
     
     // Sync to Firestore
     try {
+      console.log(`[ShapeManager] 🔥 Calling Firestore delete for ${shapeId}...`);
       await deleteShapeInFirestore(shapeId);
-      
-      if (isDevMode) {
-        console.log('[ShapeManager] deleteShape: Successfully synced to Firestore', shapeId);
-      }
+      const firestoreTime = Date.now() - startTime;
+      console.log(`[ShapeManager] ✅ Firestore delete SUCCESS in ${firestoreTime}ms`);
       
     } catch (error) {
-      console.error('[ShapeManager] deleteShape: Failed to sync to Firestore', error);
+      console.error('[ShapeManager] ❌ Firestore delete FAILED:', error);
       
       // Rollback optimistic update
       if (deletedShape) {
@@ -436,41 +406,47 @@ export const useShapeManager = (currentUser, sessionId) => {
    * Sync shapes from Firestore
    * This is called by the multiplayer hook when Firestore sends updates
    * 
+   * Strategy: Only apply changes from other users (different sessionId)
+   * If a shape has my sessionId, keep my local version (already applied optimistically)
+   * 
    * @param {Array<Object>} firestoreShapes - Shapes from Firestore
    */
   const syncFromFirestore = useCallback((firestoreShapes) => {
-    const now = Date.now();
-    lastSyncTimestamp.current = now;
+    console.log(`[ShapeManager] 🔄 SYNC FROM FIRESTORE - Received ${firestoreShapes.length} shapes`);
     
     setShapes(prev => {
-      // Merge Firestore shapes with local shapes
-      // Strategy: Don't overwrite shapes with pending changes (< 2 seconds old)
+      const result = [];
+      let keptLocal = 0;
+      let acceptedFirestore = 0;
       
-      const merged = [...firestoreShapes];
-      const PENDING_THRESHOLD = 2000; // 2 seconds
-      
-      // Check each local shape to see if it has pending changes
-      prev.forEach(localShape => {
-        const pendingTimestamp = pendingChanges.current.get(localShape.id);
-        const hasPending = pendingTimestamp !== undefined;
-        const pendingAge = hasPending ? now - pendingTimestamp : Infinity;
-        
-        // Keep local version if pending and recent
-        if (hasPending && pendingAge < PENDING_THRESHOLD) {
-          const index = merged.findIndex(s => s.id === localShape.id);
-          if (index >= 0) {
-            // Replace Firestore version with local version
-            merged[index] = localShape;
+      // For each shape from Firestore
+      firestoreShapes.forEach(firestoreShape => {
+        // If the shape was last modified by ME (my sessionId)
+        if (firestoreShape.sessionId === sessionId) {
+          // Check if I have a local version
+          const localShape = prev.find(s => s.id === firestoreShape.id);
+          if (localShape) {
+            // Use my local version (already updated optimistically)
+            result.push(localShape);
+            keptLocal++;
           } else {
-            // Local shape doesn't exist in Firestore yet, keep it
-            merged.push(localShape);
+            // No local version, accept from Firestore (creation confirmation)
+            result.push(firestoreShape);
+            acceptedFirestore++;
           }
+        } else {
+          // Shape modified by ANOTHER user, always accept from Firestore
+          result.push(firestoreShape);
+          acceptedFirestore++;
         }
       });
       
-      return merged;
+      console.log(`[ShapeManager] 🔄 SYNC RESULT - Kept local: ${keptLocal}, Accepted Firestore: ${acceptedFirestore}, Total: ${result.length}`);
+      console.log(`[ShapeManager] 🔄 Previous count: ${prev.length}, New count: ${result.length}`);
+      
+      return result;
     });
-  }, [isDevMode]);
+  }, [sessionId, isDevMode]);
   
   // ==================== PUBLIC API ====================
   

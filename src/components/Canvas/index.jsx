@@ -48,8 +48,8 @@ const Canvas = () => {
         canvasState.setAddMode('none');
         if (canvasState.isDeleteMode) handlers.toggleDeleteMode();
         // Deselect all shapes when entering pan mode
-        if (canvasState.selectedShapes.length > 0) {
-          canvasState.setSelectedShapes([]);
+        if (shapeManager.selectedShapeIds.length > 0) {
+          shapeManager.clearSelection();
         }
         break;
         
@@ -92,8 +92,8 @@ const Canvas = () => {
 
   // Shape selection handler
   const handleShapeSelect = useCallback((shapeIds) => {
-    canvasState.setSelectedShapes(shapeIds);
-  }, [canvasState]);
+    shapeManager.selectShapes(shapeIds);
+  }, [shapeManager]);
 
   // Sync toolbar selection when canvas modes change externally (e.g., ESC key)
   useEffect(() => {
@@ -117,7 +117,7 @@ const Canvas = () => {
   // Real-time multiplayer features
   useMultiplayer(
     currentUser, 
-    canvasState.setShapes, 
+    shapeManager, 
     canvasState.setCursors, 
     canvasState.setOnlineUsers,
     sessionId,
@@ -130,7 +130,7 @@ const Canvas = () => {
       <CanvasHeader
         onDeleteAllShapes={handlers.deleteAllShapes}
         onAdd500Rectangles={handlers.add500Rectangles}
-        shapesCount={canvasState.shapes.length}
+        shapesCount={shapeManager.shapes.length}
         currentUser={currentUser}
         onlineUsers={canvasState.onlineUsers}
         onLogout={logout}
@@ -156,8 +156,8 @@ const Canvas = () => {
         
         {/* Right properties panel - starts below header */}
         <PropertiesToolbar 
-          selectedShapes={canvasState.selectedShapes}
-          shapes={canvasState.shapes}
+          selectedShapes={shapeManager.selectedShapeIds}
+          shapes={shapeManager.shapes}
           shapeManager={shapeManager}
         />
       </div>

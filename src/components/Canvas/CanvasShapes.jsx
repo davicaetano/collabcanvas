@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Rect } from 'react-konva';
 import { 
-  deleteShape as deleteShapeInFirestore,
   updateShapesBatch,
   updateCursor
 } from '../../utils/firestore';
@@ -25,7 +24,6 @@ const CanvasShapes = React.memo(({
   stageScale,
   updateCursor,
   onDeleteModeExit,
-  onShapeDelete,
   selectedShapes,
   marqueePreviewShapes,
   onShapeSelect,
@@ -38,11 +36,7 @@ const CanvasShapes = React.memo(({
   const handleShapeClick = async (e, shapeId) => {
     if (isDeleteMode) {
       try {
-        await deleteShapeInFirestore(shapeId);
-        
-        // Force immediate local update by filtering out the deleted shape
-        const updatedShapes = shapes.filter(shape => shape.id !== shapeId);
-        onShapeDelete(updatedShapes);
+        await shapeManager.deleteShape(shapeId);
         
         // Auto-exit delete mode after deleting a shape
         onDeleteModeExit();

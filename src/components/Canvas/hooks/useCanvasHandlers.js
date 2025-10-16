@@ -18,7 +18,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
   } = canvasState;
 
   // Keyboard shortcuts handler
-  useKeyboardShortcuts(canvasState);
+  useKeyboardShortcuts(canvasState, shapeManager);
 
   // Mode management
   const { setAddModeWithShape, toggleDeleteMode } = useModeManagement(canvasState);
@@ -46,7 +46,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
     handleSelectionMouseMove,
     handleSelectionMouseUp,
     handleSelectionClick,
-  } = useShapeSelection(canvasState);
+  } = useShapeSelection(canvasState, shapeManager);
 
   // Cursor tracking for multiplayer
   const trackCursor = useCursorTracking(currentUser);

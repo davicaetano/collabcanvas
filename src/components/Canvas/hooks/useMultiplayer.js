@@ -8,10 +8,13 @@ import {
   removeCursor
 } from '../../../utils/firestore';
 
-export const useMultiplayer = (currentUser, setShapes, setCursors, setOnlineUsers, sessionId, isDraggingShape) => {
+export const useMultiplayer = (currentUser, shapeManager, setCursors, setOnlineUsers, sessionId, isDraggingShape) => {
   // Keep track of previous data to avoid unnecessary updates
   const previousCursorsRef = useRef(null);
   const previousOnlineUsersRef = useRef(null);
+  
+  // Extract syncFromFirestore to avoid recreating listener
+  const { syncFromFirestore } = shapeManager;
   
   // Subscribe to real-time data
   useEffect(() => {
@@ -20,12 +23,16 @@ export const useMultiplayer = (currentUser, setShapes, setCursors, setOnlineUser
     // Subscribe to shapes
     // During drag, filter out updates from this session to prevent feedback loop
     const unsubscribeShapes = subscribeToShapes((shapesData) => {
+      console.log(`[useMultiplayer] 📡 FIRESTORE LISTENER FIRED - Received ${shapesData.length} shapes`);
+      
       // If dragging, filter out shapes from this session
       if (isDraggingShape) {
         const filteredShapes = shapesData.filter(shape => shape.sessionId !== sessionId);
-        setShapes(filteredShapes);
+        console.log(`[useMultiplayer] 🚫 Dragging mode - Filtered out own shapes: ${shapesData.length} → ${filteredShapes.length}`);
+        syncFromFirestore(filteredShapes);
       } else {
-        setShapes(shapesData);
+        console.log(`[useMultiplayer] ✅ Normal mode - Passing all shapes to syncFromFirestore`);
+        syncFromFirestore(shapesData);
       }
     });
 
@@ -68,7 +75,7 @@ export const useMultiplayer = (currentUser, setShapes, setCursors, setOnlineUser
       unsubscribeCursors();
       unsubscribePresence();
     };
-  }, [currentUser, setShapes, setCursors, setOnlineUsers, sessionId, isDraggingShape]);
+  }, [currentUser, syncFromFirestore, setCursors, setOnlineUsers, sessionId, isDraggingShape]);
 
   // Handle cleanup when user closes window
   useEffect(() => {
