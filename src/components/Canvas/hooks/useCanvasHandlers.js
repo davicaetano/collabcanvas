@@ -6,9 +6,8 @@ import { useZoomPan } from './useZoomPan';
 import { useShapeOperations } from './useShapeOperations';
 import { useDrawing } from './useDrawing';
 import { useShapeSelection } from './useShapeSelection';
-import { useCursorTracking } from './useCursorTracking';
 
-export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeManager) => {
+export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeManager, cursorManager) => {
   const {
     stageRef,
     stageX,
@@ -48,9 +47,6 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
     handleSelectionClick,
   } = useShapeSelection(canvasState, shapeManager);
 
-  // Cursor tracking for multiplayer
-  const trackCursor = useCursorTracking(currentUser);
-
   // Handle mouse movement
   const handleMouseMove = useCallback((e) => {
     if (!currentUser) return;
@@ -72,7 +68,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
     handleSelectionMouseMove(canvasPos);
     
     // Track cursor position for multiplayer
-    trackCursor(canvasPos);
+    cursorManager.trackCursorPosition(canvasPos);
   }, [
     stageRef, 
     stageX, 
@@ -80,7 +76,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
     stageScale,
     handleDrawingMouseMove,
     handleSelectionMouseMove,
-    trackCursor
+    cursorManager
   ]);
 
   // Handle canvas mouse down for drawing and marquee selection

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
 import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../../utils/canvas';
-import { updateCursor } from '../../utils/firestore';
 import CanvasGrid from './CanvasGrid';
 import CanvasPreview from './CanvasPreview';
 import { MarqueeBox } from './MarqueeBox';
@@ -13,7 +12,8 @@ const CanvasStage = React.memo(({
   handlers, 
   currentUser,
   onShapeSelect,
-  shapeManager
+  shapeManager,
+  cursorManager
 }) => {
   const {
     stageRef,
@@ -32,7 +32,6 @@ const CanvasStage = React.memo(({
     marqueeStart,
     marqueeEnd,
     marqueePreviewShapes,
-    cursors,
     setIsDeleteMode,
     setIsSelectMode,
     setAddMode,
@@ -135,9 +134,9 @@ const CanvasStage = React.memo(({
             stageX={stageX}
             stageY={stageY}
             stageScale={stageScale}
-            updateCursor={updateCursor}
             sessionId={sessionId}
             shapeManager={shapeManager}
+            cursorManager={cursorManager}
             onDeleteModeExit={() => {
               setIsDeleteMode(false);
               setAddMode('none');
@@ -149,7 +148,7 @@ const CanvasStage = React.memo(({
           />
           
           {/* Cursors */}
-          <CanvasCursors cursors={cursors} currentUser={currentUser} />
+          <CanvasCursors cursors={cursorManager.cursors} currentUser={currentUser} />
         </Layer>
       </Stage>
     </div>

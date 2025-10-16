@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import { Rect } from 'react-konva';
-import { 
-  updateCursor
-} from '../../utils/firestore';
-import { getUserColor } from '../../utils/colors';
 import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
 import SelectionBox from './SelectionBox';
 
@@ -21,13 +17,13 @@ const CanvasShapes = React.memo(({
   stageX,
   stageY,
   stageScale,
-  updateCursor,
   onDeleteModeExit,
   selectedShapes,
   marqueePreviewShapes,
   onShapeSelect,
   sessionId,
-  shapeManager
+  shapeManager,
+  cursorManager
 }) => {
   // Track local positions during drag for smooth SelectionBox movement
   const [localPositions, setLocalPositions] = useState({});
@@ -139,23 +135,12 @@ const CanvasShapes = React.memo(({
       e.target._lastShapeUpdate = now;
       
       // Update cursor position at the same time for better sync
-      if (currentUser) {
-        const stage = stageRef.current;
-        const pos = stage.getPointerPosition();
-        if (pos) {
-          const canvasPos = {
-            x: (pos.x - stageX) / stageScale,
-            y: (pos.y - stageY) / stageScale,
-          };
-          
-          updateCursor(currentUser.uid, {
-            x: canvasPos.x,
-            y: canvasPos.y,
-            name: currentUser.displayName,
-            color: getUserColor(currentUser.uid),
-          });
-        }
-      }
+      cursorManager.trackCursorFromStage({
+        stageRef,
+        stageX,
+        stageY,
+        stageScale
+      });
     }
   };
 

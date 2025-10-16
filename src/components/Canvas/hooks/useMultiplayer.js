@@ -1,16 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { 
   subscribeToShapes, 
-  subscribeToCursors,
   subscribeToPresence,
   updatePresence,
-  removePresence,
-  removeCursor
+  removePresence
 } from '../../../utils/firestore';
 
-export const useMultiplayer = (currentUser, shapeManager, setCursors, setOnlineUsers, sessionId, isDraggingShape) => {
+export const useMultiplayer = (currentUser, shapeManager, setOnlineUsers, sessionId, isDraggingShape) => {
   // Keep track of previous data to avoid unnecessary updates
-  const previousCursorsRef = useRef(null);
   const previousOnlineUsersRef = useRef(null);
   
   // Extract syncFromFirestore to avoid recreating listener
@@ -36,22 +33,6 @@ export const useMultiplayer = (currentUser, shapeManager, setCursors, setOnlineU
       }
     });
 
-    // Subscribe to cursors (filter out own cursor to prevent unnecessary re-renders)
-    const unsubscribeCursors = subscribeToCursors((cursorsData) => {
-      // Remove own cursor from the data - we don't need to see our own cursor!
-      const { [currentUser.uid]: _, ...otherCursors } = cursorsData;
-      
-      // Only update if cursors actually changed (deep comparison)
-      // This prevents re-renders when Firestore sends duplicate data
-      const cursorsChanged = !previousCursorsRef.current || 
-        JSON.stringify(otherCursors) !== JSON.stringify(previousCursorsRef.current);
-      
-      if (cursorsChanged) {
-        previousCursorsRef.current = otherCursors;
-        setCursors(otherCursors);
-      }
-    });
-
     // Subscribe to presence
     const unsubscribePresence = subscribeToPresence((presenceData) => {
       // Only update if presence data actually changed (deep comparison)
@@ -72,10 +53,9 @@ export const useMultiplayer = (currentUser, shapeManager, setCursors, setOnlineU
 
     return () => {
       unsubscribeShapes();
-      unsubscribeCursors();
       unsubscribePresence();
     };
-  }, [currentUser, syncFromFirestore, setCursors, setOnlineUsers, sessionId, isDraggingShape]);
+  }, [currentUser, syncFromFirestore, setOnlineUsers, sessionId, isDraggingShape]);
 
   // Handle cleanup when user closes window
   useEffect(() => {
@@ -83,7 +63,6 @@ export const useMultiplayer = (currentUser, shapeManager, setCursors, setOnlineU
 
     const handleBeforeUnload = () => {
       removePresence(currentUser.uid);
-      removeCursor(currentUser.uid);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

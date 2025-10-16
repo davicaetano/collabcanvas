@@ -8,6 +8,7 @@ import { useCanvasState } from './hooks/useCanvasState';
 import { useCanvasHandlers } from './hooks/useCanvasHandlers';
 import { useMultiplayer } from './hooks/useMultiplayer';
 import { useShapeManager } from './hooks/useShapeManager';
+import { useCursorManager } from './hooks/useCursorManager';
 
 const Canvas = () => {
   const { currentUser, logout } = useAuth();
@@ -19,9 +20,12 @@ const Canvas = () => {
   // Shape manager - centralized shape state and operations
   const shapeManager = useShapeManager(currentUser, sessionId);
   
+  // Cursor manager - centralized cursor and presence operations
+  const cursorManager = useCursorManager(currentUser, sessionId);
+  
   // Custom hooks for state management
   const canvasState = useCanvasState();
-  const handlers = useCanvasHandlers(canvasState, currentUser, sessionId, shapeManager);
+  const handlers = useCanvasHandlers(canvasState, currentUser, sessionId, shapeManager, cursorManager);
   
   // Floating toolbar state - lifted up to sync with canvas modes
   const [selectedTool, setSelectedTool] = useState('select');
@@ -118,7 +122,6 @@ const Canvas = () => {
   useMultiplayer(
     currentUser, 
     shapeManager, 
-    canvasState.setCursors, 
     canvasState.setOnlineUsers,
     sessionId,
     canvasState.isDraggingShape
@@ -146,6 +149,7 @@ const Canvas = () => {
             currentUser={currentUser}
             onShapeSelect={handleShapeSelect}
             shapeManager={shapeManager}
+            cursorManager={cursorManager}
           />
           
           <FloatingToolbar 
