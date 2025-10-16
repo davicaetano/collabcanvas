@@ -238,6 +238,22 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
                   </div>
                 </div>
 
+                {/* Transform Section */}
+                <div>
+                  <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">
+                    Transform
+                  </div>
+                  <NumericInput
+                    label="Rotation"
+                    value={selectedShape.rotation || 0}
+                    onChange={(value) => handlePropertyUpdate(selectedShape.id, 'rotation', value)}
+                    min={0}
+                    max={360}
+                    step={1}
+                    unit="°"
+                  />
+                </div>
+
                 {/* Appearance Section */}
                 <div>
                   <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">

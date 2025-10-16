@@ -41,6 +41,12 @@ export const PROPERTY_CONSTRAINTS = {
     max: 100,
     description: 'Stroke width in pixels'
   },
+  rotation: { 
+    type: 'number', 
+    min: 0, 
+    max: 360,
+    description: 'Rotation angle in degrees (0-360)'
+  },
   fill: { 
     type: 'color',
     description: 'Fill color in hex format (#RRGGBB)'

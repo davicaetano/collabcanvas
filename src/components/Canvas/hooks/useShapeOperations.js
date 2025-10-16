@@ -29,6 +29,7 @@ export const useShapeOperations = (currentUser, selectedColor, shapeManager) => 
       fill: selectedColor,
       stroke: selectedColor,
       strokeWidth: SHAPE_STROKE_WIDTH,
+      rotation: 0,
     };
     
     await shapeManager.createShape(shapeData);
@@ -63,6 +64,7 @@ export const useShapeOperations = (currentUser, selectedColor, shapeManager) => 
         fill: randomColor,
         stroke: randomColor,
         strokeWidth: 2,
+        rotation: 0,
       };
       
       shapesData.push(shapeData);

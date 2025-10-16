@@ -12,39 +12,45 @@ import {
 const SelectionBox = ({ shape }) => {
   if (!shape) return null;
 
-  const { x, y, width, height, strokeWidth = 0 } = shape;
+  const { x, y, width, height, strokeWidth = 0, rotation = 0 } = shape;
   const halfHandle = SELECTION_HANDLE_SIZE / 2;
   
   // Add offset to account for shape's stroke so selection box doesn't cover it
   // Selection box should be outside the shape's stroke
   const offset = Math.max(strokeWidth / 2, 3); // At least 3px offset for visibility
   
+  // Calculate center position (same as shape rendering)
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  
   // Adjusted dimensions to show selection outside the stroke
-  const selectionX = x - offset;
-  const selectionY = y - offset;
   const selectionWidth = width + (offset * 2);
   const selectionHeight = height + (offset * 2);
 
-  // Handle positions (centered on corners and edges) - based on original shape
+  // Handle positions relative to center (will be rotated with the group)
   const handles = [
     // Corners
-    { x: x - halfHandle, y: y - halfHandle, cursor: 'nwse-resize' }, // Top-left
-    { x: x + width - halfHandle, y: y - halfHandle, cursor: 'nesw-resize' }, // Top-right
-    { x: x - halfHandle, y: y + height - halfHandle, cursor: 'nesw-resize' }, // Bottom-left
-    { x: x + width - halfHandle, y: y + height - halfHandle, cursor: 'nwse-resize' }, // Bottom-right
+    { x: -width / 2 - halfHandle, y: -height / 2 - halfHandle, cursor: 'nwse-resize' }, // Top-left
+    { x: width / 2 - halfHandle, y: -height / 2 - halfHandle, cursor: 'nesw-resize' }, // Top-right
+    { x: -width / 2 - halfHandle, y: height / 2 - halfHandle, cursor: 'nesw-resize' }, // Bottom-left
+    { x: width / 2 - halfHandle, y: height / 2 - halfHandle, cursor: 'nwse-resize' }, // Bottom-right
     // Edges (middle of each side)
-    { x: x + width / 2 - halfHandle, y: y - halfHandle, cursor: 'ns-resize' }, // Top-middle
-    { x: x + width / 2 - halfHandle, y: y + height - halfHandle, cursor: 'ns-resize' }, // Bottom-middle
-    { x: x - halfHandle, y: y + height / 2 - halfHandle, cursor: 'ew-resize' }, // Left-middle
-    { x: x + width - halfHandle, y: y + height / 2 - halfHandle, cursor: 'ew-resize' }, // Right-middle
+    { x: -halfHandle, y: -height / 2 - halfHandle, cursor: 'ns-resize' }, // Top-middle
+    { x: -halfHandle, y: height / 2 - halfHandle, cursor: 'ns-resize' }, // Bottom-middle
+    { x: -width / 2 - halfHandle, y: -halfHandle, cursor: 'ew-resize' }, // Left-middle
+    { x: width / 2 - halfHandle, y: -halfHandle, cursor: 'ew-resize' }, // Right-middle
   ];
 
   return (
-    <Group>
+    <Group
+      x={centerX}
+      y={centerY}
+      rotation={rotation}
+    >
       {/* Selection border - offset to not cover shape's stroke */}
       <Rect
-        x={selectionX}
-        y={selectionY}
+        x={-selectionWidth / 2}
+        y={-selectionHeight / 2}
         width={selectionWidth}
         height={selectionHeight}
         stroke={SELECTION_STROKE_COLOR}

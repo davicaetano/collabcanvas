@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { rectanglesIntersect } from '../../../utils/geometry';
+import { rectangleIntersectsRotatedRectangle } from '../../../utils/geometry';
 
 /**
  * Hook to handle shape selection with marquee (drag to select multiple shapes)
@@ -67,13 +67,7 @@ export const useShapeSelection = (canvasState, shapeManager) => {
     
     // Find shapes that intersect with marquee in real-time
     const intersectingShapes = shapeManager.shapes.filter(shape => {
-      const shapeRect = {
-        x: shape.x,
-        y: shape.y,
-        width: shape.width,
-        height: shape.height,
-      };
-      return rectanglesIntersect(marqueeRect, shapeRect);
+      return rectangleIntersectsRotatedRectangle(marqueeRect, shape);
     });
     
     // Update preview shapes (IDs only)
@@ -96,13 +90,7 @@ export const useShapeSelection = (canvasState, shapeManager) => {
     
     // Find shapes that intersect with marquee
     const intersectingShapes = shapeManager.shapes.filter(shape => {
-      const shapeRect = {
-        x: shape.x,
-        y: shape.y,
-        width: shape.width,
-        height: shape.height,
-      };
-      return rectanglesIntersect(marqueeRect, shapeRect);
+      return rectangleIntersectsRotatedRectangle(marqueeRect, shape);
     });
     
     // Check if modifier key was held during marquee selection

@@ -52,10 +52,11 @@ const CanvasShapes = React.memo(({
     // Stop event propagation to prevent canvas dragging
     e.evt.stopPropagation();
     
-    // Get the current local position (always, for smooth SelectionBox)
+    // Get the current local position from Konva (center position)
+    // Convert back to top-left corner for consistency with Firebase
     const newPosition = {
-      x: e.target.x(),
-      y: e.target.y(),
+      x: e.target.x() - shape.width / 2,
+      y: e.target.y() - shape.height / 2,
     };
     
     // Calculate the delta (how much the shape moved)
@@ -141,16 +142,23 @@ const CanvasShapes = React.memo(({
         const displayX = localPositions[shape.id]?.x ?? shape.x;
         const displayY = localPositions[shape.id]?.y ?? shape.y;
         
+        // Adjust position to center for rotation pivot
+        const centerX = displayX + shape.width / 2;
+        const centerY = displayY + shape.height / 2;
+        
         return (
           <Rect
             key={shape.id}
-            x={displayX}
-            y={displayY}
+            x={centerX}
+            y={centerY}
             width={shape.width}
             height={shape.height}
             fill={shape.fill}
             stroke={shape.stroke}
             strokeWidth={shape.strokeWidth}
+            rotation={shape.rotation || 0}
+            offsetX={shape.width / 2}
+            offsetY={shape.height / 2}
             draggable={isSelectMode}
           onDragStart={(e) => {
             if (!isSelectMode) {
@@ -174,10 +182,11 @@ const CanvasShapes = React.memo(({
             // Stop event propagation to prevent canvas dragging
             e.evt.stopPropagation();
             
-            // Get final position
+            // Get final position from Konva (center position)
+            // Convert back to top-left corner for Firebase storage
             const finalPosition = {
-              x: e.target.x(),
-              y: e.target.y(),
+              x: e.target.x() - shape.width / 2,
+              y: e.target.y() - shape.height / 2,
             };
             
             // Calculate delta for multi-shape movement
