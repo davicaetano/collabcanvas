@@ -73,10 +73,9 @@ const CanvasShapes = React.memo(({
     e.evt.stopPropagation();
     
     // Get the current local position (always, for smooth SelectionBox)
-    // Round to integers for cleaner values
     const newPosition = {
-      x: Math.round(e.target.x()),
-      y: Math.round(e.target.y()),
+      x: e.target.x(),
+      y: e.target.y(),
     };
     
     // Calculate the delta (how much the shape moved)
@@ -96,8 +95,8 @@ const CanvasShapes = React.memo(({
         const selectedShape = shapes.find(s => s.id === shapeId);
         if (selectedShape) {
           newLocalPositions[shapeId] = {
-            x: Math.round(selectedShape.x + delta.dx),
-            y: Math.round(selectedShape.y + delta.dy),
+            x: selectedShape.x + delta.dx,
+            y: selectedShape.y + delta.dy,
           };
         }
       });
@@ -121,8 +120,8 @@ const CanvasShapes = React.memo(({
           const selectedShape = shapes.find(s => s.id === shapeId);
           if (selectedShape) {
             updates[shapeId] = {
-              x: Math.round(selectedShape.x + delta.dx),
-              y: Math.round(selectedShape.y + delta.dy),
+              x: selectedShape.x + delta.dx,
+              y: selectedShape.y + delta.dy,
             };
           }
         });
@@ -203,10 +202,10 @@ const CanvasShapes = React.memo(({
             // Stop event propagation to prevent canvas dragging
             e.evt.stopPropagation();
             
-            // Round final position to integers
+            // Get final position
             const finalPosition = {
-              x: Math.round(e.target.x()),
-              y: Math.round(e.target.y()),
+              x: e.target.x(),
+              y: e.target.y(),
             };
             
             // Calculate delta for multi-shape movement

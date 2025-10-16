@@ -95,20 +95,17 @@ const validateNumber = (value, constraint) => {
     return null;
   }
   
-  // Round to integer for cleaner values (no decimals)
-  const rounded = Math.round(num);
-  
   // Check min constraint
-  if (constraint.min !== undefined && rounded < constraint.min) {
+  if (constraint.min !== undefined && num < constraint.min) {
     return null;
   }
   
   // Check max constraint
-  if (constraint.max !== undefined && rounded > constraint.max) {
+  if (constraint.max !== undefined && num > constraint.max) {
     return null;
   }
   
-  return rounded;
+  return num;
 };
 
 /**

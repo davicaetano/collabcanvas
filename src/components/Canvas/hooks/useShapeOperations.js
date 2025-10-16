@@ -27,10 +27,10 @@ export const useShapeOperations = (currentUser, selectedColor) => {
     
     const newShape = {
       id: Date.now().toString(),
-      x: Math.round(x), // Round to integer
-      y: Math.round(y), // Round to integer
-      width: Math.round(width), // Round to integer
-      height: Math.round(height), // Round to integer
+      x: x,
+      y: y,
+      width: width,
+      height: height,
       fill: selectedColor,
       stroke: selectedColor,
       strokeWidth: SHAPE_STROKE_WIDTH,
