@@ -4,7 +4,6 @@ import CanvasHeader from './CanvasHeader';
 import CanvasStage from './CanvasStage';
 import FloatingToolbar from './FloatingToolbar';
 import PropertiesToolbar from './PropertiesToolbar';
-import ConnectionStatus from './ConnectionStatus';
 import { useCanvasState } from './hooks/useCanvasState';
 import { useCanvasHandlers } from './hooks/useCanvasHandlers';
 import { useMultiplayer } from './hooks/useMultiplayer';
@@ -12,9 +11,13 @@ import { useMultiplayer } from './hooks/useMultiplayer';
 const Canvas = () => {
   const { currentUser, logout } = useAuth();
   
+  // Generate unique session ID for this browser tab/window
+  // This persists for the lifetime of the component (page session)
+  const [sessionId] = useState(() => crypto.randomUUID());
+  
   // Custom hooks for state management
   const canvasState = useCanvasState();
-  const handlers = useCanvasHandlers(canvasState, currentUser);
+  const handlers = useCanvasHandlers(canvasState, currentUser, sessionId);
   
   // Floating toolbar state - lifted up to sync with canvas modes
   const [selectedTool, setSelectedTool] = useState('select');
@@ -90,7 +93,9 @@ const Canvas = () => {
     currentUser, 
     canvasState.setShapes, 
     canvasState.setCursors, 
-    canvasState.setOnlineUsers
+    canvasState.setOnlineUsers,
+    sessionId,
+    canvasState.isDraggingShape
   );
 
   return (
@@ -135,9 +140,6 @@ const Canvas = () => {
           onShapesChange={canvasState.setShapes}
         />
       </div>
-      
-      {/* Connection status indicator (for testing) */}
-      <ConnectionStatus />
     </div>
   );
 };

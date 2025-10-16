@@ -48,6 +48,7 @@ const CanvasStage = React.memo(({
     handleMouseMove,
     handleCanvasMouseDown,
     handleCanvasMouseUp,
+    sessionId,
     handleCanvasClick,
   } = handlers;
 
@@ -136,6 +137,7 @@ const CanvasStage = React.memo(({
             stageY={stageY}
             stageScale={stageScale}
             updateCursor={updateCursor}
+            sessionId={sessionId}
             onDeleteModeExit={() => {
               setIsDeleteMode(false);
               setIsSelectMode(true);

@@ -16,10 +16,11 @@ import { FIRESTORE_BATCH_SIZE } from './canvas';
 const CANVAS_ID = 'main-canvas';
 
 // Shape operations
-export const createShape = async (shape, userId) => {
+export const createShape = async (shape, userId, sessionId) => {
   const shapeWithMetadata = {
     ...shape,
     userId,
+    sessionId, // Add session ID to identify which window created it
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -29,10 +30,12 @@ export const createShape = async (shape, userId) => {
   return shapeWithMetadata;
 };
 
-export const updateShape = async (shapeId, updates) => {
+export const updateShape = async (shapeId, updates, sessionId) => {
+  console.log('[FIREBASE] 📤 updateShape:', { shapeId, x: updates.x, y: updates.y, sessionId });
   const shapeRef = doc(db, 'canvases', CANVAS_ID, 'shapes', shapeId);
   await updateDoc(shapeRef, {
     ...updates,
+    sessionId, // Track which session made the update
     updatedAt: serverTimestamp(),
   });
 };
@@ -44,8 +47,14 @@ export const deleteShape = async (shapeId) => {
 
 // Subscribe to shapes
 export const subscribeToShapes = (callback) => {
+  console.log('[FIREBASE] subscribeToShapes - Setting up listener');
   const shapesRef = collection(db, 'canvases', CANVAS_ID, 'shapes');
   return onSnapshot(shapesRef, (snapshot) => {
+    console.log('[FIREBASE] 📥 SNAPSHOT RECEIVED:', { 
+      numShapes: snapshot.size,
+      numChanges: snapshot.docChanges().length,
+      timestamp: new Date().toISOString()
+    });
     const shapes = [];
     snapshot.forEach((doc) => {
       shapes.push({ id: doc.id, ...doc.data() });
@@ -159,7 +168,12 @@ export const deleteAllShapes = async () => {
 };
 
 // Batch update multiple shapes at once for better performance
-export const updateShapesBatch = async (shapeUpdates) => {
+export const updateShapesBatch = async (shapeUpdates, sessionId) => {
+  console.log('[FIREBASE] 📤 updateShapesBatch:', { 
+    numShapes: Object.keys(shapeUpdates).length,
+    shapeIds: Object.keys(shapeUpdates),
+    sessionId
+  });
   const BATCH_SIZE = FIRESTORE_BATCH_SIZE; // Firestore batch limit (500)
   
   // Split updates into batches
@@ -174,6 +188,7 @@ export const updateShapesBatch = async (shapeUpdates) => {
       const shapeRef = doc(db, 'canvases', CANVAS_ID, 'shapes', shapeId);
       batch.update(shapeRef, {
         ...updates,
+        sessionId, // Track which session made the update
         updatedAt: serverTimestamp(),
       });
     });

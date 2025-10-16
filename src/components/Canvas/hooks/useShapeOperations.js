@@ -20,7 +20,7 @@ import {
  * @param {string} selectedColor - Currently selected color for new shapes
  * @returns {Object} - Shape operation functions
  */
-export const useShapeOperations = (currentUser, selectedColor) => {
+export const useShapeOperations = (currentUser, selectedColor, sessionId) => {
   // Create shape at specific position
   const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
     if (!currentUser) return;
@@ -36,8 +36,8 @@ export const useShapeOperations = (currentUser, selectedColor) => {
       strokeWidth: SHAPE_STROKE_WIDTH,
     };
     
-    await createShapeInFirestore(newShape, currentUser.uid);
-  }, [currentUser, selectedColor]);
+    await createShapeInFirestore(newShape, currentUser.uid, sessionId);
+  }, [currentUser, selectedColor, sessionId]);
 
   // Delete all shapes
   const deleteAllShapes = useCallback(async () => {

@@ -28,7 +28,8 @@ const CanvasShapes = React.memo(({
   onShapeDelete,
   selectedShapes,
   marqueePreviewShapes,
-  onShapeSelect
+  onShapeSelect,
+  sessionId
 }) => {
   // Track local positions during drag for smooth SelectionBox movement
   const [localPositions, setLocalPositions] = useState({});
@@ -68,6 +69,8 @@ const CanvasShapes = React.memo(({
 
   const handleShapeDragMove = (e, shape) => {
     if (!isSelectMode) return;
+    
+    console.log('[DRAG] 🖱️  handleShapeDragMove:', { shapeId: shape.id });
     
     // Stop event propagation to prevent canvas dragging
     e.evt.stopPropagation();
@@ -127,7 +130,7 @@ const CanvasShapes = React.memo(({
         });
         
         // Batch update all shapes in Firestore
-        updateShapesBatch(updates);
+        updateShapesBatch(updates, sessionId);
         
       } else {
         // Single shape movement - use existing logic
@@ -135,7 +138,7 @@ const CanvasShapes = React.memo(({
           ...shape,
           x: newPosition.x,
           y: newPosition.y,
-        });
+        }, sessionId);
       }
       
       e.target._lastShapeUpdate = now;
@@ -223,17 +226,17 @@ const CanvasShapes = React.memo(({
                 const selectedShape = shapes.find(s => s.id === shapeId);
                 if (selectedShape) {
                   updates[shapeId] = {
-                    x: Math.round(selectedShape.x + delta.dx),
-                    y: Math.round(selectedShape.y + delta.dy),
+                    x: selectedShape.x + delta.dx,
+                    y: selectedShape.y + delta.dy,
                   };
                 }
               });
-              updateShapesBatch(updates);
+              updateShapesBatch(updates, sessionId);
             } else {
               updateShapeInFirestore(shape.id, {
                 ...shape,
                 ...finalPosition,
-              });
+              }, sessionId);
             }
             
             // Clear local positions after a small delay to allow Firebase sync
