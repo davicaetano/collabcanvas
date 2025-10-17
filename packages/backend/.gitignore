@@ -43,3 +43,7 @@ Thumbs.db
 *.log
 logs/
 
+# Firebase credentials - NEVER COMMIT THESE!
+firebase-service-account.json
+*-firebase-*.json
+firebase-adminsdk-*.json

@@ -6,18 +6,23 @@ and execute canvas operations using the defined tools.
 """
 
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from langchain_openai import ChatOpenAI
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.memory import ConversationBufferWindowMemory
 
 from .tools import ALL_TOOLS
 from .prompts import CANVAS_AGENT_SYSTEM_PROMPT, CANVAS_AGENT_INSTRUCTIONS
+from services.session_manager import SessionManager
 
 
-def create_canvas_agent() -> AgentExecutor:
+def create_canvas_agent(memory: Optional[ConversationBufferWindowMemory] = None) -> AgentExecutor:
     """
     Create and configure the canvas AI agent with LangChain and OpenAI.
+    
+    Args:
+        memory: Optional conversation memory for maintaining context
     
     Returns:
         AgentExecutor configured with canvas tools
@@ -34,12 +39,21 @@ def create_canvas_agent() -> AgentExecutor:
         api_key=api_key,
     )
     
-    # Create prompt template
-    prompt = ChatPromptTemplate.from_messages([
+    # Create prompt template with optional chat history
+    prompt_messages = [
         ("system", CANVAS_AGENT_SYSTEM_PROMPT),
+    ]
+    
+    # Add chat history placeholder if memory is provided
+    if memory:
+        prompt_messages.append(MessagesPlaceholder(variable_name="chat_history"))
+    
+    prompt_messages.extend([
         ("human", "{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
+    
+    prompt = ChatPromptTemplate.from_messages(prompt_messages)
     
     # Create agent with tools
     agent = create_tool_calling_agent(
@@ -56,19 +70,21 @@ def create_canvas_agent() -> AgentExecutor:
         handle_parsing_errors=True,
         max_iterations=10,  # Allow multiple tool calls for complex commands
         return_intermediate_steps=True,  # CRITICAL: Return tool outputs!
+        memory=memory,  # Add memory to agent
     )
     
     return agent_executor
 
 
-def execute_canvas_command(command: str, canvas_id: str = None, user_id: str = None) -> Dict[str, Any]:
+def execute_canvas_command(command: str, canvas_id: str = "main-canvas", user_id: str = None, session_id: str = "ai-agent") -> Dict[str, Any]:
     """
     Execute a canvas command and return the resulting shapes.
     
     Args:
         command: Natural language command from user
-        canvas_id: ID of the canvas (for context, optional)
-        user_id: ID of the user making the request (for context, optional)
+        canvas_id: ID of the canvas (default: "main-canvas")
+        user_id: ID of the user making the request (optional)
+        session_id: Session ID of the browser tab (default: "ai-agent")
     
     Returns:
         Dictionary with success status, message, and shapes:
@@ -80,8 +96,13 @@ def execute_canvas_command(command: str, canvas_id: str = None, user_id: str = N
         }
     """
     try:
-        # Create agent
-        agent = create_canvas_agent()
+        print(f"Executing AI command: {command} (session: {session_id})")
+        
+        # Get or create memory for this session
+        memory = SessionManager.get_memory(session_id, k=6)
+        
+        # Create agent with memory
+        agent = create_canvas_agent(memory=memory)
         
         # Execute command
         result = agent.invoke({
@@ -103,10 +124,15 @@ def execute_canvas_command(command: str, canvas_id: str = None, user_id: str = N
                 shape["canvasId"] = canvas_id
             if user_id:
                 shape["createdBy"] = user_id
+            if session_id:
+                shape["sessionId"] = session_id
+        
+        # Get the actual AI response message
+        ai_message = result.get("output", f"Successfully executed command: {command}")
         
         return {
             "success": True,
-            "message": f"Successfully executed command: {command}",
+            "message": ai_message,
             "shapes": shapes,
         }
     
@@ -170,7 +196,8 @@ def extract_shapes_from_result(result: Dict[str, Any]) -> List[Dict[str, Any]]:
                 elif isinstance(tool_output, list):
                     # Multiple shapes from tool (like grid or form)
                     for item in tool_output:
-                        if isinstance(item, dict):
+                        if isinstance(item, dict) and "type" in item:
+                            # Only add if it's actually a shape (has "type" field)
                             shapes.append(item)
     
     return shapes

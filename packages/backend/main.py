@@ -74,8 +74,9 @@ class ShapeModel(BaseModel):
 class AICommandRequest(BaseModel):
     """Request model for AI command execution"""
     command: str = Field(..., description="Natural language command to execute")
-    canvas_id: Optional[str] = Field(None, description="ID of the canvas")
+    canvas_id: Optional[str] = Field("main-canvas", description="ID of the canvas")
     user_id: Optional[str] = Field(None, description="ID of the user making the request")
+    session_id: Optional[str] = Field("ai-agent", description="Session ID of the browser tab")
 
 
 class AICommandResponse(BaseModel):
@@ -154,7 +155,8 @@ async def execute_ai_command(request: AICommandRequest):
         result = execute_canvas_command(
             command=request.command,
             canvas_id=request.canvas_id,
-            user_id=request.user_id
+            user_id=request.user_id,
+            session_id=request.session_id
         )
         
         logger.info(f"Command executed successfully. Generated {len(result['shapes'])} shape(s)")

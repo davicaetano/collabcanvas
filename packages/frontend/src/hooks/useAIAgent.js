@@ -14,9 +14,10 @@ const API_BASE_URL = import.meta.env.VITE_AI_BACKEND_URL || 'http://localhost:80
  * 
  * @param {string} canvasId - ID of the current canvas
  * @param {string} userId - ID of the current user
+ * @param {string} sessionId - Session ID of the browser tab
  * @returns {Object} AI agent state and methods
  */
-export const useAIAgent = (canvasId, userId) => {
+export const useAIAgent = (canvasId, userId, sessionId) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastResponse, setLastResponse] = useState(null);
@@ -46,6 +47,7 @@ export const useAIAgent = (canvasId, userId) => {
           command: command.trim(),
           canvas_id: canvasId,
           user_id: userId,
+          session_id: sessionId,
         }),
       });
 
@@ -72,7 +74,7 @@ export const useAIAgent = (canvasId, userId) => {
     } finally {
       setIsLoading(false);
     }
-  }, [canvasId, userId]);
+  }, [canvasId, userId, sessionId]);
 
   /**
    * Check backend health
