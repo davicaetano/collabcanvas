@@ -38,7 +38,7 @@ const getRotatedCursor = (baseCursor, rotation) => {
   return cursorMap[baseCursor]?.[rotationIndex] || baseCursor;
 };
 
-const SelectionBox = ({ shape, onResize, onResizeEnd }) => {
+const SelectionBox = ({ shape, onResize, onResizeEnd, stageScale = 1, stageX = 0, stageY = 0 }) => {
   if (!shape) return null;
   
   const groupRef = useRef();
@@ -145,8 +145,14 @@ const SelectionBox = ({ shape, onResize, onResizeEnd }) => {
     container.style.cursor = handle.cursor;
     
     const handleMouseMove = (e) => {
-      const pos = stage.getPointerPosition();
-      if (!pos || !originalDimensions.current) return;
+      const screenPos = stage.getPointerPosition();
+      if (!screenPos || !originalDimensions.current) return;
+      
+      // Convert screen coordinates to canvas coordinates accounting for zoom and pan
+      const pos = {
+        x: (screenPos.x - stageX) / stageScale,
+        y: (screenPos.y - stageY) / stageScale,
+      };
       
       const { x: origX, y: origY, width: origWidth, height: origHeight, rotation: origRotation } = originalDimensions.current;
       

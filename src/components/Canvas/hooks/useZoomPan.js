@@ -13,8 +13,8 @@ import {
  * - Two-finger scroll = Pan
  * 
  * Mouse:
- * - Ctrl + Scroll = Zoom
- * - Scroll (without Ctrl) = Pan (vertical/horizontal)
+ * - Scroll (without Ctrl) = Zoom
+ * - Ctrl + Scroll = Pan (vertical/horizontal)
  * 
  * @param {Object} canvasState - Canvas state object from useCanvasState
  * @returns {Object} - Zoom and pan handlers
@@ -42,9 +42,31 @@ export const useZoomPan = (canvasState) => {
     const stage = stageRef.current;
     const evt = e.evt;
     
-    // Detect if this is a pinch gesture (zoom) or scroll gesture (pan)
-    // Pinch gestures come with ctrlKey = true on most trackpads
-    const isPinch = evt.ctrlKey;
+    // Detect if this is a zoom or pan gesture
+    // Different behavior for mouse vs trackpad:
+    // 
+    // Trackpad pinch: ctrlKey=true + small deltaY → Zoom
+    // Trackpad scroll: ctrlKey=false + small deltaY → Pan
+    // Mouse scroll: large deltaY
+    //   - WITHOUT Ctrl → Zoom
+    //   - WITH Ctrl → Pan
+    
+    const deltaY = Math.abs(evt.deltaY);
+    const isLikelyMouse = deltaY >= MOUSE_WHEEL_THRESHOLD;
+    const isLikelyTrackpadPinch = evt.ctrlKey && deltaY < MOUSE_WHEEL_THRESHOLD;
+    
+    let isPinch; // true = zoom, false = pan
+    
+    if (isLikelyTrackpadPinch) {
+      // Trackpad pinch → Zoom
+      isPinch = true;
+    } else if (isLikelyMouse) {
+      // Mouse scroll → Zoom if NO Ctrl, Pan if Ctrl
+      isPinch = !evt.ctrlKey;
+    } else {
+      // Trackpad scroll (no ctrl, small delta) → Pan
+      isPinch = false;
+    }
     
     if (isPinch) {
       // ZOOM: Pinch gesture

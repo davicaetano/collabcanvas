@@ -315,6 +315,9 @@ const CanvasShapes = React.memo(({
             shape={displayShape} 
             onResize={(newDimensions) => handleShapeResize(shapeId, newDimensions)}
             onResizeEnd={(finalDimensions) => handleShapeResizeEnd(shapeId, finalDimensions)}
+            stageScale={stageScale}
+            stageX={stageX}
+            stageY={stageY}
           />
         );
       })}
