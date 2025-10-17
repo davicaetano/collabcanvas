@@ -1,6 +1,0 @@
-{
-  "buildCommand": "npm run build --workspace=packages/frontend",
-  "installCommand": "npm install",
-  "outputDirectory": "packages/frontend/dist"
-}
-
