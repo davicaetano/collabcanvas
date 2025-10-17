@@ -38,13 +38,14 @@ const getRotatedCursor = (baseCursor, rotation) => {
   return cursorMap[baseCursor]?.[rotationIndex] || baseCursor;
 };
 
-const SelectionBox = ({ shape, onResize }) => {
+const SelectionBox = ({ shape, onResize, onResizeEnd }) => {
   if (!shape) return null;
   
   const groupRef = useRef();
   const [isResizing, setIsResizing] = useState(false);
   const [activeHandle, setActiveHandle] = useState(null);
   const originalDimensions = useRef(null);
+  const currentDimensions = useRef(null);
 
   const { x, y, width, height, strokeWidth = 0, rotation = 0 } = shape;
   const halfHandle = SELECTION_HANDLE_SIZE / 2;
@@ -179,12 +180,26 @@ const SelectionBox = ({ shape, onResize }) => {
       
       if (handle.xDir !== 0) {
         // Width changes when dragging horizontally
-        newWidth = Math.max(10, Math.abs(localDx));
+        // Check if mouse is on the correct side (same sign as handle direction)
+        const isCorrectSide = (localDx * handle.xDir) > 0;
+        if (isCorrectSide) {
+          newWidth = Math.max(10, Math.abs(localDx));
+        } else {
+          // Mouse crossed to the opposite side - clamp to minimum
+          newWidth = 10;
+        }
       }
       
       if (handle.yDir !== 0) {
         // Height changes when dragging vertically
-        newHeight = Math.max(10, Math.abs(localDy));
+        // Check if mouse is on the correct side (same sign as handle direction)
+        const isCorrectSide = (localDy * handle.yDir) > 0;
+        if (isCorrectSide) {
+          newHeight = Math.max(10, Math.abs(localDy));
+        } else {
+          // Mouse crossed to the opposite side - clamp to minimum
+          newHeight = 10;
+        }
       }
       
       // Calculate the new center position in LOCAL space
@@ -212,18 +227,29 @@ const SelectionBox = ({ shape, onResize }) => {
       const newX = newCenterWorldX - newWidth / 2;
       const newY = newCenterWorldY - newHeight / 2;
       
-      onResize({
+      const newDimensions = {
         x: newX,
         y: newY,
         width: newWidth,
         height: newHeight,
-      });
+      };
+      
+      // Store current dimensions for final update
+      currentDimensions.current = newDimensions;
+      
+      onResize(newDimensions);
     };
     
     const handleMouseUp = () => {
+      // Call onResizeEnd with final dimensions if available
+      if (onResizeEnd && currentDimensions.current) {
+        onResizeEnd(currentDimensions.current);
+      }
+      
       setIsResizing(false);
       setActiveHandle(null);
       originalDimensions.current = null;
+      currentDimensions.current = null;
       
       // Reset cursor to default
       container.style.cursor = 'default';

@@ -59,12 +59,12 @@ const CanvasShapes = React.memo(({
       [shapeId]: newDimensions
     }));
     
-    // Throttle Firebase updates to once every 100ms
+    // Throttle Firebase updates to once every 50ms (more responsive)
     const now = Date.now();
     const lastUpdate = resizeThrottleRef.current[shapeId]?.lastUpdate || 0;
     const timeSinceLastUpdate = now - lastUpdate;
     
-    if (timeSinceLastUpdate >= 100) {
+    if (timeSinceLastUpdate >= 50) {
       // Send to Firebase immediately (throttled)
       shapeManager.updateShape(shapeId, newDimensions);
       resizeThrottleRef.current[shapeId] = { lastUpdate: now, pendingUpdate: null };
@@ -82,16 +82,31 @@ const CanvasShapes = React.memo(({
             lastUpdate: Date.now(), 
             pendingUpdate: null 
           };
-          
-          // Clear from resizing state after final update
-          setResizingShapes(prev => {
-            const newState = { ...prev };
-            delete newState[shapeId];
-            return newState;
-          });
-        }, 100 - timeSinceLastUpdate)
+        }, 50 - timeSinceLastUpdate)
       };
     }
+  };
+  
+  const handleShapeResizeEnd = (shapeId, finalDimensions) => {
+    if (!shapeManager) return;
+    
+    // Clear any pending updates
+    if (resizeThrottleRef.current[shapeId]?.pendingUpdate) {
+      clearTimeout(resizeThrottleRef.current[shapeId].pendingUpdate);
+    }
+    
+    // Send final update to Firebase immediately
+    shapeManager.updateShape(shapeId, finalDimensions);
+    
+    // Clear from resizing state
+    setResizingShapes(prev => {
+      const newState = { ...prev };
+      delete newState[shapeId];
+      return newState;
+    });
+    
+    // Clear throttle ref
+    resizeThrottleRef.current[shapeId] = null;
   };
 
   const handleShapeDragMove = (e, shape) => {
@@ -299,6 +314,7 @@ const CanvasShapes = React.memo(({
             key={`selection-${shapeId}`} 
             shape={displayShape} 
             onResize={(newDimensions) => handleShapeResize(shapeId, newDimensions)}
+            onResizeEnd={(finalDimensions) => handleShapeResizeEnd(shapeId, finalDimensions)}
           />
         );
       })}
