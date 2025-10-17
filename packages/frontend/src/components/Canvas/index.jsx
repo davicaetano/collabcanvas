@@ -4,6 +4,7 @@ import CanvasHeader from './CanvasHeader';
 import CanvasStage from './CanvasStage';
 import FloatingToolbar from './FloatingToolbar';
 import PropertiesToolbar from './PropertiesToolbar';
+import AIPanel from './AIPanel';
 import { useCanvasState } from './hooks/useCanvasState';
 import { useCanvasHandlers } from './hooks/useCanvasHandlers';
 import { useMultiplayer } from './hooks/useMultiplayer';
@@ -125,6 +126,13 @@ const Canvas = () => {
     canvasState.isDraggingShape
   );
 
+  // Handle AI-generated shapes
+  const handleAIShapesCreated = useCallback((shapes) => {
+    console.log('AI created shapes:', shapes);
+    // Shapes are automatically synced via Firestore listener in useMultiplayer
+    // No need to manually add them to local state
+  }, []);
+
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
       {/* Header spans full width */}
@@ -153,6 +161,12 @@ const Canvas = () => {
           <FloatingToolbar 
             selectedTool={selectedTool}
             onToolChange={handleToolChange}
+          />
+          
+          <AIPanel 
+            currentUser={currentUser}
+            canvasId="main-canvas"
+            onShapesCreated={handleAIShapesCreated}
           />
         </div>
         
