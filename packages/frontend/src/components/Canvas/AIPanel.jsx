@@ -19,7 +19,7 @@ const EXAMPLE_COMMANDS = [
   { label: 'Big Green Square', command: 'make a big green square' },
 ];
 
-const AIPanel = ({ currentUser, canvasId = 'default-canvas', onShapesCreated }) => {
+const AIPanel = ({ currentUser, canvasId = 'main-canvas', onShapesCreated }) => {
   const [command, setCommand] = useState('');
   const [commandHistory, setCommandHistory] = useState([]);
   const [isExpanded, setIsExpanded] = useState(true);
