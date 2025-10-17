@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   PROPERTIES_PANEL_WIDTH,
   PROPERTIES_PANEL_BACKGROUND,
@@ -28,6 +28,9 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
   // Check if there are shapes selected
   const hasSelection = selectedShapes.length > 0;
 
+  // Throttle ref for property updates (to avoid excessive Firebase writes)
+  const propertyThrottleRef = useRef({});
+
   /**
    * Handle property update for a shape
    * Uses shapeManager for optimistic updates and Firestore sync
@@ -44,6 +47,44 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
     } catch (error) {
       console.error('Failed to update property:', error);
       // shapeManager handles rollback if needed
+    }
+  };
+
+  /**
+   * Handle property update with throttling (for continuous inputs like sliders)
+   * Updates local state immediately but throttles Firebase writes to 100ms
+   */
+  const handlePropertyUpdateThrottled = async (shapeId, propertyName, newValue) => {
+    if (!shapeManager) return;
+    
+    // Create a unique key for this shape+property combination
+    const throttleKey = `${shapeId}-${propertyName}`;
+    
+    // Throttle Firebase updates to once every 100ms
+    const now = Date.now();
+    const lastUpdate = propertyThrottleRef.current[throttleKey]?.lastUpdate || 0;
+    const timeSinceLastUpdate = now - lastUpdate;
+    
+    if (timeSinceLastUpdate >= 100) {
+      // Send to Firebase immediately (throttled)
+      handlePropertyUpdate(shapeId, propertyName, newValue);
+      propertyThrottleRef.current[throttleKey] = { lastUpdate: now, pendingUpdate: null };
+    } else {
+      // Schedule pending update
+      if (propertyThrottleRef.current[throttleKey]?.pendingUpdate) {
+        clearTimeout(propertyThrottleRef.current[throttleKey].pendingUpdate);
+      }
+      
+      propertyThrottleRef.current[throttleKey] = {
+        ...propertyThrottleRef.current[throttleKey],
+        pendingUpdate: setTimeout(() => {
+          handlePropertyUpdate(shapeId, propertyName, newValue);
+          propertyThrottleRef.current[throttleKey] = { 
+            lastUpdate: Date.now(), 
+            pendingUpdate: null 
+          };
+        }, 100 - timeSinceLastUpdate)
+      };
     }
   };
   
@@ -243,15 +284,37 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
                   <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">
                     Transform
                   </div>
-                  <NumericInput
-                    label="Rotation"
-                    value={selectedShape.rotation || 0}
-                    onChange={(value) => handlePropertyUpdate(selectedShape.id, 'rotation', value)}
-                    min={0}
-                    max={360}
-                    step={1}
-                    unit="°"
-                  />
+                  <div className="flex gap-2 items-end">
+                    {/* Rotation numeric input - left half */}
+                    <div className="flex-1">
+                      <NumericInput
+                        label="Rotation"
+                        value={selectedShape.rotation || 0}
+                        onChange={(value) => handlePropertyUpdate(selectedShape.id, 'rotation', value)}
+                        min={0}
+                        max={360}
+                        step={1}
+                        unit="°"
+                      />
+                    </div>
+                    
+                    {/* Rotation slider - right half */}
+                    <div className="flex-1">
+                      <label className="block text-gray-400 text-xs mb-1">Adjust</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="360"
+                        step="1"
+                        value={selectedShape.rotation || 0}
+                        onChange={(e) => handlePropertyUpdateThrottled(selectedShape.id, 'rotation', parseFloat(e.target.value))}
+                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((selectedShape.rotation || 0) / 360) * 100}%, #374151 ${((selectedShape.rotation || 0) / 360) * 100}%, #374151 100%)`
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Appearance Section */}
