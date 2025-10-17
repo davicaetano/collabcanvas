@@ -21,13 +21,16 @@ export const useShapeOperations = (currentUser, selectedColor, shapeManager) => 
   const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT, type = 'rectangle') => {
     if (!currentUser || !shapeManager) return null;
     
+    // Text shapes should always have black color by default
+    const fillColor = type === 'text' ? '#000000' : selectedColor;
+    
     const shapeData = {
-      type: type, // 'rectangle' or 'circle'
+      type: type, // 'rectangle', 'circle', or 'text'
       x: x,
       y: y,
       width: width,
       height: height,
-      fill: selectedColor,
+      fill: fillColor,
       stroke: selectedColor,
       strokeWidth: SHAPE_STROKE_WIDTH,
       rotation: 0,

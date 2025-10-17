@@ -31,6 +31,8 @@ export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
     if (addMode === 'none') return false;
     
     e.evt.stopPropagation();
+    
+    // All shapes (rectangle, circle, text) use drag to define area
     setIsDrawing(true);
     setDrawStartPos(canvasPos);
     setPreviewRect({
@@ -63,6 +65,9 @@ export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
       Math.pow(previewRect.width, 2) + Math.pow(previewRect.height, 2)
     );
     
+    // Store the current addMode before clearing it (for text editing)
+    const shapeType = addMode;
+    
     // Exit add mode and return to select mode immediately (before async operations)
     setAddMode('none');
     setIsSelectMode(true);
@@ -72,7 +77,7 @@ export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
     if (dragDistance < 10) {
       // Small drag or click - create default size shape
       try {
-        createdShape = await createShapeAt(drawStartPos.x, drawStartPos.y, undefined, undefined, addMode);
+        createdShape = await createShapeAt(drawStartPos.x, drawStartPos.y, undefined, undefined, shapeType);
       } catch (error) {
         console.error('Failed to create shape (offline?):', error);
       }
@@ -84,7 +89,7 @@ export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
           previewRect.y,
           previewRect.width,
           previewRect.height,
-          addMode
+          shapeType
         );
       } catch (error) {
         console.error('Failed to create shape (offline?):', error);
@@ -96,7 +101,8 @@ export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
       shapeManager.selectShapes([createdShape.id]);
     }
     
-    return true; // Handled
+    // Return the created shape (so text can be auto-edited)
+    return createdShape || true;
   }, [addMode, isDrawing, drawStartPos, previewRect, createShapeAt, setAddMode, setIsSelectMode, shapeManager]);
 
   // Reset drawing state (called after mouse up)

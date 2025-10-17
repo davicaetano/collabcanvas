@@ -33,6 +33,9 @@ export const useCanvasState = (currentUser, sessionId) => {
   const [onlineUsers, setOnlineUsers] = useState({});
   const [isDraggingShape, setIsDraggingShape] = useState(false);
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
+  
+  // Text editing state
+  const [newlyCreatedTextId, setNewlyCreatedTextId] = useState(null);
 
   // Subscribe to canvas settings changes
   useEffect(() => {
@@ -100,5 +103,8 @@ export const useCanvasState = (currentUser, sessionId) => {
     setIsDraggingShape,
     isDraggingCanvas,
     setIsDraggingCanvas,
+    // Text editing state
+    newlyCreatedTextId,
+    setNewlyCreatedTextId,
   };
 };

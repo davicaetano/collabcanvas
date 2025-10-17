@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Rect, Ellipse } from 'react-konva';
+import React, { useState, useRef, useEffect } from 'react';
+import { Rect, Ellipse, Text } from 'react-konva';
 import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
 import SelectionBox from './SelectionBox';
 
@@ -21,10 +21,20 @@ const CanvasShapes = React.memo(({
   onShapeSelect,
   sessionId,
   shapeManager,
-  cursorManager
+  cursorManager,
+  newlyCreatedTextId,
+  setNewlyCreatedTextId
 }) => {
   // Track local positions during drag for smooth SelectionBox movement
   const [localPositions, setLocalPositions] = useState({});
+  
+  // No inline text editor - editing happens in Properties Toolbar
+  // Just clear the newly created flag
+  useEffect(() => {
+    if (newlyCreatedTextId) {
+      setNewlyCreatedTextId(null); // Clear the flag
+    }
+  }, [newlyCreatedTextId, setNewlyCreatedTextId]);
 
   const handleShapeClick = async (e, shapeId) => {
     if (isSelectMode && onShapeSelect) {
@@ -45,6 +55,7 @@ const CanvasShapes = React.memo(({
       }
     }
   };
+  
 
   // Local state for shapes being resized (to avoid excessive Firebase writes)
   const [resizingShapes, setResizingShapes] = useState({});
@@ -217,16 +228,46 @@ const CanvasShapes = React.memo(({
         const centerY = displayShapeY + displayHeight / 2;
         
         // Determine which component to render based on shape type
-        const ShapeComponent = shape.type === 'circle' ? Ellipse : Rect;
+        let ShapeComponent;
+        let shapeProps = {};
+        let offsetProps = {};
         
-        // For Ellipse, we need to use radiusX and radiusY instead of width and height
-        const shapeProps = shape.type === 'circle' ? {
-          radiusX: displayWidth / 2,
-          radiusY: displayHeight / 2,
-        } : {
-          width: displayWidth,
-          height: displayHeight,
-        };
+        if (shape.type === 'circle') {
+          ShapeComponent = Ellipse;
+          shapeProps = {
+            radiusX: displayWidth / 2,
+            radiusY: displayHeight / 2,
+          };
+          offsetProps = {
+            offsetX: 0,
+            offsetY: 0,
+          };
+        } else if (shape.type === 'text') {
+          ShapeComponent = Text;
+          shapeProps = {
+            text: shape.text || '',
+            fontSize: shape.fontSize || 24,
+            fontFamily: shape.fontFamily || 'Arial, sans-serif',
+            fontStyle: shape.fontStyle || 'normal',
+            align: shape.textAlign || 'left',
+            width: displayWidth,
+          };
+          offsetProps = {
+            offsetX: displayWidth / 2,
+            offsetY: displayHeight / 2,
+          };
+        } else {
+          // Rectangle (default)
+          ShapeComponent = Rect;
+          shapeProps = {
+            width: displayWidth,
+            height: displayHeight,
+          };
+          offsetProps = {
+            offsetX: displayWidth / 2,
+            offsetY: displayHeight / 2,
+          };
+        }
         
         return (
           <ShapeComponent
@@ -238,8 +279,7 @@ const CanvasShapes = React.memo(({
             stroke={shape.stroke}
             strokeWidth={shape.strokeWidth}
             rotation={shape.rotation || 0}
-            offsetX={shape.type === 'circle' ? 0 : displayWidth / 2}
-            offsetY={shape.type === 'circle' ? 0 : displayHeight / 2}
+            {...offsetProps}
             draggable={isSelectMode}
           onDragStart={(e) => {
             if (!isSelectMode) {
@@ -355,6 +395,7 @@ const CanvasShapes = React.memo(({
           />
         );
       })}
+      
     </>
   );
 });

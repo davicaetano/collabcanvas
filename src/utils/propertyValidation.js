@@ -55,6 +55,33 @@ export const PROPERTY_CONSTRAINTS = {
     type: 'color',
     description: 'Stroke color in hex format (#RRGGBB)'
   },
+  // Text properties
+  text: {
+    type: 'string',
+    maxLength: 5000,
+    description: 'Text content (max 5000 characters)'
+  },
+  fontSize: {
+    type: 'number',
+    min: 8,
+    max: 200,
+    description: 'Font size in pixels (8-200)'
+  },
+  fontFamily: {
+    type: 'string',
+    maxLength: 100,
+    description: 'Font family name'
+  },
+  fontStyle: {
+    type: 'enum',
+    values: ['normal', 'italic', 'bold', 'italic bold'],
+    description: 'Font style (normal, italic, bold, italic bold)'
+  },
+  textAlign: {
+    type: 'enum',
+    values: ['left', 'center', 'right'],
+    description: 'Text alignment (left, center, right)'
+  },
 };
 
 /**
@@ -79,6 +106,12 @@ export const validateProperty = (propertyName, value) => {
       
     case 'color':
       return validateColor(value);
+      
+    case 'string':
+      return validateString(value, constraint);
+      
+    case 'enum':
+      return validateEnum(value, constraint);
       
     default:
       return value;
@@ -130,6 +163,43 @@ const validateColor = (value) => {
   const hexPattern = /^#[0-9A-Fa-f]{6}$/;
   
   if (!hexPattern.test(value)) {
+    return null;
+  }
+  
+  return value;
+};
+
+/**
+ * Validate string values
+ * 
+ * @param {any} value - Value to validate
+ * @param {Object} constraint - Constraint object with maxLength
+ * @returns {string|null} - Validated string or null if invalid
+ */
+const validateString = (value, constraint) => {
+  // Must be a string
+  if (typeof value !== 'string') {
+    return null;
+  }
+  
+  // Check max length constraint
+  if (constraint.maxLength !== undefined && value.length > constraint.maxLength) {
+    return null;
+  }
+  
+  return value;
+};
+
+/**
+ * Validate enum values
+ * 
+ * @param {any} value - Value to validate
+ * @param {Object} constraint - Constraint object with values array
+ * @returns {string|null} - Validated value or null if invalid
+ */
+const validateEnum = (value, constraint) => {
+  // Must be in the allowed values list
+  if (!constraint.values || !constraint.values.includes(value)) {
     return null;
   }
   

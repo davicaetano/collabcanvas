@@ -7,6 +7,8 @@ import {
 } from '../../utils/canvas';
 import NumericInput from './properties/NumericInput';
 import ColorInput from './properties/ColorInput';
+import TextInput from './properties/TextInput';
+import SelectInput from './properties/SelectInput';
 import { 
   TrashIcon, 
   DocumentDuplicateIcon, 
@@ -225,6 +227,73 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
             ) : selectedShapeObjects.length === 1 ? (
               // Single shape selected - show editable properties
               <div className="space-y-4">
+                {/* Text Properties Section - Only for text shapes */}
+                {selectedShape.type === 'text' && (
+                  <div>
+                    <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">
+                      Text Content
+                    </div>
+                    <div className="space-y-3">
+                      <TextInput
+                        label="Text"
+                        value={selectedShape.text}
+                        onChange={(value) => handlePropertyUpdate(selectedShape.id, 'text', value)}
+                        placeholder="Enter text..."
+                        maxLength={5000}
+                      />
+                      
+                      <NumericInput
+                        label="Font Size"
+                        value={selectedShape.fontSize || 24}
+                        onChange={(value) => handlePropertyUpdate(selectedShape.id, 'fontSize', value)}
+                        min={8}
+                        max={200}
+                        step={1}
+                        unit="px"
+                      />
+                      
+                      <SelectInput
+                        label="Font Family"
+                        value={selectedShape.fontFamily || 'Arial, sans-serif'}
+                        onChange={(value) => handlePropertyUpdate(selectedShape.id, 'fontFamily', value)}
+                        options={[
+                          { value: 'Arial, sans-serif', label: 'Arial' },
+                          { value: 'Helvetica, sans-serif', label: 'Helvetica' },
+                          { value: 'Times New Roman, serif', label: 'Times New Roman' },
+                          { value: 'Georgia, serif', label: 'Georgia' },
+                          { value: 'Courier New, monospace', label: 'Courier New' },
+                          { value: 'Verdana, sans-serif', label: 'Verdana' },
+                          { value: 'Comic Sans MS, cursive', label: 'Comic Sans MS' },
+                          { value: 'Impact, sans-serif', label: 'Impact' },
+                        ]}
+                      />
+                      
+                      <SelectInput
+                        label="Font Style"
+                        value={selectedShape.fontStyle || 'normal'}
+                        onChange={(value) => handlePropertyUpdate(selectedShape.id, 'fontStyle', value)}
+                        options={[
+                          { value: 'normal', label: 'Normal' },
+                          { value: 'italic', label: 'Italic' },
+                          { value: 'bold', label: 'Bold' },
+                          { value: 'italic bold', label: 'Bold Italic' },
+                        ]}
+                      />
+                      
+                      <SelectInput
+                        label="Text Align"
+                        value={selectedShape.textAlign || 'left'}
+                        onChange={(value) => handlePropertyUpdate(selectedShape.id, 'textAlign', value)}
+                        options={[
+                          { value: 'left', label: 'Left' },
+                          { value: 'center', label: 'Center' },
+                          { value: 'right', label: 'Right' },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 {/* Position Section */}
                 <div>
                   <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">
@@ -324,24 +393,28 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
                   </div>
                   <div className="space-y-3">
                     <ColorInput
-                      label="Fill Color"
+                      label={selectedShape.type === 'text' ? 'Text Color' : 'Fill Color'}
                       value={selectedShape.fill}
                       onChange={(value) => handlePropertyUpdate(selectedShape.id, 'fill', value)}
                     />
-                    <ColorInput
-                      label="Stroke Color"
-                      value={selectedShape.stroke}
-                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'stroke', value)}
-                    />
-                    <NumericInput
-                      label="Stroke Width"
-                      value={selectedShape.strokeWidth}
-                      onChange={(value) => handlePropertyUpdate(selectedShape.id, 'strokeWidth', value)}
-                      min={0}
-                      max={100}
-                      step={1}
-                      unit="px"
-                    />
+                    {selectedShape.type !== 'text' && (
+                      <>
+                        <ColorInput
+                          label="Stroke Color"
+                          value={selectedShape.stroke}
+                          onChange={(value) => handlePropertyUpdate(selectedShape.id, 'stroke', value)}
+                        />
+                        <NumericInput
+                          label="Stroke Width"
+                          value={selectedShape.strokeWidth}
+                          onChange={(value) => handlePropertyUpdate(selectedShape.id, 'strokeWidth', value)}
+                          min={0}
+                          max={100}
+                          step={1}
+                          unit="px"
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

@@ -282,28 +282,17 @@ const SelectionBox = ({
       originalDimensions.current = null;
       currentDimensions.current = null;
       
-      // Check if mouse is still over a handle and restore its cursor
-      const screenPos = stage.getPointerPosition();
-      if (screenPos) {
-        const layer = stage.getLayer();
-        const shape = layer.getIntersection(screenPos);
-        
-        if (shape && shape.name()?.startsWith('handle-')) {
-          // Mouse is still over a handle, use that handle's cursor
-          const handleIndex = parseInt(shape.name().split('-')[1]);
-          const hoveredHandle = handles[handleIndex];
-          if (hoveredHandle) {
-            container.style.cursor = hoveredHandle.cursor;
-          } else {
-            container.style.cursor = getDefaultCursor();
-          }
-        } else {
-          // Mouse is not over any handle, reset to default
+      // Always reset cursor to default after resize
+      // The onMouseEnter events on handles will update it if needed
+      container.style.cursor = getDefaultCursor();
+      
+      // Use setTimeout as a fallback to ensure cursor is reset
+      // This helps in edge cases where the cursor gets stuck
+      setTimeout(() => {
+        if (container && !document.querySelector(':active')) {
           container.style.cursor = getDefaultCursor();
         }
-      } else {
-        container.style.cursor = getDefaultCursor();
-      }
+      }, 50);
       
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);

@@ -91,7 +91,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
       y: (pos.y - stageY) / stageScale,
     };
     
-    // Handle add mode (rectangle drawing)
+    // Handle add mode (shape drawing)
     const drawingHandled = handleDrawingMouseDown(e, canvasPos);
     if (drawingHandled) return;
     
@@ -108,8 +108,13 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
 
   // Handle canvas mouse up
   const handleCanvasMouseUp = useCallback(async () => {
-    // Handle add mode (rectangle creation)
-    await handleDrawingMouseUp();
+    // Handle add mode (shape creation)
+    const createdShape = await handleDrawingMouseUp();
+    
+    // If a text shape was created, set it for immediate editing
+    if (createdShape && createdShape.type === 'text') {
+      canvasState.setNewlyCreatedTextId(createdShape.id);
+    }
     
     // Handle marquee selection
     handleSelectionMouseUp();
@@ -119,7 +124,8 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
   }, [
     handleDrawingMouseUp,
     handleSelectionMouseUp,
-    resetDrawingState
+    resetDrawingState,
+    canvasState
   ]);
 
   // Handle canvas click (delegated to selection handler)

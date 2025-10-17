@@ -34,6 +34,8 @@ const CanvasStage = React.memo(({
     marqueePreviewShapes,
     setIsSelectMode,
     setAddMode,
+    newlyCreatedTextId,
+    setNewlyCreatedTextId,
   } = canvasState;
 
   const {
@@ -137,6 +139,8 @@ const CanvasStage = React.memo(({
             selectedShapes={shapeManager.selectedShapeIds}
             marqueePreviewShapes={marqueePreviewShapes}
             onShapeSelect={onShapeSelect}
+            newlyCreatedTextId={newlyCreatedTextId}
+            setNewlyCreatedTextId={setNewlyCreatedTextId}
           />
           
           {/* Cursors */}

@@ -13,6 +13,13 @@ import {
   DEFAULT_SHAPE_WIDTH,
   DEFAULT_SHAPE_HEIGHT,
   SHAPE_STROKE_WIDTH,
+  DEFAULT_TEXT_CONTENT,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_STYLE,
+  DEFAULT_TEXT_ALIGN,
+  DEFAULT_TEXT_WIDTH,
+  DEFAULT_TEXT_HEIGHT,
 } from '../../../utils/canvas';
 
 /**
@@ -63,18 +70,33 @@ export const useShapeManager = (currentUser, sessionId) => {
     }
     
     // Generate unique ID
+    const shapeType = shapeData.type || 'rectangle';
+    
     const newShape = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type: shapeData.type || 'rectangle', // Default to rectangle for backward compatibility
+      type: shapeType, // Default to rectangle for backward compatibility
       x: shapeData.x || 0,
       y: shapeData.y || 0,
-      width: shapeData.width || DEFAULT_SHAPE_WIDTH,
-      height: shapeData.height || DEFAULT_SHAPE_HEIGHT,
+      width: shapeData.width || (shapeType === 'text' ? DEFAULT_TEXT_WIDTH : DEFAULT_SHAPE_WIDTH),
+      height: shapeData.height || (shapeType === 'text' ? DEFAULT_TEXT_HEIGHT : DEFAULT_SHAPE_HEIGHT),
       fill: shapeData.fill || '#3B82F6',
       stroke: shapeData.stroke || '#3B82F6',
       strokeWidth: shapeData.strokeWidth || SHAPE_STROKE_WIDTH,
       ...shapeData,
     };
+    
+    // Add text-specific properties if this is a text shape
+    if (shapeType === 'text') {
+      newShape.text = shapeData.text || DEFAULT_TEXT_CONTENT;
+      newShape.fontSize = shapeData.fontSize || DEFAULT_FONT_SIZE;
+      newShape.fontFamily = shapeData.fontFamily || DEFAULT_FONT_FAMILY;
+      newShape.fontStyle = shapeData.fontStyle || DEFAULT_FONT_STYLE;
+      newShape.textAlign = shapeData.textAlign || DEFAULT_TEXT_ALIGN;
+      // Text shapes should have black color by default and no stroke
+      newShape.fill = shapeData.fill || '#000000';
+      newShape.strokeWidth = 0;
+      newShape.stroke = 'transparent';
+    }
     
     // Optimistic update - add to local state immediately
     setShapes(prev => [...prev, newShape]);
@@ -105,19 +127,38 @@ export const useShapeManager = (currentUser, sessionId) => {
     
     // Generate shapes with IDs
     const baseTimestamp = Date.now();
-    const newShapes = shapesData.map((shapeData, index) => ({
-      id: `${baseTimestamp}-${index}-${Math.random().toString(36).substr(2, 9)}`,
-      type: shapeData.type || 'rectangle', // Default to rectangle for backward compatibility
-      x: shapeData.x || 0,
-      y: shapeData.y || 0,
-      width: shapeData.width || DEFAULT_SHAPE_WIDTH,
-      height: shapeData.height || DEFAULT_SHAPE_HEIGHT,
-      fill: shapeData.fill || '#3B82F6',
-      stroke: shapeData.stroke || '#3B82F6',
-      strokeWidth: shapeData.strokeWidth || SHAPE_STROKE_WIDTH,
-      userId: currentUser.uid,
-      ...shapeData,
-    }));
+    const newShapes = shapesData.map((shapeData, index) => {
+      const shapeType = shapeData.type || 'rectangle';
+      
+      const newShape = {
+        id: `${baseTimestamp}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+        type: shapeType, // Default to rectangle for backward compatibility
+        x: shapeData.x || 0,
+        y: shapeData.y || 0,
+        width: shapeData.width || (shapeType === 'text' ? DEFAULT_TEXT_WIDTH : DEFAULT_SHAPE_WIDTH),
+        height: shapeData.height || (shapeType === 'text' ? DEFAULT_TEXT_HEIGHT : DEFAULT_SHAPE_HEIGHT),
+        fill: shapeData.fill || '#3B82F6',
+        stroke: shapeData.stroke || '#3B82F6',
+        strokeWidth: shapeData.strokeWidth || SHAPE_STROKE_WIDTH,
+        userId: currentUser.uid,
+        ...shapeData,
+      };
+      
+      // Add text-specific properties if this is a text shape
+      if (shapeType === 'text') {
+        newShape.text = shapeData.text || DEFAULT_TEXT_CONTENT;
+        newShape.fontSize = shapeData.fontSize || DEFAULT_FONT_SIZE;
+        newShape.fontFamily = shapeData.fontFamily || DEFAULT_FONT_FAMILY;
+        newShape.fontStyle = shapeData.fontStyle || DEFAULT_FONT_STYLE;
+        newShape.textAlign = shapeData.textAlign || DEFAULT_TEXT_ALIGN;
+        // Text shapes should have black color by default and no stroke
+        newShape.fill = shapeData.fill || '#000000';
+        newShape.strokeWidth = 0;
+        newShape.stroke = 'transparent';
+      }
+      
+      return newShape;
+    });
     
     // Optimistic update - add all to local state immediately
     setShapes(prev => [...prev, ...newShapes]);

@@ -21,6 +21,15 @@ export const SHAPE_STROKE_WIDTH = 2;
 export const MIN_DRAG_DISTANCE = 10;
 export const MIN_SHAPE_SIZE = 5;
 
+// Text constants
+export const DEFAULT_TEXT_CONTENT = 'Double-click to edit';
+export const DEFAULT_FONT_SIZE = 24;
+export const DEFAULT_FONT_FAMILY = 'Arial, sans-serif';
+export const DEFAULT_FONT_STYLE = 'normal';
+export const DEFAULT_TEXT_ALIGN = 'left';
+export const DEFAULT_TEXT_WIDTH = 200;
+export const DEFAULT_TEXT_HEIGHT = 50;
+
 // Animation and timing constants
 export const BUTTON_HOVER_SCALE = 1.05;
 export const AVATAR_TRANSITION_DURATION = 200; // ms
