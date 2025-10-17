@@ -30,8 +30,14 @@ app = FastAPI(
 )
 
 # Get allowed origins from environment
-allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
-allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",")]
+# For development, allow all localhost ports (Vite uses 5170-5189)
+if os.getenv("ALLOWED_ORIGINS"):
+    allowed_origins = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS").split(",")]
+else:
+    # Generate localhost ports 5170-5189 for Vite dev server
+    allowed_origins = [f"http://localhost:{port}" for port in range(5170, 5190)]
+    # Add common dev ports
+    allowed_origins.extend(["http://localhost:3000", "http://localhost:8080"])
 
 # Configure CORS
 app.add_middleware(

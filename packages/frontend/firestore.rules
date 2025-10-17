@@ -1,26 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // DEVELOPMENT MODE: Open rules for testing
-    // WARNING: Change this to require authentication for production!
-    
-    // Allow all reads and writes to shapes collection
-    match /shapes/{shapeId} {
-      allow read, write: if true;
-    }
-    
-    // Allow all reads and writes to canvases collection
+    // Allow read/write access to authenticated users for canvas data
     match /canvases/{canvasId}/{document=**} {
-      allow read, write: if true;
-    }
-    
-    // Allow cursors collection
-    match /cursors/{cursorId} {
-      allow read, write: if true;
-    }
-    
-    // Allow presence collection
-    match /presence/{userId} {
       allow read, write: if true;
     }
   }

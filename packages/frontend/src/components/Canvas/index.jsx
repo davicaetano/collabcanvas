@@ -166,6 +166,7 @@ const Canvas = () => {
           <AIPanel 
             currentUser={currentUser}
             canvasId="main-canvas"
+            sessionId={sessionId}
             onShapesCreated={handleAIShapesCreated}
           />
         </div>

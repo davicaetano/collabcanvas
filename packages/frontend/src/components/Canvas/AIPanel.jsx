@@ -7,7 +7,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAIAgent } from '../../hooks/useAIAgent';
-import { saveAIShapesToFirestore } from '../../utils/aiFirestore';
+import { createShape } from '../../utils/firestore';
 
 // Example commands to help users get started
 const EXAMPLE_COMMANDS = [
@@ -19,7 +19,7 @@ const EXAMPLE_COMMANDS = [
   { label: 'Big Green Square', command: 'make a big green square' },
 ];
 
-const AIPanel = ({ currentUser, canvasId = 'main-canvas', onShapesCreated }) => {
+const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCreated }) => {
   const [command, setCommand] = useState('');
   const [commandHistory, setCommandHistory] = useState([]);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -46,8 +46,10 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', onShapesCreated }) => 
       const response = await executeCommand(command);
       
       if (response && response.success && response.shapes.length > 0) {
-        // Save shapes to Firestore
-        await saveAIShapesToFirestore(canvasId, currentUser?.uid, response.shapes);
+        // Save shapes to Firestore using the same function as normal shapes
+        for (const shape of response.shapes) {
+          await createShape(shape, currentUser?.uid, sessionId);
+        }
         
         // Add to history
         setCommandHistory(prev => [
