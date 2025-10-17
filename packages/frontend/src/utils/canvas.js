@@ -10,6 +10,7 @@ export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 5;
 export const CURSOR_UPDATE_THROTTLE = 50; // ms - cursor position updates
 export const SHAPE_UPDATE_THROTTLE = 100; // ms - shape property/position/resize updates to Firebase
+export const VIEWPORT_SAVE_THROTTLE = 500; // ms - viewport (zoom/pan) save to localStorage
 
 // Avatar constants
 export const AVATAR_SIZE = 40; // 10 * 4 (w-10 h-10 in Tailwind)

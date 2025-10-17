@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { subscribeToCanvasSettings, updateCanvasBackgroundColor } from '../../../utils/firestore';
+import { VIEWPORT_SAVE_THROTTLE } from '../../../utils/canvas';
 
 // localStorage key for viewport state
 const VIEWPORT_STORAGE_KEY = 'collabcanvas-viewport';
@@ -85,7 +86,7 @@ export const useCanvasState = (currentUser, sessionId) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       saveViewportState(stageScale, stageX, stageY);
-    }, 500); // Throttle saves to every 500ms
+    }, VIEWPORT_SAVE_THROTTLE);
     
     return () => clearTimeout(timeoutId);
   }, [stageScale, stageX, stageY]);

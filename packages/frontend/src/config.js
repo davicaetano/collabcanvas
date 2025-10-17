@@ -12,7 +12,7 @@
  * 
  * Displayed in the header (dev mode only) to confirm deployment status.
  */
-export const APP_VERSION = 2;
+export const APP_VERSION = 3;
 
 /**
  * Check if running in development mode
