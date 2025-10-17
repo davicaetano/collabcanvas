@@ -90,10 +90,11 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
 
   return (
     <div 
-      className="fixed left-0 top-0 bg-gray-800 border-r border-gray-700 shadow-2xl transition-all duration-300 ease-in-out overflow-hidden"
+      className="fixed left-0 bg-gray-800 border-r border-gray-700 shadow-2xl transition-all duration-300 ease-in-out overflow-hidden"
       style={{
+        top: '64px', // Start below header
         width: '360px',
-        height: isExpanded ? '100vh' : 'auto',
+        height: isExpanded ? 'calc(100vh - 64px)' : 'auto',
         zIndex: 50,
       }}
     >
@@ -122,7 +123,7 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
 
       {/* Content */}
       {isExpanded && (
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 52px)' }}>
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 64px - 52px)' }}>
           {/* Conversation History */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {conversationHistory.length === 0 ? (
