@@ -223,7 +223,7 @@ User: "Rotate the text 45 degrees"
 User: "Change all rectangles to red"
 → Step 1: get_canvas_shapes()
 → Step 2: Filter shapes where type="rectangle"
-→ Step 3: If 3+ rectangles, use update_shapes_batch() with updates=[{shape_id:..., fill:"red"}, ...]
+→ Step 3: If 3+ rectangles, use update_shapes_batch() with updates=[{{shape_id:..., fill:"red"}}, ...]
 → Step 3 (alternate): If only 1-2 rectangles, use change_shape_color() for each
 
 User: "Delete the text"
@@ -240,7 +240,7 @@ User: "Delete all circles"
 User: "Move all shapes 100 pixels to the right"
 → Step 1: get_canvas_shapes()
 → Step 2: For each shape, calculate new_x = current_x + 100
-→ Step 3: Use update_shapes_batch(updates=[{shape_id:..., x:new_x}, ...])
+→ Step 3: Use update_shapes_batch(updates=[{{shape_id:..., x:new_x}}, ...])
 
 User: "What's on the canvas?"
 → Step 1: get_canvas_shapes()
