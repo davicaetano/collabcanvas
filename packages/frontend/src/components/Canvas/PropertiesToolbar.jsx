@@ -153,10 +153,15 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
             />
           </button>
 
-          {/* Copy Button - Placeholder */}
+          {/* Copy Button */}
           <button
-            disabled={true}
-            className="flex items-center justify-center bg-gray-800 border border-gray-700 cursor-default opacity-50"
+            onClick={() => shapeManager.copySelectedShapes()}
+            disabled={!hasSelection}
+            className={`group flex items-center justify-center bg-gray-800 border border-gray-700 transition-all ${
+              !hasSelection 
+                ? 'cursor-default opacity-50' 
+                : 'hover:bg-gray-700 hover:border-blue-500 cursor-pointer'
+            }`}
             style={{
               width: '40px',
               height: '40px',
@@ -164,13 +169,23 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
             }}
             title="Copy (⌘C / Ctrl+C)"
           >
-            <ClipboardDocumentIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+            <ClipboardDocumentIcon 
+              className={`w-5 h-5 transition-colors ${
+                hasSelection ? 'text-gray-300 group-hover:text-blue-400' : 'text-gray-600'
+              }`}
+              strokeWidth={1.5}
+            />
           </button>
 
-          {/* Paste Button - Placeholder */}
+          {/* Paste Button */}
           <button
-            disabled={true}
-            className="flex items-center justify-center bg-gray-800 border border-gray-700 cursor-default opacity-50"
+            onClick={() => shapeManager.pasteShapes()}
+            disabled={!shapeManager.hasClipboard}
+            className={`group flex items-center justify-center bg-gray-800 border border-gray-700 transition-all ${
+              !shapeManager.hasClipboard
+                ? 'cursor-default opacity-50' 
+                : 'hover:bg-gray-700 hover:border-blue-500 cursor-pointer'
+            }`}
             style={{
               width: '40px',
               height: '40px',
@@ -178,7 +193,12 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
             }}
             title="Paste (⌘V / Ctrl+V)"
           >
-            <ClipboardIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+            <ClipboardIcon 
+              className={`w-5 h-5 transition-colors ${
+                shapeManager.hasClipboard ? 'text-gray-300 group-hover:text-blue-400' : 'text-gray-600'
+              }`}
+              strokeWidth={1.5}
+            />
           </button>
 
           {/* Duplicate Button - Placeholder */}

@@ -5,6 +5,8 @@ import { useEffect } from 'react';
  * Currently handles:
  * - ESC: Exit current mode and deselect shapes
  * - Backspace/Delete: Delete selected shapes
+ * - Command+C/Ctrl+C: Copy selected shapes
+ * - Command+V/Ctrl+V: Paste shapes
  * - V: Select tool
  * - H: Pan tool
  * - R: Rectangle tool
@@ -85,6 +87,29 @@ export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) =>
             shapeManager.clearSelection();
           }
           onToolChange('text');
+          return;
+        }
+      }
+      
+      // Copy & Paste shortcuts (Command+C, Command+V / Ctrl+C, Ctrl+V)
+      if ((e.metaKey || e.ctrlKey) && !isTyping) {
+        const key = e.key.toLowerCase();
+        
+        // Command+C / Ctrl+C: Copy
+        if (key === 'c') {
+          if (shapeManager.selectedShapeIds && shapeManager.selectedShapeIds.length > 0) {
+            e.preventDefault();
+            const count = shapeManager.copySelectedShapes();
+          }
+          return;
+        }
+        
+        // Command+V / Ctrl+V: Paste
+        if (key === 'v') {
+          if (shapeManager.hasClipboard) {
+            e.preventDefault();
+            shapeManager.pasteShapes();
+          }
           return;
         }
       }

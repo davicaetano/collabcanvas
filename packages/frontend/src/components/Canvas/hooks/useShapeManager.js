@@ -50,6 +50,10 @@ export const useShapeManager = (currentUser, sessionId) => {
   // Selected shape IDs
   const [selectedShapeIds, setSelectedShapeIds] = useState([]);
   
+  // Clipboard for copy/paste
+  const [clipboard, setClipboard] = useState([]);
+  const [pasteCount, setPasteCount] = useState(0);
+  
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -327,6 +331,120 @@ export const useShapeManager = (currentUser, sessionId) => {
     }
   }, [shapes]);
   
+  // ==================== COPY & PASTE OPERATIONS ====================
+  
+  /**
+   * Calculate bounding box offset for paste operation
+   * Returns 10% of the largest dimension (width or height) of the bounding box
+   * @param {Array<Object>} shapes - Shapes to calculate offset for
+   * @returns {number} Offset value
+   */
+  const calculatePasteOffset = (shapes) => {
+    if (shapes.length === 0) return 20; // Fallback
+    
+    // Calculate bounding box
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+    
+    shapes.forEach(shape => {
+      const shapeMinX = shape.x;
+      const shapeMinY = shape.y;
+      const shapeMaxX = shape.x + (shape.width || 0);
+      const shapeMaxY = shape.y + (shape.height || 0);
+      
+      minX = Math.min(minX, shapeMinX);
+      minY = Math.min(minY, shapeMinY);
+      maxX = Math.max(maxX, shapeMaxX);
+      maxY = Math.max(maxY, shapeMaxY);
+    });
+    
+    // Calculate dimensions
+    const deltaX = maxX - minX;
+    const deltaY = maxY - minY;
+    
+    // Get largest dimension
+    const maxDimension = Math.max(deltaX, deltaY);
+    
+    // Return 10% of largest dimension (minimum 20px)
+    return Math.max(20, Math.round(maxDimension * 0.1));
+  };
+  
+  /**
+   * Copy selected shapes to clipboard
+   * @returns {number} Number of shapes copied
+   */
+  const copySelectedShapes = useCallback(() => {
+    if (selectedShapeIds.length === 0) return 0;
+    
+    // Get full shape objects for selected IDs
+    const shapesToCopy = selectedShapeIds
+      .map(id => shapes.find(s => s.id === id))
+      .filter(Boolean);
+    
+    // Store in clipboard
+    setClipboard(shapesToCopy);
+    setPasteCount(0); // Reset paste counter
+    
+    return shapesToCopy.length;
+  }, [selectedShapeIds, shapes]);
+  
+  /**
+   * Paste shapes from clipboard with incremental offset
+   * Offset is calculated as 10% of the bounding box's largest dimension
+   * Progressive: 1st paste = 1x offset, 2nd = 2x offset, 3rd = 3x offset, etc.
+   * @returns {Promise<Array<string>>} IDs of pasted shapes
+   */
+  const pasteShapes = useCallback(async () => {
+    if (clipboard.length === 0 || !currentUser) return [];
+    
+    // Calculate base offset (10% of largest dimension)
+    const baseOffset = calculatePasteOffset(clipboard);
+    
+    // Calculate progressive offset (1x, 2x, 3x...)
+    const offset = baseOffset * (pasteCount + 1);
+    
+    // Create new shapes with offset and new IDs
+    const baseTimestamp = Date.now();
+    const newShapes = clipboard.map((shape, index) => {
+      const newShape = {
+        ...shape,
+        id: `${baseTimestamp}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+        x: shape.x + offset,
+        y: shape.y + offset,
+        userId: currentUser.uid,
+      };
+      
+      // Remove old metadata
+      delete newShape.createdAt;
+      delete newShape.updatedAt;
+      delete newShape.sessionId;
+      
+      return newShape;
+    });
+    
+    // Optimistic update - add to local state immediately
+    setShapes(prev => [...prev, ...newShapes]);
+    
+    // Select the newly pasted shapes
+    setSelectedShapeIds(newShapes.map(s => s.id));
+    
+    // Increment paste counter for next paste
+    setPasteCount(prev => prev + 1);
+    
+    // Sync to Firestore
+    try {
+      await addShapesBatchInFirestore(newShapes);
+      return newShapes.map(s => s.id);
+    } catch (error) {
+      // Rollback optimistic update
+      const createdIds = newShapes.map(s => s.id);
+      setShapes(prev => prev.filter(s => !createdIds.includes(s.id)));
+      setSelectedShapeIds([]);
+      
+      throw error;
+    }
+  }, [clipboard, pasteCount, currentUser, sessionId]);
+  
   // ==================== QUERY OPERATIONS ====================
   
   /**
@@ -375,9 +493,12 @@ export const useShapeManager = (currentUser, sessionId) => {
   
   /**
    * Clear selection (deselect all shapes)
+   * Also clears the clipboard
    */
   const clearSelection = useCallback(() => {
     setSelectedShapeIds([]);
+    setClipboard([]);
+    setPasteCount(0);
   }, []);
   
   // ==================== FIRESTORE SYNCHRONIZATION ====================
@@ -437,6 +558,11 @@ export const useShapeManager = (currentUser, sessionId) => {
     deleteShapeBatch,
     deleteAllShapes,
     
+    // Copy & Paste operations
+    copySelectedShapes,
+    pasteShapes,
+    hasClipboard: clipboard.length > 0,
+    
     // Query operations
     getShape,
     getAllShapes,
@@ -452,6 +578,7 @@ export const useShapeManager = (currentUser, sessionId) => {
     // State dependencies
     shapes,
     selectedShapeIds,
+    clipboard,
     
     // Function dependencies (all useCallback functions)
     createShape,
@@ -461,6 +588,8 @@ export const useShapeManager = (currentUser, sessionId) => {
     deleteShape,
     deleteShapeBatch,
     deleteAllShapes,
+    copySelectedShapes,
+    pasteShapes,
     getShape,
     getAllShapes,
     getSelectedShapes,
