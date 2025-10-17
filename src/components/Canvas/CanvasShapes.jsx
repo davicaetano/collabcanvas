@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Rect } from 'react-konva';
 import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
 import SelectionBox from './SelectionBox';
@@ -43,6 +43,54 @@ const CanvasShapes = React.memo(({
         // Single select: replace selection with this shape
         onShapeSelect([shapeId]);
       }
+    }
+  };
+
+  // Local state for shapes being resized (to avoid excessive Firebase writes)
+  const [resizingShapes, setResizingShapes] = useState({});
+  const resizeThrottleRef = useRef({});
+  
+  const handleShapeResize = (shapeId, newDimensions) => {
+    if (!shapeManager) return;
+    
+    // Update local resizing state immediately for smooth UI
+    setResizingShapes(prev => ({
+      ...prev,
+      [shapeId]: newDimensions
+    }));
+    
+    // Throttle Firebase updates to once every 100ms
+    const now = Date.now();
+    const lastUpdate = resizeThrottleRef.current[shapeId]?.lastUpdate || 0;
+    const timeSinceLastUpdate = now - lastUpdate;
+    
+    if (timeSinceLastUpdate >= 100) {
+      // Send to Firebase immediately (throttled)
+      shapeManager.updateShape(shapeId, newDimensions);
+      resizeThrottleRef.current[shapeId] = { lastUpdate: now, pendingUpdate: null };
+    } else {
+      // Schedule pending update
+      if (resizeThrottleRef.current[shapeId]?.pendingUpdate) {
+        clearTimeout(resizeThrottleRef.current[shapeId].pendingUpdate);
+      }
+      
+      resizeThrottleRef.current[shapeId] = {
+        ...resizeThrottleRef.current[shapeId],
+        pendingUpdate: setTimeout(() => {
+          shapeManager.updateShape(shapeId, newDimensions);
+          resizeThrottleRef.current[shapeId] = { 
+            lastUpdate: Date.now(), 
+            pendingUpdate: null 
+          };
+          
+          // Clear from resizing state after final update
+          setResizingShapes(prev => {
+            const newState = { ...prev };
+            delete newState[shapeId];
+            return newState;
+          });
+        }, 100 - timeSinceLastUpdate)
+      };
     }
   };
 
@@ -142,23 +190,30 @@ const CanvasShapes = React.memo(({
         const displayX = localPositions[shape.id]?.x ?? shape.x;
         const displayY = localPositions[shape.id]?.y ?? shape.y;
         
+        // Use resizing dimensions if available (during resize), otherwise use shape dimensions
+        const resizeDims = resizingShapes[shape.id];
+        const displayWidth = resizeDims?.width ?? shape.width;
+        const displayHeight = resizeDims?.height ?? shape.height;
+        const displayShapeX = resizeDims?.x ?? displayX;
+        const displayShapeY = resizeDims?.y ?? displayY;
+        
         // Adjust position to center for rotation pivot
-        const centerX = displayX + shape.width / 2;
-        const centerY = displayY + shape.height / 2;
+        const centerX = displayShapeX + displayWidth / 2;
+        const centerY = displayShapeY + displayHeight / 2;
         
         return (
           <Rect
             key={shape.id}
             x={centerX}
             y={centerY}
-            width={shape.width}
-            height={shape.height}
+            width={displayWidth}
+            height={displayHeight}
             fill={shape.fill}
             stroke={shape.stroke}
             strokeWidth={shape.strokeWidth}
             rotation={shape.rotation || 0}
-            offsetX={shape.width / 2}
-            offsetY={shape.height / 2}
+            offsetX={displayWidth / 2}
+            offsetY={displayHeight / 2}
             draggable={isSelectMode}
           onDragStart={(e) => {
             if (!isSelectMode) {
@@ -232,11 +287,20 @@ const CanvasShapes = React.memo(({
         if (!shape) return null;
         
         // Use local position if available (during drag), otherwise use Firebase position
-        const displayShape = localPositions[shapeId] 
-          ? { ...shape, ...localPositions[shapeId] }
-          : shape;
+        // Also use resizing dimensions if available (during resize)
+        const displayShape = {
+          ...shape,
+          ...(localPositions[shapeId] || {}),
+          ...(resizingShapes[shapeId] || {})
+        };
         
-        return <SelectionBox key={`selection-${shapeId}`} shape={displayShape} />;
+        return (
+          <SelectionBox 
+            key={`selection-${shapeId}`} 
+            shape={displayShape} 
+            onResize={(newDimensions) => handleShapeResize(shapeId, newDimensions)}
+          />
+        );
       })}
 
       {/* Render preview selection boxes during marquee drag */}
