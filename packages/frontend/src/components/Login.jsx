@@ -13,7 +13,6 @@ const Login = () => {
       await signInWithGoogle();
     } catch (error) {
       setError('Failed to sign in with Google');
-      console.error(error);
     } finally {
       setLoading(false);
     }

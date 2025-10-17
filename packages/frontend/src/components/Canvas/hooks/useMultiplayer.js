@@ -20,15 +20,11 @@ export const useMultiplayer = (currentUser, shapeManager, setOnlineUsers, sessio
     // Subscribe to shapes
     // During drag, filter out updates from this session to prevent feedback loop
     const unsubscribeShapes = subscribeToShapes((shapesData) => {
-      console.log(`[useMultiplayer] 📡 FIRESTORE LISTENER FIRED - Received ${shapesData.length} shapes`);
-      
       // If dragging, filter out shapes from this session
       if (isDraggingShape) {
         const filteredShapes = shapesData.filter(shape => shape.sessionId !== sessionId);
-        console.log(`[useMultiplayer] 🚫 Dragging mode - Filtered out own shapes: ${shapesData.length} → ${filteredShapes.length}`);
         syncFromFirestore(filteredShapes);
       } else {
-        console.log(`[useMultiplayer] ✅ Normal mode - Passing all shapes to syncFromFirestore`);
         syncFromFirestore(shapesData);
       }
     });

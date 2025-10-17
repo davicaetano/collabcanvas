@@ -96,7 +96,6 @@ export const validateProperty = (propertyName, value) => {
   
   // Unknown property - reject
   if (!constraint) {
-    console.warn(`Unknown property: ${propertyName}`);
     return null;
   }
   

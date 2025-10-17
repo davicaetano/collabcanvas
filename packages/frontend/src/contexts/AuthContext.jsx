@@ -22,7 +22,6 @@ export const AuthProvider = ({ children }) => {
       const result = await signInWithPopup(auth, googleProvider);
       return result.user;
     } catch (error) {
-      console.error('Sign-in error:', error.code, error.message);
       throw error;
     }
   };
@@ -39,7 +38,6 @@ export const AuthProvider = ({ children }) => {
       
       await signOut(auth);
     } catch (error) {
-      console.error('Error signing out:', error);
       throw error;
     }
   };
@@ -54,7 +52,7 @@ export const AuthProvider = ({ children }) => {
             removeCursor(currentUser.uid)
           ]);
         } catch (error) {
-          console.error('Error cleaning up on auth state change:', error);
+          // Error cleaning up
         }
       }
       

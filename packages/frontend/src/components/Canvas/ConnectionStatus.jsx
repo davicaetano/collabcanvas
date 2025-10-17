@@ -14,14 +14,10 @@ import { db } from '../../utils/firebase';
  * - Disconnected (red): No connection to Firestore (changes queued locally)
  */
 const ConnectionStatus = React.memo(() => {
-  console.log('[ConnectionStatus] 🔄 Component rendering');
-  
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
 
   useEffect(() => {
-    console.log('[ConnectionStatus] 🚀 Component mounted, setting up Firestore listener');
-    
     setIsConnecting(true);
     
     // Listen to shapes collection to detect Firestore connectivity
@@ -29,27 +25,19 @@ const ConnectionStatus = React.memo(() => {
     const unsubscribe = onSnapshot(
       shapesRef,
       (snapshot) => {
-        console.log('[ConnectionStatus] 🟢 Firestore snapshot received');
         setIsConnected(true);
         setIsConnecting(false);
       },
       (error) => {
-        console.error('[ConnectionStatus] 🔴 Firestore error:', error);
         setIsConnected(false);
         setIsConnecting(false);
       }
     );
 
     return () => {
-      console.log('[ConnectionStatus] 💀 Component unmounting, cleaning up Firestore listener');
       unsubscribe();
     };
   }, []);
-
-  // Log state changes
-  useEffect(() => {
-    console.log('[ConnectionStatus] 📊 State changed - isConnected:', isConnected, 'isConnecting:', isConnecting);
-  }, [isConnected, isConnecting]);
 
   // Don't render anything in production (optional)
   // Uncomment the line below to hide in production

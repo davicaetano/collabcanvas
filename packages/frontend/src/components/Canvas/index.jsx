@@ -77,7 +77,7 @@ const Canvas = () => {
         break;
         
       default:
-        console.warn('Unknown tool selected:', toolId);
+        // Unknown tool
     }
   }, [canvasState, shapeManager]);
 
@@ -128,7 +128,6 @@ const Canvas = () => {
 
   // Handle AI-generated shapes
   const handleAIShapesCreated = useCallback((shapes) => {
-    console.log('AI created shapes:', shapes);
     // Shapes are automatically synced via Firestore listener in useMultiplayer
     // No need to manually add them to local state
   }, []);

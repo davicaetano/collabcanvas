@@ -22,7 +22,7 @@ const loadAIPanelState = () => {
       };
     }
   } catch (error) {
-    console.warn('Failed to load AI Panel state from localStorage:', error);
+    // Failed to load state - use defaults
   }
   return { isExpanded: true };
 };
@@ -32,7 +32,7 @@ const saveAIPanelState = (isExpanded) => {
   try {
     localStorage.setItem(AI_PANEL_STORAGE_KEY, JSON.stringify({ isExpanded }));
   } catch (error) {
-    console.warn('Failed to save AI Panel state to localStorage:', error);
+    // Failed to save state
   }
 };
 
@@ -104,7 +104,6 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
         ].slice(-12)); // Keep last 12 entries
       }
     } catch (err) {
-      console.error('Error executing AI command:', err);
       setConversationHistory(prev => [
         ...prev,
         { 

@@ -47,7 +47,6 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
       });
       
     } catch (error) {
-      console.error('Failed to update property:', error);
       // shapeManager handles rollback if needed
     }
   };
@@ -96,10 +95,6 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
    */
   const handleDelete = () => {
     if (!hasSelection || !shapeManager) return;
-    
-    if (isDevMode) {
-      console.log('[PropertiesToolbar] Deleting shapes:', selectedShapes);
-    }
     
     shapeManager.deleteShapeBatch(selectedShapes);
   };

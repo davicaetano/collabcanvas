@@ -25,10 +25,6 @@ export const db = getFirestore(app);
 
 // Enable offline persistence (automatically caches data locally)
 // This allows the app to work offline and sync when back online
-try {
-  // Note: In Firestore v9+, offline persistence is enabled by default
-} catch (error) {
-  console.error('Failed to enable offline persistence:', error);
-}
+// Note: In Firestore v9+, offline persistence is enabled by default
 
 export default app;

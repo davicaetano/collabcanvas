@@ -134,16 +134,6 @@ export const useShapeSelection = (canvasState, shapeManager) => {
 
   // Handle canvas click to deselect shapes
   const handleSelectionClick = useCallback((e) => {
-    const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
-    
-    if (isDevMode) {
-      console.log('Canvas click:', {
-        targetClassName: e.target.className,
-        isStage: e.target === e.target.getStage(),
-        selectedShapes: shapeManager.selectedShapeIds
-      });
-    }
-    
     // Only handle clicks on empty canvas (not on shapes)
     if (e.target === e.target.getStage()) {
       if (addMode !== 'none' && !isDrawing) {
@@ -153,7 +143,6 @@ export const useShapeSelection = (canvasState, shapeManager) => {
       
       // Deselect all shapes when clicking on empty canvas
       if (shapeManager.selectedShapeIds && shapeManager.selectedShapeIds.length > 0) {
-        if (isDevMode) console.log('Deselecting shapes');
         shapeManager.clearSelection();
       }
     }

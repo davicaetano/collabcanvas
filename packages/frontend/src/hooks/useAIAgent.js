@@ -67,7 +67,6 @@ export const useAIAgent = (canvasId, userId, sessionId) => {
       
       return data;
     } catch (err) {
-      console.error('AI command error:', err);
       setError(err.message || 'Failed to execute command');
       setLastResponse(null);
       return null;
@@ -89,7 +88,6 @@ export const useAIAgent = (canvasId, userId, sessionId) => {
       }
       return await response.json();
     } catch (err) {
-      console.error('Health check error:', err);
       return null;
     }
   }, []);

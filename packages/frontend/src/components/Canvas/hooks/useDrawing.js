@@ -79,7 +79,7 @@ export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
       try {
         createdShape = await createShapeAt(drawStartPos.x, drawStartPos.y, undefined, undefined, shapeType);
       } catch (error) {
-        console.error('Failed to create shape (offline?):', error);
+        // Failed to create shape
       }
     } else if (previewRect.width > 5 && previewRect.height > 5) {
       // Actual drag - create shape with drawn dimensions
@@ -92,7 +92,7 @@ export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
           shapeType
         );
       } catch (error) {
-        console.error('Failed to create shape (offline?):', error);
+        // Failed to create shape
       }
     }
     

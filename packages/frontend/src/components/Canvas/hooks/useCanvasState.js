@@ -17,7 +17,7 @@ const loadViewportState = () => {
       };
     }
   } catch (error) {
-    console.warn('Failed to load viewport state from localStorage:', error);
+    // Failed to load state - use defaults
   }
   return { scale: 1, x: 0, y: 0 };
 };
@@ -27,7 +27,7 @@ const saveViewportState = (scale, x, y) => {
   try {
     localStorage.setItem(VIEWPORT_STORAGE_KEY, JSON.stringify({ scale, x, y }));
   } catch (error) {
-    console.warn('Failed to save viewport state to localStorage:', error);
+    // Failed to save state
   }
 };
 
@@ -97,7 +97,7 @@ export const useCanvasState = (currentUser, sessionId) => {
     try {
       await updateCanvasBackgroundColor(color, currentUser.uid, sessionId);
     } catch (error) {
-      console.error('Failed to update canvas background color:', error);
+      // Failed to update background color
     }
   }, [currentUser, sessionId]);
 

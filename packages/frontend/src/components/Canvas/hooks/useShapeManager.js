@@ -106,8 +106,6 @@ export const useShapeManager = (currentUser, sessionId) => {
       await createShapeInFirestore(newShape, currentUser.uid, sessionId);
       return newShape;
     } catch (error) {
-      console.error('[ShapeManager] createShape: Failed to sync to Firestore', error);
-      
       // Rollback optimistic update
       setShapes(prev => prev.filter(s => s.id !== newShape.id));
       
@@ -168,8 +166,6 @@ export const useShapeManager = (currentUser, sessionId) => {
       await addShapesBatchInFirestore(newShapes);
       return newShapes;
     } catch (error) {
-      console.error('[ShapeManager] createShapeBatch: Failed to sync to Firestore', error);
-      
       // Rollback optimistic update - remove all created shapes
       const createdIds = newShapes.map(s => s.id);
       setShapes(prev => prev.filter(s => !createdIds.includes(s.id)));
@@ -208,8 +204,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     try {
       await updateShapeInFirestore(shapeId, validatedUpdates, sessionId);
     } catch (error) {
-      console.error('[ShapeManager] updateShape: Failed to sync to Firestore', error);
-      
       // Note: We don't rollback on error because Firestore might be temporarily offline
       // The next Firestore sync will correct the state if needed
       
@@ -253,7 +247,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     try {
       await updateShapesBatchInFirestore(validatedUpdatesMap, sessionId);
     } catch (error) {
-      console.error('[ShapeManager] updateShapeBatch: Failed to sync to Firestore', error);
       throw error;
     }
   }, [sessionId]);
@@ -277,8 +270,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     try {
       await deleteShapeInFirestore(shapeId);
     } catch (error) {
-      console.error('[ShapeManager] deleteShape: Failed to sync to Firestore', error);
-      
       // Rollback optimistic update
       if (deletedShape) {
         setShapes(prev => [...prev, deletedShape]);
@@ -308,7 +299,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     try {
       await deleteShapesBatchInFirestore(shapeIds);
     } catch (error) {
-      console.error('[ShapeManager] deleteShapeBatch: Failed to sync to Firestore', error);
       // Note: We don't revert optimistic update here
       // Firestore listener will sync the correct state
     }
@@ -330,8 +320,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     try {
       await deleteAllShapesInFirestore();
     } catch (error) {
-      console.error('[ShapeManager] deleteAllShapes: Failed to sync to Firestore', error);
-      
       // Rollback optimistic update
       setShapes(allShapes);
       
