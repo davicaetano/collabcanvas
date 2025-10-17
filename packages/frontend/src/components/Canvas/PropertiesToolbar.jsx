@@ -3,7 +3,8 @@ import {
   PROPERTIES_PANEL_WIDTH,
   PROPERTIES_PANEL_BACKGROUND,
   PROPERTIES_SECTION_SPACING,
-  Z_INDEX_PROPERTIES_TOOLBAR
+  Z_INDEX_PROPERTIES_TOOLBAR,
+  SHAPE_UPDATE_THROTTLE
 } from '../../utils/canvas';
 import NumericInput from './properties/NumericInput';
 import ColorInput from './properties/ColorInput';
@@ -53,7 +54,7 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
 
   /**
    * Handle property update with throttling (for continuous inputs like sliders)
-   * Updates local state immediately but throttles Firebase writes to 100ms
+   * Updates local state immediately but throttles Firebase writes
    */
   const handlePropertyUpdateThrottled = async (shapeId, propertyName, newValue) => {
     if (!shapeManager) return;
@@ -61,12 +62,12 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
     // Create a unique key for this shape+property combination
     const throttleKey = `${shapeId}-${propertyName}`;
     
-    // Throttle Firebase updates to once every 100ms
+    // Throttle Firebase updates
     const now = Date.now();
     const lastUpdate = propertyThrottleRef.current[throttleKey]?.lastUpdate || 0;
     const timeSinceLastUpdate = now - lastUpdate;
     
-    if (timeSinceLastUpdate >= 100) {
+    if (timeSinceLastUpdate >= SHAPE_UPDATE_THROTTLE) {
       // Send to Firebase immediately (throttled)
       handlePropertyUpdate(shapeId, propertyName, newValue);
       propertyThrottleRef.current[throttleKey] = { lastUpdate: now, pendingUpdate: null };
@@ -84,7 +85,7 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
             lastUpdate: Date.now(), 
             pendingUpdate: null 
           };
-        }, 100 - timeSinceLastUpdate)
+        }, SHAPE_UPDATE_THROTTLE - timeSinceLastUpdate)
       };
     }
   };

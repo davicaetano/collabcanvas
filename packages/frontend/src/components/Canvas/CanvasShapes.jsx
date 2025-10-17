@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Rect, Ellipse, Text } from 'react-konva';
-import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
+import { SHAPE_UPDATE_THROTTLE } from '../../utils/canvas';
 import SelectionBox from './SelectionBox';
 
 const CanvasShapes = React.memo(({ 
@@ -70,12 +70,12 @@ const CanvasShapes = React.memo(({
       [shapeId]: newDimensions
     }));
     
-    // Throttle Firebase updates to once every 50ms (more responsive)
+    // Throttle Firebase updates
     const now = Date.now();
     const lastUpdate = resizeThrottleRef.current[shapeId]?.lastUpdate || 0;
     const timeSinceLastUpdate = now - lastUpdate;
     
-    if (timeSinceLastUpdate >= 50) {
+    if (timeSinceLastUpdate >= SHAPE_UPDATE_THROTTLE) {
       // Send to Firebase immediately (throttled)
       shapeManager.updateShape(shapeId, newDimensions);
       resizeThrottleRef.current[shapeId] = { lastUpdate: now, pendingUpdate: null };
@@ -93,7 +93,7 @@ const CanvasShapes = React.memo(({
             lastUpdate: Date.now(), 
             pendingUpdate: null 
           };
-        }, 50 - timeSinceLastUpdate)
+        }, SHAPE_UPDATE_THROTTLE - timeSinceLastUpdate)
       };
     }
   };
@@ -163,7 +163,7 @@ const CanvasShapes = React.memo(({
     
     // Throttle Firebase updates only (not local visual movement)
     const now = Date.now();
-    const shouldUpdate = now - (e.target._lastShapeUpdate || 0) > CURSOR_UPDATE_THROTTLE;
+    const shouldUpdate = now - (e.target._lastShapeUpdate || 0) > SHAPE_UPDATE_THROTTLE;
     
     if (shouldUpdate) {
       if (isMultipleSelection) {

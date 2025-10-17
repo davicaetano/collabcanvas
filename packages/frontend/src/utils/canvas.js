@@ -8,7 +8,8 @@ export const VIEWPORT_HEIGHT = window.innerHeight; // Account for expanded heade
 export const GRID_SIZE = 50;
 export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 5;
-export const CURSOR_UPDATE_THROTTLE = 50; // ms - synchronized updates
+export const CURSOR_UPDATE_THROTTLE = 50; // ms - cursor position updates
+export const SHAPE_UPDATE_THROTTLE = 100; // ms - shape property/position/resize updates to Firebase
 
 // Avatar constants
 export const AVATAR_SIZE = 40; // 10 * 4 (w-10 h-10 in Tailwind)
