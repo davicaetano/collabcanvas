@@ -9,6 +9,35 @@ import {
   SELECTION_HANDLE_STROKE_WIDTH
 } from '../../utils/canvas';
 
+/**
+ * Calculate the appropriate cursor for a handle based on its base cursor and the shape's rotation
+ * @param {string} baseCursor - The handle's base cursor (without rotation)
+ * @param {number} rotation - The shape's rotation in degrees
+ * @returns {string} The adjusted cursor name
+ */
+const getRotatedCursor = (baseCursor, rotation) => {
+  // Normalize rotation to 0-360 range
+  const normalizedRotation = ((rotation % 360) + 360) % 360;
+  
+  // Round to nearest 45 degrees for cursor selection
+  const roundedRotation = Math.round(normalizedRotation / 45) * 45;
+  
+  // Map base cursors to their rotational variants
+  // Each cursor type rotates through 8 positions (every 45 degrees)
+  const cursorMap = {
+    'nwse-resize': ['nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize'],
+    'nesw-resize': ['nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize'],
+    'ns-resize': ['ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize'],
+    'ew-resize': ['ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize'],
+  };
+  
+  // Get rotation index (0-7)
+  const rotationIndex = (roundedRotation / 45) % 8;
+  
+  // Return rotated cursor
+  return cursorMap[baseCursor]?.[rotationIndex] || baseCursor;
+};
+
 const SelectionBox = ({ shape, onResize }) => {
   if (!shape) return null;
   
@@ -33,34 +62,34 @@ const SelectionBox = ({ shape, onResize }) => {
   const selectionHeight = height + (offset * 2);
 
   // Handle positions relative to center (will be rotated with the group)
-  // Each handle has position, cursor, and anchor info for resize calculation
+  // Each handle has position, base cursor, and anchor info for resize calculation
   const handles = [
     // Corners
     { 
       x: -width / 2 - halfHandle, 
       y: -height / 2 - halfHandle, 
-      cursor: 'nwse-resize',
+      baseCursor: 'nwse-resize',
       anchor: 'top-left',
       xDir: -1, yDir: -1 
     },
     { 
       x: width / 2 - halfHandle, 
       y: -height / 2 - halfHandle, 
-      cursor: 'nesw-resize',
+      baseCursor: 'nesw-resize',
       anchor: 'top-right',
       xDir: 1, yDir: -1 
     },
     { 
       x: -width / 2 - halfHandle, 
       y: height / 2 - halfHandle, 
-      cursor: 'nesw-resize',
+      baseCursor: 'nesw-resize',
       anchor: 'bottom-left',
       xDir: -1, yDir: 1 
     },
     { 
       x: width / 2 - halfHandle, 
       y: height / 2 - halfHandle, 
-      cursor: 'nwse-resize',
+      baseCursor: 'nwse-resize',
       anchor: 'bottom-right',
       xDir: 1, yDir: 1 
     },
@@ -68,32 +97,35 @@ const SelectionBox = ({ shape, onResize }) => {
     { 
       x: -halfHandle, 
       y: -height / 2 - halfHandle, 
-      cursor: 'ns-resize',
+      baseCursor: 'ns-resize',
       anchor: 'top',
       xDir: 0, yDir: -1 
     },
     { 
       x: -halfHandle, 
       y: height / 2 - halfHandle, 
-      cursor: 'ns-resize',
+      baseCursor: 'ns-resize',
       anchor: 'bottom',
       xDir: 0, yDir: 1 
     },
     { 
       x: -width / 2 - halfHandle, 
       y: -halfHandle, 
-      cursor: 'ew-resize',
+      baseCursor: 'ew-resize',
       anchor: 'left',
       xDir: -1, yDir: 0 
     },
     { 
       x: width / 2 - halfHandle, 
       y: -halfHandle, 
-      cursor: 'ew-resize',
+      baseCursor: 'ew-resize',
       anchor: 'right',
       xDir: 1, yDir: 0 
     },
-  ];
+  ].map(handle => ({
+    ...handle,
+    cursor: getRotatedCursor(handle.baseCursor, rotation)
+  }));
   
   const handleMouseDown = (handle) => {
     if (!onResize) return;
@@ -121,53 +153,68 @@ const SelectionBox = ({ shape, onResize }) => {
       const origCenterX = origX + origWidth / 2;
       const origCenterY = origY + origHeight / 2;
       
-      // Calculate distance from original center to mouse
-      const dx = pos.x - origCenterX;
-      const dy = pos.y - origCenterY;
+      // Calculate the OPPOSITE ANCHOR POINT in local space
+      // This is the point that should remain fixed during resize
+      const oppositeLocalX = -handle.xDir * origWidth / 2;
+      const oppositeLocalY = -handle.yDir * origHeight / 2;
       
-      // Rotate back to shape's local space (accounting for rotation)
+      // Convert opposite anchor to world space
+      const angleRad = (origRotation * Math.PI) / 180;
+      const oppositeWorldX = origCenterX + (oppositeLocalX * Math.cos(angleRad) - oppositeLocalY * Math.sin(angleRad));
+      const oppositeWorldY = origCenterY + (oppositeLocalX * Math.sin(angleRad) + oppositeLocalY * Math.cos(angleRad));
+      
+      // Calculate distance from mouse to opposite anchor in world space
+      const worldDx = pos.x - oppositeWorldX;
+      const worldDy = pos.y - oppositeWorldY;
+      
+      // Transform to local space (relative to shape's rotation)
       const angle = (-origRotation * Math.PI) / 180;
-      const localDx = dx * Math.cos(angle) - dy * Math.sin(angle);
-      const localDy = dx * Math.sin(angle) + dy * Math.cos(angle);
+      const localDx = worldDx * Math.cos(angle) - worldDy * Math.sin(angle);
+      const localDy = worldDx * Math.sin(angle) + worldDy * Math.cos(angle);
       
-      // Calculate new dimensions based on which edge is being dragged
+      // Calculate new dimensions
+      // The new dimension is the distance from the opposite edge to the mouse
       let newWidth = origWidth;
       let newHeight = origHeight;
-      let deltaX = 0;
-      let deltaY = 0;
       
       if (handle.xDir !== 0) {
-        if (handle.xDir < 0) {
-          // Dragging left edge - right edge stays fixed
-          newWidth = Math.max(10, origWidth / 2 - localDx);
-          deltaX = origWidth - newWidth;
-        } else {
-          // Dragging right edge - left edge stays fixed
-          newWidth = Math.max(10, localDx + origWidth / 2);
-          deltaX = 0;
-        }
+        // Width changes when dragging horizontally
+        newWidth = Math.max(10, Math.abs(localDx));
       }
       
       if (handle.yDir !== 0) {
-        if (handle.yDir < 0) {
-          // Dragging top edge - bottom edge stays fixed
-          newHeight = Math.max(10, origHeight / 2 - localDy);
-          deltaY = origHeight - newHeight;
-        } else {
-          // Dragging bottom edge - top edge stays fixed
-          newHeight = Math.max(10, localDy + origHeight / 2);
-          deltaY = 0;
-        }
+        // Height changes when dragging vertically
+        newHeight = Math.max(10, Math.abs(localDy));
       }
       
-      // Apply position adjustment (rotate delta back to world space)
-      const angleRad = (origRotation * Math.PI) / 180;
-      const adjustedDx = deltaX * Math.cos(angleRad) - deltaY * Math.sin(angleRad);
-      const adjustedDy = deltaX * Math.sin(angleRad) + deltaY * Math.cos(angleRad);
+      // Calculate the new center position in LOCAL space
+      // The center should be at the midpoint from the opposite anchor
+      // When xDir = 0 (vertical edge), center X stays at 0 (middle)
+      // When yDir = 0 (horizontal edge), center Y stays at 0 (middle)
+      let newCenterLocalX = 0;
+      let newCenterLocalY = 0;
+      
+      if (handle.xDir !== 0) {
+        // Horizontal resize: center moves horizontally
+        newCenterLocalX = oppositeLocalX + (handle.xDir * newWidth / 2);
+      }
+      
+      if (handle.yDir !== 0) {
+        // Vertical resize: center moves vertically
+        newCenterLocalY = oppositeLocalY + (handle.yDir * newHeight / 2);
+      }
+      
+      // Convert new center from LOCAL to WORLD space (relative to original center)
+      const newCenterWorldX = origCenterX + (newCenterLocalX * Math.cos(angleRad) - newCenterLocalY * Math.sin(angleRad));
+      const newCenterWorldY = origCenterY + (newCenterLocalX * Math.sin(angleRad) + newCenterLocalY * Math.cos(angleRad));
+      
+      // Calculate new top-left position from center
+      const newX = newCenterWorldX - newWidth / 2;
+      const newY = newCenterWorldY - newHeight / 2;
       
       onResize({
-        x: origX + adjustedDx,
-        y: origY + adjustedDy,
+        x: newX,
+        y: newY,
         width: newWidth,
         height: newHeight,
       });

@@ -29,17 +29,12 @@ export const useCursorManager = (currentUser, sessionId) => {
   // Online users presence data
   const [onlineUsers, setOnlineUsers] = useState({});
   
-  // Log on mount only (for debugging)
+  // Cleanup on unmount
   useEffect(() => {
-    if (isDevMode) {
-      console.log('[CursorManager] Mounted');
-    }
     return () => {
-      if (isDevMode) {
-        console.log('[CursorManager] Unmounted');
-      }
+      // Cleanup logic if needed
     };
-  }, [isDevMode]);
+  }, []);
   
   // ==================== CURSOR OPERATIONS ====================
   
@@ -79,11 +74,7 @@ export const useCursorManager = (currentUser, sessionId) => {
       name: currentUser.displayName,
       color: getUserColor(currentUser.uid),
     });
-    
-    if (isDevMode) {
-      console.log('[CursorManager] trackCursorFromStage:', canvasPos);
-    }
-  }, [currentUser, isDevMode]);
+  }, [currentUser]);
   
   /**
    * Track cursor position from canvas coordinates (already converted)
@@ -108,11 +99,7 @@ export const useCursorManager = (currentUser, sessionId) => {
       name: currentUser.displayName,
       color: getUserColor(currentUser.uid),
     });
-    
-    if (isDevMode) {
-      console.log('[CursorManager] trackCursorPosition:', canvasPos);
-    }
-  }, [currentUser, isDevMode]);
+  }, [currentUser]);
   
   /**
    * Cleanup cursor data from Firestore
@@ -122,11 +109,7 @@ export const useCursorManager = (currentUser, sessionId) => {
     if (!currentUser) return;
     
     removeCursor(currentUser.uid);
-    
-    if (isDevMode) {
-      console.log('[CursorManager] cleanup: Removed cursor for user', currentUser.uid);
-    }
-  }, [currentUser, isDevMode]);
+  }, [currentUser]);
   
   // ==================== PRESENCE OPERATIONS ====================
   
@@ -141,10 +124,6 @@ export const useCursorManager = (currentUser, sessionId) => {
   useEffect(() => {
     if (!currentUser) return;
     
-    if (isDevMode) {
-      console.log('[CursorManager] Subscribing to cursors');
-    }
-    
     const unsubscribe = subscribeToCursors((cursorsData) => {
       // Remove own cursor from the data - we don't need to see our own cursor!
       const { [currentUser.uid]: _, ...otherCursors } = cursorsData;
@@ -157,20 +136,13 @@ export const useCursorManager = (currentUser, sessionId) => {
       if (cursorsChanged) {
         previousCursorsRef.current = otherCursors;
         setCursors(otherCursors);
-        
-        if (isDevMode) {
-          console.log('[CursorManager] Updated cursors:', Object.keys(otherCursors).length);
-        }
       }
     });
     
     return () => {
-      if (isDevMode) {
-        console.log('[CursorManager] Unsubscribing from cursors');
-      }
       unsubscribe();
     };
-  }, [currentUser, isDevMode]);
+  }, [currentUser]);
   
   // Handle cleanup when user closes window/tab
   useEffect(() => {

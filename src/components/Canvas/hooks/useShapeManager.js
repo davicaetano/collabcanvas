@@ -43,17 +43,12 @@ export const useShapeManager = (currentUser, sessionId) => {
   // Selected shape IDs
   const [selectedShapeIds, setSelectedShapeIds] = useState([]);
   
-  // Log on mount only (for debugging)
+  // Cleanup on unmount
   useEffect(() => {
-    if (isDevMode) {
-      console.log('[ShapeManager] Mounted');
-    }
     return () => {
-      if (isDevMode) {
-        console.log('[ShapeManager] Unmounted');
-      }
+      // Cleanup logic if needed
     };
-  }, [isDevMode]);
+  }, []);
   
   // ==================== CRUD OPERATIONS ====================
   
@@ -64,7 +59,6 @@ export const useShapeManager = (currentUser, sessionId) => {
    */
   const createShape = useCallback(async (shapeData) => {
     if (!currentUser) {
-      if (isDevMode) console.warn('[ShapeManager] createShape: No user authenticated');
       return null;
     }
     
@@ -81,21 +75,12 @@ export const useShapeManager = (currentUser, sessionId) => {
       ...shapeData,
     };
     
-    if (isDevMode) {
-      console.log('[ShapeManager] createShape: Creating shape', newShape);
-    }
-    
     // Optimistic update - add to local state immediately
     setShapes(prev => [...prev, newShape]);
     
     // Sync to Firestore
     try {
       await createShapeInFirestore(newShape, currentUser.uid, sessionId);
-      
-      if (isDevMode) {
-        console.log('[ShapeManager] createShape: Successfully synced to Firestore', newShape.id);
-      }
-      
       return newShape;
     } catch (error) {
       console.error('[ShapeManager] createShape: Failed to sync to Firestore', error);
@@ -105,7 +90,7 @@ export const useShapeManager = (currentUser, sessionId) => {
       
       throw error;
     }
-  }, [currentUser, sessionId, isDevMode]);
+  }, [currentUser, sessionId]);
   
   /**
    * Create multiple shapes at once (batch operation)
@@ -114,7 +99,6 @@ export const useShapeManager = (currentUser, sessionId) => {
    */
   const createShapeBatch = useCallback(async (shapesData) => {
     if (!currentUser) {
-      if (isDevMode) console.warn('[ShapeManager] createShapeBatch: No user authenticated');
       return [];
     }
     
@@ -133,21 +117,12 @@ export const useShapeManager = (currentUser, sessionId) => {
       ...shapeData,
     }));
     
-    if (isDevMode) {
-      console.log('[ShapeManager] createShapeBatch: Creating shapes', newShapes.length);
-    }
-    
     // Optimistic update - add all to local state immediately
     setShapes(prev => [...prev, ...newShapes]);
     
     // Sync to Firestore
     try {
       await addShapesBatchInFirestore(newShapes);
-      
-      if (isDevMode) {
-        console.log('[ShapeManager] createShapeBatch: Successfully synced to Firestore', newShapes.length);
-      }
-      
       return newShapes;
     } catch (error) {
       console.error('[ShapeManager] createShapeBatch: Failed to sync to Firestore', error);
@@ -158,7 +133,7 @@ export const useShapeManager = (currentUser, sessionId) => {
       
       throw error;
     }
-  }, [currentUser, sessionId, isDevMode]);
+  }, [currentUser, sessionId]);
   
   /**
    * Update a single shape
@@ -173,18 +148,11 @@ export const useShapeManager = (currentUser, sessionId) => {
       const validated = validateProperty(key, value);
       if (validated !== null) {
         validatedUpdates[key] = validated;
-      } else {
-        if (isDevMode) {
-          console.warn('[ShapeManager] updateShape: Invalid property', key, value);
-        }
       }
     }
     
     // If no valid updates, return early
     if (Object.keys(validatedUpdates).length === 0) {
-      if (isDevMode) {
-        console.warn('[ShapeManager] updateShape: No valid updates to apply');
-      }
       return;
     }
     
@@ -196,11 +164,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     // Sync to Firestore
     try {
       await updateShapeInFirestore(shapeId, validatedUpdates, sessionId);
-      
-      if (isDevMode) {
-        console.log('[ShapeManager] updateShape: Successfully synced to Firestore', shapeId);
-      }
-      
     } catch (error) {
       console.error('[ShapeManager] updateShape: Failed to sync to Firestore', error);
       
@@ -209,7 +172,7 @@ export const useShapeManager = (currentUser, sessionId) => {
       
       throw error;
     }
-  }, [sessionId, isDevMode]);
+  }, [sessionId]);
   
   /**
    * Update multiple shapes at once (batch operation)
@@ -217,10 +180,6 @@ export const useShapeManager = (currentUser, sessionId) => {
    * @returns {Promise<void>}
    */
   const updateShapeBatch = useCallback(async (updatesMap) => {
-    if (isDevMode) {
-      console.log('[ShapeManager] updateShapeBatch: Updating shapes', Object.keys(updatesMap).length);
-    }
-    
     // Validate all updates
     const validatedUpdatesMap = {};
     for (const [shapeId, updates] of Object.entries(updatesMap)) {
@@ -238,9 +197,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     
     // If no valid updates, return early
     if (Object.keys(validatedUpdatesMap).length === 0) {
-      if (isDevMode) {
-        console.warn('[ShapeManager] updateShapeBatch: No valid updates to apply');
-      }
       return;
     }
     
@@ -253,16 +209,11 @@ export const useShapeManager = (currentUser, sessionId) => {
     // Sync to Firestore
     try {
       await updateShapesBatchInFirestore(validatedUpdatesMap, sessionId);
-      
-      if (isDevMode) {
-        console.log('[ShapeManager] updateShapeBatch: Successfully synced to Firestore', Object.keys(validatedUpdatesMap).length);
-      }
-      
     } catch (error) {
       console.error('[ShapeManager] updateShapeBatch: Failed to sync to Firestore', error);
       throw error;
     }
-  }, [sessionId, isDevMode]);
+  }, [sessionId]);
   
   /**
    * Delete a single shape
@@ -270,32 +221,20 @@ export const useShapeManager = (currentUser, sessionId) => {
    * @returns {Promise<void>}
    */
   const deleteShape = useCallback(async (shapeId) => {
-    const startTime = Date.now();
-    console.log(`[ShapeManager] ⏱️ DELETE START - Shape ${shapeId} at ${startTime}`);
-    
     // Store deleted shape for potential rollback
     const deletedShape = shapes.find(s => s.id === shapeId);
     
     // Optimistic update - remove from local state immediately
-    console.log(`[ShapeManager] ⚡ Optimistic delete - Removing shape ${shapeId} from local state`);
-    setShapes(prev => {
-      const filtered = prev.filter(s => s.id !== shapeId);
-      console.log(`[ShapeManager] ⚡ Local state updated - Shapes count: ${prev.length} → ${filtered.length}`);
-      return filtered;
-    });
+    setShapes(prev => prev.filter(s => s.id !== shapeId));
     
     // Also remove from selection if selected
     setSelectedShapeIds(prev => prev.filter(id => id !== shapeId));
     
     // Sync to Firestore
     try {
-      console.log(`[ShapeManager] 🔥 Calling Firestore delete for ${shapeId}...`);
       await deleteShapeInFirestore(shapeId);
-      const firestoreTime = Date.now() - startTime;
-      console.log(`[ShapeManager] ✅ Firestore delete SUCCESS in ${firestoreTime}ms`);
-      
     } catch (error) {
-      console.error('[ShapeManager] ❌ Firestore delete FAILED:', error);
+      console.error('[ShapeManager] deleteShape: Failed to sync to Firestore', error);
       
       // Rollback optimistic update
       if (deletedShape) {
@@ -304,7 +243,7 @@ export const useShapeManager = (currentUser, sessionId) => {
       
       throw error;
     }
-  }, [shapes, isDevMode]);
+  }, [shapes]);
   
   /**
    * Delete multiple shapes in a batch operation
@@ -316,10 +255,6 @@ export const useShapeManager = (currentUser, sessionId) => {
   const deleteShapeBatch = useCallback(async (shapeIds) => {
     if (!shapeIds || shapeIds.length === 0) return;
     
-    if (isDevMode) {
-      console.log('[ShapeManager] deleteShapeBatch: Deleting shapes', shapeIds);
-    }
-    
     // Optimistic update - remove shapes immediately
     setShapes(prev => prev.filter(shape => !shapeIds.includes(shape.id)));
     
@@ -329,26 +264,18 @@ export const useShapeManager = (currentUser, sessionId) => {
     // Sync to Firestore
     try {
       await deleteShapesBatchInFirestore(shapeIds);
-      
-      if (isDevMode) {
-        console.log('[ShapeManager] deleteShapeBatch: Successfully deleted from Firestore');
-      }
     } catch (error) {
-      console.error('[ShapeManager] Error deleting shapes batch:', error);
+      console.error('[ShapeManager] deleteShapeBatch: Failed to sync to Firestore', error);
       // Note: We don't revert optimistic update here
       // Firestore listener will sync the correct state
     }
-  }, [isDevMode]);
+  }, []);
   
   /**
    * Delete all shapes in the canvas
    * @returns {Promise<void>}
    */
   const deleteAllShapes = useCallback(async () => {
-    if (isDevMode) {
-      console.log('[ShapeManager] deleteAllShapes: Deleting all shapes', shapes.length);
-    }
-    
     // Store all shapes for potential rollback
     const allShapes = [...shapes];
     
@@ -359,11 +286,6 @@ export const useShapeManager = (currentUser, sessionId) => {
     // Sync to Firestore
     try {
       await deleteAllShapesInFirestore();
-      
-      if (isDevMode) {
-        console.log('[ShapeManager] deleteAllShapes: Successfully synced to Firestore');
-      }
-      
     } catch (error) {
       console.error('[ShapeManager] deleteAllShapes: Failed to sync to Firestore', error);
       
@@ -372,7 +294,7 @@ export const useShapeManager = (currentUser, sessionId) => {
       
       throw error;
     }
-  }, [shapes, isDevMode]);
+  }, [shapes]);
   
   // ==================== QUERY OPERATIONS ====================
   
@@ -411,10 +333,6 @@ export const useShapeManager = (currentUser, sessionId) => {
    * @param {boolean} additive - If true, add to current selection. If false, replace selection
    */
   const selectShapes = useCallback((shapeIds, additive = false) => {
-    if (isDevMode) {
-      console.log('[ShapeManager] selectShapes:', shapeIds, 'additive:', additive);
-    }
-    
     if (additive) {
       // Add to selection (merge and deduplicate)
       setSelectedShapeIds(prev => [...new Set([...prev, ...shapeIds])]);
@@ -422,18 +340,14 @@ export const useShapeManager = (currentUser, sessionId) => {
       // Replace selection
       setSelectedShapeIds(shapeIds);
     }
-  }, [isDevMode]);
+  }, []);
   
   /**
    * Clear selection (deselect all shapes)
    */
   const clearSelection = useCallback(() => {
-    if (isDevMode) {
-      console.log('[ShapeManager] clearSelection');
-    }
-    
     setSelectedShapeIds([]);
-  }, [isDevMode]);
+  }, []);
   
   // ==================== FIRESTORE SYNCHRONIZATION ====================
   
@@ -447,12 +361,8 @@ export const useShapeManager = (currentUser, sessionId) => {
    * @param {Array<Object>} firestoreShapes - Shapes from Firestore
    */
   const syncFromFirestore = useCallback((firestoreShapes) => {
-    console.log(`[ShapeManager] 🔄 SYNC FROM FIRESTORE - Received ${firestoreShapes.length} shapes`);
-    
     setShapes(prev => {
       const result = [];
-      let keptLocal = 0;
-      let acceptedFirestore = 0;
       
       // For each shape from Firestore
       firestoreShapes.forEach(firestoreShape => {
@@ -463,25 +373,19 @@ export const useShapeManager = (currentUser, sessionId) => {
           if (localShape) {
             // Use my local version (already updated optimistically)
             result.push(localShape);
-            keptLocal++;
           } else {
             // No local version, accept from Firestore (creation confirmation)
             result.push(firestoreShape);
-            acceptedFirestore++;
           }
         } else {
           // Shape modified by ANOTHER user, always accept from Firestore
           result.push(firestoreShape);
-          acceptedFirestore++;
         }
       });
       
-      console.log(`[ShapeManager] 🔄 SYNC RESULT - Kept local: ${keptLocal}, Accepted Firestore: ${acceptedFirestore}, Total: ${result.length}`);
-      console.log(`[ShapeManager] 🔄 Previous count: ${prev.length}, New count: ${result.length}`);
-      
       return result;
     });
-  }, [sessionId, isDevMode]);
+  }, [sessionId]);
   
   // ==================== PUBLIC API ====================
   
