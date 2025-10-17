@@ -2,6 +2,7 @@ import React from 'react';
 import UserPresence from './UserPresence';
 import ConnectionStatus from './ConnectionStatus';
 import { CurrentUserAvatar } from '../shared/Avatar';
+import { APP_VERSION } from '../../config';
 
 const CanvasHeader = ({ 
   // Toolbar props
@@ -38,6 +39,12 @@ const CanvasHeader = ({
               >
                 Add 500
               </button>
+              
+              <div className="flex items-center px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg">
+                <span className="text-xs font-mono text-gray-300">
+                  v{APP_VERSION}
+                </span>
+              </div>
             </div>
           )}
         </div>
