@@ -32,11 +32,13 @@ def create_canvas_agent(memory: Optional[ConversationBufferWindowMemory] = None)
     if not api_key:
         raise ValueError("OPENAI_API_KEY not found in environment variables")
     
-    # Initialize ChatOpenAI with GPT-4o
+    # Initialize ChatOpenAI with GPT-4o-mini for faster responses
     llm = ChatOpenAI(
-        model="gpt-4o",
-        temperature=0.1,  # Low temperature for more consistent results
+        model="gpt-4o-mini",  # Faster and cheaper than gpt-4o
+        temperature=0,  # Zero temperature for fastest, most deterministic results
         api_key=api_key,
+        max_tokens=500,  # Limit response length for faster processing
+        timeout=30,  # 30 second timeout to prevent hanging
     )
     
     # Create prompt template with optional chat history
@@ -62,13 +64,15 @@ def create_canvas_agent(memory: Optional[ConversationBufferWindowMemory] = None)
         prompt=prompt,
     )
     
-    # Create agent executor
+    # Create agent executor with optimized settings for speed
     agent_executor = AgentExecutor(
         agent=agent,
         tools=ALL_TOOLS,
         verbose=True,  # Enable logging for debugging
         handle_parsing_errors=True,
-        max_iterations=10,  # Allow multiple tool calls for complex commands
+        max_iterations=5,  # Reduced from 10 - most commands need 1-2 iterations
+        max_execution_time=30,  # 30 second timeout for entire execution
+        early_stopping_method="generate",  # Stop as soon as we have a valid response
         return_intermediate_steps=True,  # CRITICAL: Return tool outputs!
         memory=memory,  # Add memory to agent
     )

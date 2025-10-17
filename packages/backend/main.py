@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app
 app = FastAPI(
     title="CollabCanvas AI API",
-    description="AI-powered canvas manipulation API using LangChain and OpenAI GPT-4o",
+    description="AI-powered canvas manipulation API using LangChain and OpenAI GPT-4o-mini",
     version="1.0.0",
 )
 
@@ -97,7 +97,7 @@ async def root():
     return {
         "name": "CollabCanvas AI API",
         "version": "1.0.0",
-        "description": "AI-powered canvas manipulation using LangChain and OpenAI GPT-4o",
+        "description": "AI-powered canvas manipulation using LangChain and OpenAI GPT-4o-mini",
         "endpoints": {
             "health": "/health",
             "ai_command": "/api/ai/command",
@@ -119,7 +119,7 @@ async def health_check():
         "status": "healthy",
         "environment": os.getenv("ENVIRONMENT", "development"),
         "openai_configured": bool(openai_key and openai_key != "your-openai-api-key-here"),
-        "model": "gpt-4o",
+        "model": "gpt-4o-mini",
     }
 
 
