@@ -8,10 +8,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAIAgent } from '../../hooks/useAIAgent';
 
+// localStorage key for AI Panel state
+const AI_PANEL_STORAGE_KEY = 'collabcanvas-ai-panel';
+
+// Load saved AI Panel state from localStorage
+const loadAIPanelState = () => {
+  try {
+    const saved = localStorage.getItem(AI_PANEL_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        isExpanded: parsed.isExpanded !== undefined ? parsed.isExpanded : true,
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to load AI Panel state from localStorage:', error);
+  }
+  return { isExpanded: true };
+};
+
+// Save AI Panel state to localStorage
+const saveAIPanelState = (isExpanded) => {
+  try {
+    localStorage.setItem(AI_PANEL_STORAGE_KEY, JSON.stringify({ isExpanded }));
+  } catch (error) {
+    console.warn('Failed to save AI Panel state to localStorage:', error);
+  }
+};
+
 const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCreated }) => {
   const [command, setCommand] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
-  const [isExpanded, setIsExpanded] = useState(true);
+  
+  // Load initial state from localStorage
+  const initialState = loadAIPanelState();
+  const [isExpanded, setIsExpanded] = useState(initialState.isExpanded);
+  
   const inputRef = useRef(null);
   const historyEndRef = useRef(null);
   
@@ -34,6 +66,11 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
       historyEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [conversationHistory]);
+
+  // Save AI Panel state to localStorage whenever isExpanded changes
+  useEffect(() => {
+    saveAIPanelState(isExpanded);
+  }, [isExpanded]);
 
   // Handle command execution
   const handleExecute = async () => {
@@ -90,7 +127,7 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
 
   return (
     <div 
-      className="fixed left-0 bg-gray-800 border-r border-gray-700 shadow-2xl transition-all duration-300 ease-in-out overflow-hidden"
+      className="fixed left-0 bg-gray-800 border-r border-gray-700 shadow-2xl transition-all duration-300 ease-in-out flex flex-col"
       style={{
         top: '64px', // Start below header
         width: '360px',
@@ -99,7 +136,7 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800 flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
           <h3 className="font-semibold text-white">AI Canvas Agent</h3>
@@ -123,7 +160,7 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
 
       {/* Content */}
       {isExpanded && (
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 64px - 52px)' }}>
+        <div className="flex flex-col flex-1 min-h-0">
           {/* Conversation History */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {conversationHistory.length === 0 ? (
@@ -157,7 +194,7 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
           </div>
 
           {/* Input Area (Fixed at bottom) */}
-          <div className="border-t border-gray-700 p-4 bg-gray-800">
+          <div className="border-t border-gray-700 p-4 bg-gray-800 flex-shrink-0">
             <div className="space-y-2">
               <div className="relative">
                 <textarea

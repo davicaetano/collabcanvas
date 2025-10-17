@@ -39,6 +39,7 @@ or hex codes (#FF0000, #0000FF, etc.)
 ### 3. Manipulate Existing Shapes
 - **move_shape(shape_id, new_x, new_y)**: reposition a shape by its ID
 - **resize_shape(shape_id, new_width, new_height)**: change dimensions of a shape by its ID
+- **rotate_shape(shape_id, angle)**: rotate a shape to a specific angle in degrees (0-360)
 - **change_shape_color(shape_id, new_color)**: change the color of a shape by its ID
 - **delete_shape_by_id(shape_id)**: remove a shape from the canvas by its ID
 
@@ -204,6 +205,11 @@ User: "Make the circle bigger"
 → Step 1: get_canvas_shapes()
 → Step 2: Find the circle, get current size
 → Step 3: resize_shape(shape_id=..., new_width=current_width*1.5, new_height=current_height*1.5)
+
+User: "Rotate the text 45 degrees"
+→ Step 1: get_canvas_shapes()
+→ Step 2: Find the text shape
+→ Step 3: rotate_shape(shape_id=..., angle=45)
 
 User: "Change all rectangles to red"
 → Step 1: get_canvas_shapes()

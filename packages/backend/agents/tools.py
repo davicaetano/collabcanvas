@@ -405,6 +405,67 @@ def resize_shape(
 
 
 @tool
+def rotate_shape(
+    shape_id: str,
+    angle: float,
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Rotate a shape by setting its rotation angle.
+    
+    **IMPORTANT**: First call get_canvas_shapes() to find the shape ID!
+    
+    Args:
+        shape_id: The unique ID of the shape (get this from get_canvas_shapes)
+        angle: Rotation angle in degrees (0-360). Positive = clockwise
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+    
+    Example:
+        # User: "rotate the text 45 degrees"
+        # Step 1: Get shapes
+        shapes = get_canvas_shapes()
+        # Step 2: Find text shape (id="abc-123")
+        # Step 3: Rotate it
+        result = rotate_shape(shape_id="abc-123", angle=45)
+    """
+    try:
+        # Normalize angle to 0-360 range
+        normalized_angle = float(angle) % 360
+        
+        # Update shape in Firestore
+        success = update_shape_in_firestore(
+            shape_id=shape_id,
+            updates={"rotation": normalized_angle},
+            canvas_id=canvas_id,
+            session_id="ai-agent"
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Rotated shape {shape_id} to {normalized_angle}°",
+                "shape_id": shape_id,
+                "angle": normalized_angle
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Failed to rotate shape {shape_id}. It may not exist on the canvas.",
+                "shape_id": shape_id
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error rotating shape: {str(e)}",
+            "shape_id": shape_id
+        }
+
+
+@tool
 def change_shape_color(
     shape_id: str,
     new_color: str,
@@ -758,6 +819,7 @@ ALL_TOOLS = [
     # Manipulation operations (modify existing shapes)
     move_shape,
     resize_shape,
+    rotate_shape,
     change_shape_color,
     delete_shape_by_id,
 ]
