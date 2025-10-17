@@ -246,3 +246,88 @@ export const updateCanvasBackgroundColor = async (backgroundColor, userId, sessi
     updatedAt: serverTimestamp(),
   }, { merge: true });
 };
+
+// ==================== USER PREFERENCES ====================
+
+/**
+ * Get user's favorite colors
+ * @param {string} userId - User ID
+ * @returns {Promise<string[]>} Array of hex color codes
+ */
+export const getUserFavoriteColors = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      return data.favColors || [];
+    }
+    return [];
+  } catch (error) {
+    return [];
+  }
+};
+
+/**
+ * Subscribe to user's favorite colors in real-time
+ * @param {string} userId - User ID
+ * @param {Function} callback - Callback function that receives the colors array
+ * @returns {Function} Unsubscribe function
+ */
+export const subscribeToUserFavoriteColors = (userId, callback) => {
+  const userRef = doc(db, 'users', userId);
+  
+  return onSnapshot(
+    userRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        callback(data.favColors || []);
+      } else {
+        callback([]);
+      }
+    },
+    (error) => {
+      callback([]);
+    }
+  );
+};
+
+/**
+ * Add a color to user's favorite colors (max 10, most recent first)
+ * @param {string} userId - User ID
+ * @param {string} color - Hex color code (e.g., "#FF5733")
+ */
+export const addFavoriteColor = async (userId, color) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    let favColors = [];
+    
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      favColors = data.favColors || [];
+    }
+    
+    // Remove color if it already exists (to move it to front)
+    favColors = favColors.filter(c => c.toLowerCase() !== color.toLowerCase());
+    
+    // Add new color to the beginning
+    favColors.unshift(color);
+    
+    // Keep only last 10 colors
+    if (favColors.length > 10) {
+      favColors = favColors.slice(0, 10);
+    }
+    
+    // Save to Firestore
+    await setDoc(userRef, {
+      favColors,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (error) {
+    // Silently fail
+  }
+};

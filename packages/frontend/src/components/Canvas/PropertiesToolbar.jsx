@@ -17,7 +17,7 @@ import {
   ClipboardIcon 
 } from '@heroicons/react/24/outline';
 
-const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, canvasState }) => {
+const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, canvasState, currentUser }) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
   
   // Get the actual shape objects from the selected IDs
@@ -217,6 +217,7 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
                     label="Canvas Background"
                     value={canvasState?.canvasBackgroundColor || '#ffffff'}
                     onChange={(value) => canvasState?.updateBackgroundColor(value)}
+                    userId={currentUser?.uid}
                   />
                 </div>
               </div>
@@ -392,6 +393,7 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
                       label={selectedShape.type === 'text' ? 'Text Color' : 'Fill Color'}
                       value={selectedShape.fill}
                       onChange={(value) => handlePropertyUpdate(selectedShape.id, 'fill', value)}
+                      userId={currentUser?.uid}
                     />
                     {selectedShape.type !== 'text' && (
                       <>
@@ -399,6 +401,7 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
                           label="Stroke Color"
                           value={selectedShape.stroke}
                           onChange={(value) => handlePropertyUpdate(selectedShape.id, 'stroke', value)}
+                          userId={currentUser?.uid}
                         />
                         <NumericInput
                           label="Stroke Width"

@@ -176,6 +176,7 @@ const Canvas = () => {
           shapes={shapeManager.shapes}
           shapeManager={shapeManager}
           canvasState={canvasState}
+          currentUser={currentUser}
         />
       </div>
     </div>
