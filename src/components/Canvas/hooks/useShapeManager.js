@@ -54,7 +54,7 @@ export const useShapeManager = (currentUser, sessionId) => {
   
   /**
    * Create a single shape
-   * @param {Object} shapeData - Shape properties (x, y, width, height, fill, stroke, etc.)
+   * @param {Object} shapeData - Shape properties (x, y, width, height, fill, stroke, type, etc.)
    * @returns {Promise<Object>} Created shape
    */
   const createShape = useCallback(async (shapeData) => {
@@ -65,6 +65,7 @@ export const useShapeManager = (currentUser, sessionId) => {
     // Generate unique ID
     const newShape = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: shapeData.type || 'rectangle', // Default to rectangle for backward compatibility
       x: shapeData.x || 0,
       y: shapeData.y || 0,
       width: shapeData.width || DEFAULT_SHAPE_WIDTH,
@@ -106,6 +107,7 @@ export const useShapeManager = (currentUser, sessionId) => {
     const baseTimestamp = Date.now();
     const newShapes = shapesData.map((shapeData, index) => ({
       id: `${baseTimestamp}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+      type: shapeData.type || 'rectangle', // Default to rectangle for backward compatibility
       x: shapeData.x || 0,
       y: shapeData.y || 0,
       width: shapeData.width || DEFAULT_SHAPE_WIDTH,

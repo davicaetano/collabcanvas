@@ -17,11 +17,12 @@ import {
  * @returns {Object} - Shape operation functions
  */
 export const useShapeOperations = (currentUser, selectedColor, shapeManager) => {
-  // Create shape at specific position
-  const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
+  // Create shape at specific position with specific type
+  const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT, type = 'rectangle') => {
     if (!currentUser || !shapeManager) return null;
     
     const shapeData = {
+      type: type, // 'rectangle' or 'circle'
       x: x,
       y: y,
       width: width,

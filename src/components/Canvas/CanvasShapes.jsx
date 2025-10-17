@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Rect } from 'react-konva';
+import { Rect, Ellipse } from 'react-konva';
 import { CURSOR_UPDATE_THROTTLE } from '../../utils/canvas';
 import SelectionBox from './SelectionBox';
 
@@ -216,19 +216,30 @@ const CanvasShapes = React.memo(({
         const centerX = displayShapeX + displayWidth / 2;
         const centerY = displayShapeY + displayHeight / 2;
         
+        // Determine which component to render based on shape type
+        const ShapeComponent = shape.type === 'circle' ? Ellipse : Rect;
+        
+        // For Ellipse, we need to use radiusX and radiusY instead of width and height
+        const shapeProps = shape.type === 'circle' ? {
+          radiusX: displayWidth / 2,
+          radiusY: displayHeight / 2,
+        } : {
+          width: displayWidth,
+          height: displayHeight,
+        };
+        
         return (
-          <Rect
+          <ShapeComponent
             key={shape.id}
             x={centerX}
             y={centerY}
-            width={displayWidth}
-            height={displayHeight}
+            {...shapeProps}
             fill={shape.fill}
             stroke={shape.stroke}
             strokeWidth={shape.strokeWidth}
             rotation={shape.rotation || 0}
-            offsetX={displayWidth / 2}
-            offsetY={displayHeight / 2}
+            offsetX={shape.type === 'circle' ? 0 : displayWidth / 2}
+            offsetY={shape.type === 'circle' ? 0 : displayHeight / 2}
             draggable={isSelectMode}
           onDragStart={(e) => {
             if (!isSelectMode) {

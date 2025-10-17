@@ -1,5 +1,5 @@
 import React from 'react';
-import { Rect } from 'react-konva';
+import { Rect, Ellipse } from 'react-konva';
 
 const CanvasPreview = React.memo(({ addMode, previewRect, selectedColor }) => {
   if (addMode === 'none' || !previewRect) return null;
@@ -12,12 +12,33 @@ const CanvasPreview = React.memo(({ addMode, previewRect, selectedColor }) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  return (
+  // Determine which component to render based on addMode
+  const isCircle = addMode === 'circle';
+  const width = Math.abs(previewRect.width);
+  const height = Math.abs(previewRect.height);
+  
+  // Calculate center position for ellipse
+  const centerX = previewRect.x + width / 2;
+  const centerY = previewRect.y + height / 2;
+
+  return isCircle ? (
+    <Ellipse
+      x={centerX}
+      y={centerY}
+      radiusX={width / 2}
+      radiusY={height / 2}
+      fill={hexToRgba(selectedColor)}
+      stroke={selectedColor}
+      strokeWidth={2}
+      dash={[5, 5]}
+      listening={false}
+    />
+  ) : (
     <Rect
       x={previewRect.x}
       y={previewRect.y}
-      width={Math.abs(previewRect.width)}
-      height={Math.abs(previewRect.height)}
+      width={width}
+      height={height}
       fill={hexToRgba(selectedColor)}
       stroke={selectedColor}
       strokeWidth={2}

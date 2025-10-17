@@ -282,8 +282,28 @@ const SelectionBox = ({
       originalDimensions.current = null;
       currentDimensions.current = null;
       
-      // Reset cursor to mode-appropriate cursor
-      container.style.cursor = getDefaultCursor();
+      // Check if mouse is still over a handle and restore its cursor
+      const screenPos = stage.getPointerPosition();
+      if (screenPos) {
+        const layer = stage.getLayer();
+        const shape = layer.getIntersection(screenPos);
+        
+        if (shape && shape.name()?.startsWith('handle-')) {
+          // Mouse is still over a handle, use that handle's cursor
+          const handleIndex = parseInt(shape.name().split('-')[1]);
+          const hoveredHandle = handles[handleIndex];
+          if (hoveredHandle) {
+            container.style.cursor = hoveredHandle.cursor;
+          } else {
+            container.style.cursor = getDefaultCursor();
+          }
+        } else {
+          // Mouse is not over any handle, reset to default
+          container.style.cursor = getDefaultCursor();
+        }
+      } else {
+        container.style.cursor = getDefaultCursor();
+      }
       
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);

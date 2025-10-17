@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 /**
- * Hook to handle rectangle drawing in Add Mode
+ * Hook to handle shape drawing in Add Mode (rectangle, circle, etc.)
  * Manages the drawing state and preview while user drags to create shapes
  * 
  * @param {Object} canvasState - Canvas state object from useCanvasState
@@ -70,20 +70,21 @@ export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
     let createdShape = null;
     
     if (dragDistance < 10) {
-      // Small drag or click - create default size rectangle
+      // Small drag or click - create default size shape
       try {
-        createdShape = await createShapeAt(drawStartPos.x, drawStartPos.y);
+        createdShape = await createShapeAt(drawStartPos.x, drawStartPos.y, undefined, undefined, addMode);
       } catch (error) {
         console.error('Failed to create shape (offline?):', error);
       }
     } else if (previewRect.width > 5 && previewRect.height > 5) {
-      // Actual drag - create rectangle with drawn dimensions
+      // Actual drag - create shape with drawn dimensions
       try {
         createdShape = await createShapeAt(
           previewRect.x,
           previewRect.y,
           previewRect.width,
-          previewRect.height
+          previewRect.height,
+          addMode
         );
       } catch (error) {
         console.error('Failed to create shape (offline?):', error);
