@@ -35,11 +35,15 @@ export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) =>
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Don't process shortcuts if modifier keys are pressed (Command/Ctrl/Alt)
+      // This allows browser shortcuts like Command+R (refresh) to work
+      const hasModifier = e.metaKey || e.ctrlKey || e.altKey;
+      
       // Don't process tool shortcuts if user is typing in an input field
       const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
       
-      // Tool shortcuts (V, H, R, C, T)
-      if (!isTyping && onToolChange) {
+      // Tool shortcuts (V, H, R, C, T) - only without modifiers
+      if (!isTyping && !hasModifier && onToolChange) {
         const key = e.key.toLowerCase();
         
         if (key === 'v') {
@@ -49,21 +53,37 @@ export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) =>
         }
         if (key === 'h') {
           e.preventDefault();
+          // Deselect shapes when entering pan mode
+          if (shapeManager.selectedShapeIds && shapeManager.selectedShapeIds.length > 0) {
+            shapeManager.clearSelection();
+          }
           onToolChange('pan');
           return;
         }
         if (key === 'r') {
           e.preventDefault();
+          // Deselect shapes when entering draw mode
+          if (shapeManager.selectedShapeIds && shapeManager.selectedShapeIds.length > 0) {
+            shapeManager.clearSelection();
+          }
           onToolChange('rectangle');
           return;
         }
         if (key === 'c') {
           e.preventDefault();
+          // Deselect shapes when entering draw mode
+          if (shapeManager.selectedShapeIds && shapeManager.selectedShapeIds.length > 0) {
+            shapeManager.clearSelection();
+          }
           onToolChange('circle');
           return;
         }
         if (key === 't') {
           e.preventDefault();
+          // Deselect shapes when entering draw mode
+          if (shapeManager.selectedShapeIds && shapeManager.selectedShapeIds.length > 0) {
+            shapeManager.clearSelection();
+          }
           onToolChange('text');
           return;
         }

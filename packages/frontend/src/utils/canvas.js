@@ -24,7 +24,7 @@ export const MIN_DRAG_DISTANCE = 10;
 export const MIN_SHAPE_SIZE = 5;
 
 // Text constants
-export const DEFAULT_TEXT_CONTENT = 'Double-click to edit';
+export const DEFAULT_TEXT_CONTENT = 'Hello World';
 export const DEFAULT_FONT_SIZE = 24;
 export const DEFAULT_FONT_FAMILY = 'Arial, sans-serif';
 export const DEFAULT_FONT_STYLE = 'normal';
