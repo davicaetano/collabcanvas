@@ -16,7 +16,9 @@ from services.firebase_service import (
     create_shape as create_shape_in_firestore,
     create_shapes_batch as create_shapes_batch_in_firestore,
     update_shape as update_shape_in_firestore,
+    update_shapes_batch as update_shapes_batch_in_firestore,
     delete_shape as delete_shape_from_firestore,
+    delete_shapes_batch as delete_shapes_batch_from_firestore,
     shapes_to_simple_format
 )
 
@@ -805,6 +807,235 @@ def create_form(
         }
 
 
+# ==================== BATCH OPERATIONS ====================
+
+@tool
+def create_shapes_batch(
+    shapes: List[Dict[str, Any]],
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Create multiple shapes at once in a single batch operation.
+    
+    This is much faster than creating shapes one by one when you need to create
+    multiple shapes (like a grid, form, or diagram).
+    
+    **Use this instead of multiple create_shape() calls when:**
+    - Creating 3+ shapes at once
+    - Creating grids, forms, or layouts
+    - Creating related shapes together
+    
+    Args:
+        shapes: List of shape dictionaries. Each shape must include:
+                - id: unique identifier (use generate_shape_id() or str(uuid.uuid4()))
+                - type: "rectangle" or "circle"
+                - x, y: position coordinates
+                - width, height: dimensions in pixels
+                - fill: color (hex format like "#FF0000" or color name like "red")
+                - rotation: rotation angle in degrees (optional, default 0)
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+    
+    Example:
+        shapes = [
+            {"id": "abc-123", "type": "rectangle", "x": 100, "y": 100, "width": 50, "height": 50, "fill": "#FF0000", "rotation": 0},
+            {"id": "def-456", "type": "circle", "x": 200, "y": 100, "width": 50, "height": 50, "fill": "#0000FF", "rotation": 0},
+            {"id": "ghi-789", "type": "rectangle", "x": 300, "y": 100, "width": 50, "height": 50, "fill": "#00FF00", "rotation": 0},
+        ]
+        result = create_shapes_batch(shapes=shapes)
+    """
+    try:
+        # Validate shapes
+        for i, shape in enumerate(shapes):
+            if 'id' not in shape:
+                shape['id'] = generate_shape_id()
+            if 'type' not in shape:
+                return {
+                    "success": False,
+                    "message": f"Shape {i} is missing required field 'type'"
+                }
+            # Normalize colors
+            if 'fill' in shape:
+                shape['fill'] = normalize_color(shape['fill'])
+        
+        # Create all shapes in Firebase batch
+        success = create_shapes_batch_in_firestore(
+            shapes=shapes,
+            canvas_id=canvas_id,
+            session_id="ai-agent"
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Created {len(shapes)} shapes in batch",
+                "shape_count": len(shapes)
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to create shapes batch"
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error creating shapes batch: {str(e)}"
+        }
+
+
+@tool
+def update_shapes_batch(
+    updates: List[Dict[str, Any]],
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Update multiple shapes at once in a single batch operation.
+    
+    This is much faster than updating shapes one by one when you need to modify
+    multiple shapes (like moving all shapes in a group, changing colors of multiple items, etc.).
+    
+    **Use this instead of multiple move_shape(), resize_shape(), etc. when:**
+    - Updating 3+ shapes at once
+    - Moving all shapes in a direction
+    - Changing colors of multiple shapes
+    - Resizing multiple shapes together
+    
+    Args:
+        updates: List of update dictionaries. Each must include:
+                 - shape_id: ID of the shape to update
+                 - Any fields to update: x, y, width, height, fill, rotation, etc.
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+    
+    Example 1 - Move multiple shapes:
+        updates = [
+            {"shape_id": "abc-123", "x": 150, "y": 200},
+            {"shape_id": "def-456", "x": 250, "y": 200},
+            {"shape_id": "ghi-789", "x": 350, "y": 200},
+        ]
+        result = update_shapes_batch(updates=updates)
+    
+    Example 2 - Change colors of multiple shapes:
+        updates = [
+            {"shape_id": "abc-123", "fill": "#FF0000"},
+            {"shape_id": "def-456", "fill": "#FF0000"},
+        ]
+        result = update_shapes_batch(updates=updates)
+    
+    Example 3 - Mixed updates:
+        updates = [
+            {"shape_id": "abc-123", "x": 100, "fill": "#00FF00"},
+            {"shape_id": "def-456", "width": 200, "height": 150},
+        ]
+        result = update_shapes_batch(updates=updates)
+    """
+    try:
+        # Validate updates
+        for i, update in enumerate(updates):
+            if 'shape_id' not in update:
+                return {
+                    "success": False,
+                    "message": f"Update {i} is missing required field 'shape_id'"
+                }
+            # Normalize colors if present
+            if 'fill' in update:
+                update['fill'] = normalize_color(update['fill'])
+        
+        # Update all shapes in Firebase batch
+        success = update_shapes_batch_in_firestore(
+            updates=updates,
+            canvas_id=canvas_id,
+            session_id="ai-agent"
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Updated {len(updates)} shapes in batch",
+                "shape_count": len(updates)
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to update shapes batch"
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error updating shapes batch: {str(e)}"
+        }
+
+
+@tool
+def delete_shapes_batch(
+    shape_ids: List[str],
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Delete multiple shapes at once in a single batch operation.
+    
+    This is much faster than deleting shapes one by one when you need to remove
+    multiple shapes (like clearing a section, removing all of a certain type, etc.).
+    
+    **Use this instead of multiple delete_shape_by_id() calls when:**
+    - Deleting 3+ shapes at once
+    - Clearing a group of shapes
+    - Removing all shapes of a certain type
+    - Cleaning up multiple elements
+    
+    Args:
+        shape_ids: List of shape IDs to delete
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+    
+    Example 1 - Delete specific shapes:
+        result = delete_shapes_batch(shape_ids=["abc-123", "def-456", "ghi-789"])
+    
+    Example 2 - Delete all rectangles (after getting them with get_canvas_shapes):
+        shapes = get_canvas_shapes()
+        rectangle_ids = [s['id'] for s in shapes if s['type'] == 'rectangle']
+        result = delete_shapes_batch(shape_ids=rectangle_ids)
+    """
+    try:
+        if not shape_ids or len(shape_ids) == 0:
+            return {
+                "success": False,
+                "message": "No shape IDs provided"
+            }
+        
+        # Delete all shapes in Firebase batch
+        success = delete_shapes_batch_from_firestore(
+            shape_ids=shape_ids,
+            canvas_id=canvas_id
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Deleted {len(shape_ids)} shapes in batch",
+                "shape_count": len(shape_ids)
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to delete shapes batch"
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error deleting shapes batch: {str(e)}"
+        }
+
+
 # Export all tools
 ALL_TOOLS = [
     # Read operations (agent should use these first to understand canvas state)
@@ -822,5 +1053,10 @@ ALL_TOOLS = [
     rotate_shape,
     change_shape_color,
     delete_shape_by_id,
+    
+    # Batch operations (for multiple shapes at once - faster performance)
+    create_shapes_batch,
+    update_shapes_batch,
+    delete_shapes_batch,
 ]
 

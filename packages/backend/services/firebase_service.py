@@ -330,6 +330,108 @@ def create_shapes_batch(
         return False
 
 
+def update_shapes_batch(
+    updates: List[Dict[str, Any]],
+    user_id: str = None,
+    session_id: str = "ai-agent",
+    canvas_id: str = "main-canvas"
+) -> bool:
+    """
+    Update multiple shapes in a batch operation
+    
+    Each update dict must include 'shape_id' to identify which shape to update,
+    plus any fields to update.
+    
+    Args:
+        updates: List of update dictionaries, each containing:
+                 - shape_id: ID of the shape to update
+                 - Additional fields to update (x, y, fill, etc.)
+        user_id: ID of user making the changes
+        session_id: Session ID (default: "ai-agent")
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        True if successful, False otherwise
+    
+    Example:
+        updates = [
+            {'shape_id': 'abc-123', 'x': 100, 'y': 200},
+            {'shape_id': 'def-456', 'fill': '#FF0000'},
+        ]
+    """
+    try:
+        db = get_firestore_client()
+        batch = db.batch()
+        
+        shapes_ref = db.collection('canvases').document(canvas_id).collection('shapes')
+        
+        for update_item in updates:
+            if 'shape_id' not in update_item:
+                raise ValueError("Each update must have a 'shape_id' field")
+            
+            shape_id = update_item['shape_id']
+            doc_ref = shapes_ref.document(shape_id)
+            
+            # Extract shape_id and prepare update data
+            update_fields = {k: v for k, v in update_item.items() if k != 'shape_id'}
+            
+            # Add metadata
+            update_data = {
+                **update_fields,
+                'updatedAt': firestore.SERVER_TIMESTAMP,
+                'sessionId': session_id,
+            }
+            
+            if user_id:
+                update_data['userId'] = user_id
+            
+            batch.update(doc_ref, update_data)
+        
+        batch.commit()
+        logger.info(f"Updated {len(updates)} shapes in batch on canvas '{canvas_id}'")
+        return True
+    
+    except Exception as e:
+        logger.error(f"Error updating shapes batch: {e}")
+        return False
+
+
+def delete_shapes_batch(
+    shape_ids: List[str],
+    canvas_id: str = "main-canvas"
+) -> bool:
+    """
+    Delete multiple shapes in a batch operation
+    
+    Args:
+        shape_ids: List of shape IDs to delete
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        True if successful, False otherwise
+    
+    Example:
+        delete_shapes_batch(['abc-123', 'def-456', 'ghi-789'])
+    """
+    try:
+        db = get_firestore_client()
+        batch = db.batch()
+        
+        shapes_ref = db.collection('canvases').document(canvas_id).collection('shapes')
+        
+        for shape_id in shape_ids:
+            doc_ref = shapes_ref.document(shape_id)
+            batch.delete(doc_ref)
+        
+        batch.commit()
+        logger.info(f"Deleted {len(shape_ids)} shapes in batch from canvas '{canvas_id}'")
+        return True
+    
+    except Exception as e:
+        logger.error(f"Error deleting shapes batch: {e}")
+        return False
+
+
 # ==================== HELPER FUNCTIONS ====================
 
 def shapes_to_simple_format(shapes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

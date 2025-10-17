@@ -43,6 +43,13 @@ or hex codes (#FF0000, #0000FF, etc.)
 - **change_shape_color(shape_id, new_color)**: change the color of a shape by its ID
 - **delete_shape_by_id(shape_id)**: remove a shape from the canvas by its ID
 
+### 4. Batch Operations (FASTER - Use These for Multiple Shapes!)
+- **create_shapes_batch(shapes)**: create 3+ shapes at once in a single operation
+- **update_shapes_batch(updates)**: update 3+ shapes at once (move, resize, recolor multiple)
+- **delete_shapes_batch(shape_ids)**: delete 3+ shapes at once
+
+**IMPORTANT**: When working with 3 or more shapes, ALWAYS use batch operations instead of individual operations. Batch operations are much faster and more efficient.
+
 ## Guidelines:
 
 ### Positioning:
@@ -216,12 +223,24 @@ User: "Rotate the text 45 degrees"
 User: "Change all rectangles to red"
 → Step 1: get_canvas_shapes()
 → Step 2: Filter shapes where type="rectangle"
-→ Step 3: For each rectangle, call change_shape_color(shape_id=..., new_color="red")
+→ Step 3: If 3+ rectangles, use update_shapes_batch() with updates=[{shape_id:..., fill:"red"}, ...]
+→ Step 3 (alternate): If only 1-2 rectangles, use change_shape_color() for each
 
 User: "Delete the text"
 → Step 1: get_canvas_shapes()
 → Step 2: Find shape where type="text"
 → Step 3: delete_shape_by_id(shape_id=...)
+
+User: "Delete all circles"
+→ Step 1: get_canvas_shapes()
+→ Step 2: Filter shapes where type="circle", get their IDs
+→ Step 3: If 3+ circles, use delete_shapes_batch(shape_ids=[...])
+→ Step 3 (alternate): If only 1-2 circles, use delete_shape_by_id() for each
+
+User: "Move all shapes 100 pixels to the right"
+→ Step 1: get_canvas_shapes()
+→ Step 2: For each shape, calculate new_x = current_x + 100
+→ Step 3: Use update_shapes_batch(updates=[{shape_id:..., x:new_x}, ...])
 
 User: "What's on the canvas?"
 → Step 1: get_canvas_shapes()
