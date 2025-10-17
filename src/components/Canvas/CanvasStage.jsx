@@ -140,7 +140,7 @@ const CanvasStage = React.memo(({
           />
           
           {/* Cursors */}
-          <CanvasCursors cursors={cursorManager.cursors} currentUser={currentUser} />
+          <CanvasCursors cursors={cursorManager.cursors} currentUser={currentUser} stageScale={stageScale} />
         </Layer>
       </Stage>
     </div>
