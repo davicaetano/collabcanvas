@@ -157,7 +157,7 @@ export const useShapeSelection = (canvasState, shapeManager) => {
         shapeManager.clearSelection();
       }
     }
-  }, [addMode, isDrawing, shapeManager]);
+  }, [isSelectMode, addMode, isDrawing, shapeManager]);
 
   return {
     handleSelectionMouseDown,

@@ -6,9 +6,10 @@ import { useCallback } from 'react';
  * 
  * @param {Object} canvasState - Canvas state object from useCanvasState
  * @param {Function} createShapeAt - Function to create shape (from useShapeOperations)
+ * @param {Object} shapeManager - Shape manager for auto-selecting created shapes
  * @returns {Object} - Drawing handlers and state
  */
-export const useDrawing = (canvasState, createShapeAt) => {
+export const useDrawing = (canvasState, createShapeAt, shapeManager) => {
   const {
     stageRef,
     stageX,
@@ -66,17 +67,19 @@ export const useDrawing = (canvasState, createShapeAt) => {
     setAddMode('none');
     setIsSelectMode(true);
     
+    let createdShape = null;
+    
     if (dragDistance < 10) {
       // Small drag or click - create default size rectangle
       try {
-        await createShapeAt(drawStartPos.x, drawStartPos.y);
+        createdShape = await createShapeAt(drawStartPos.x, drawStartPos.y);
       } catch (error) {
         console.error('Failed to create shape (offline?):', error);
       }
     } else if (previewRect.width > 5 && previewRect.height > 5) {
       // Actual drag - create rectangle with drawn dimensions
       try {
-        await createShapeAt(
+        createdShape = await createShapeAt(
           previewRect.x,
           previewRect.y,
           previewRect.width,
@@ -87,8 +90,13 @@ export const useDrawing = (canvasState, createShapeAt) => {
       }
     }
     
+    // Select the newly created shape
+    if (createdShape && shapeManager) {
+      shapeManager.selectShapes([createdShape.id]);
+    }
+    
     return true; // Handled
-  }, [addMode, isDrawing, drawStartPos, previewRect, createShapeAt, setAddMode, setIsSelectMode]);
+  }, [addMode, isDrawing, drawStartPos, previewRect, createShapeAt, setAddMode, setIsSelectMode, shapeManager]);
 
   // Reset drawing state (called after mouse up)
   const resetDrawingState = useCallback(() => {

@@ -38,7 +38,18 @@ const getRotatedCursor = (baseCursor, rotation) => {
   return cursorMap[baseCursor]?.[rotationIndex] || baseCursor;
 };
 
-const SelectionBox = ({ shape, onResize, onResizeEnd, stageScale = 1, stageX = 0, stageY = 0 }) => {
+const SelectionBox = ({ 
+  shape, 
+  onResize, 
+  onResizeEnd, 
+  stageScale = 1, 
+  stageX = 0, 
+  stageY = 0,
+  isSelectMode = false,
+  isPanMode = false,
+  isDraggingCanvas = false,
+  addMode = 'none'
+}) => {
   if (!shape) return null;
   
   const groupRef = useRef();
@@ -48,6 +59,20 @@ const SelectionBox = ({ shape, onResize, onResizeEnd, stageScale = 1, stageX = 0
   const currentDimensions = useRef(null);
 
   const { x, y, width, height, strokeWidth = 0, rotation = 0 } = shape;
+  
+  // Determine the correct cursor based on current mode
+  const getDefaultCursor = () => {
+    if (isPanMode) {
+      return isDraggingCanvas ? 'grabbing' : 'grab';
+    }
+    if (addMode !== 'none') {
+      return 'crosshair';
+    }
+    if (isSelectMode) {
+      return 'url(/select-cursor.svg) 3 3, auto';
+    }
+    return 'default';
+  };
   const halfHandle = SELECTION_HANDLE_SIZE / 2;
   
   // Add offset to account for shape's stroke so selection box doesn't cover it
@@ -257,8 +282,8 @@ const SelectionBox = ({ shape, onResize, onResizeEnd, stageScale = 1, stageX = 0
       originalDimensions.current = null;
       currentDimensions.current = null;
       
-      // Reset cursor to default
-      container.style.cursor = 'default';
+      // Reset cursor to mode-appropriate cursor
+      container.style.cursor = getDefaultCursor();
       
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -309,7 +334,7 @@ const SelectionBox = ({ shape, onResize, onResizeEnd, stageScale = 1, stageX = 0
           onMouseLeave={(e) => {
             if (!isResizing) {
               const container = e.target.getStage().container();
-              container.style.cursor = 'default';
+              container.style.cursor = getDefaultCursor();
             }
           }}
         />

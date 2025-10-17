@@ -318,6 +318,10 @@ const CanvasShapes = React.memo(({
             stageScale={stageScale}
             stageX={stageX}
             stageY={stageY}
+            isSelectMode={isSelectMode}
+            isPanMode={isPanMode}
+            isDraggingCanvas={isDraggingCanvas}
+            addMode={addMode}
           />
         );
       })}
@@ -329,7 +333,16 @@ const CanvasShapes = React.memo(({
         
         const shape = shapes.find(s => s.id === shapeId);
         if (!shape) return null;
-        return <SelectionBox key={`preview-${shapeId}`} shape={shape} />;
+        return (
+          <SelectionBox 
+            key={`preview-${shapeId}`} 
+            shape={shape}
+            isSelectMode={isSelectMode}
+            isPanMode={isPanMode}
+            isDraggingCanvas={isDraggingCanvas}
+            addMode={addMode}
+          />
+        );
       })}
     </>
   );

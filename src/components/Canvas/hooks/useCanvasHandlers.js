@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useModeManagement } from './useModeManagement';
 import { useShapeDrag } from './useShapeDrag';
@@ -14,30 +14,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
     stageY,
     stageScale,
     selectedColor,
-    isPanMode,
-    setIsPanMode,
-    setIsDraggingCanvas,
   } = canvasState;
-  
-  // Track previous pan mode state for middle mouse button
-  const previousPanModeRef = useRef(false);
-  const isMiddleMousePanningRef = useRef(false);
-  
-  // Global mouse up listener for middle mouse button
-  useEffect(() => {
-    const handleGlobalMouseUp = (e) => {
-      // Check if middle mouse button was released
-      if (e.button === 1 && isMiddleMousePanningRef.current) {
-        // Restore previous pan mode state
-        setIsPanMode(previousPanModeRef.current);
-        setIsDraggingCanvas(false);
-        isMiddleMousePanningRef.current = false;
-      }
-    };
-    
-    window.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [setIsPanMode, setIsDraggingCanvas]);
 
   // Keyboard shortcuts handler
   useKeyboardShortcuts(canvasState, shapeManager, handleToolChange);
@@ -60,7 +37,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
     handleDrawingMouseMove, 
     handleDrawingMouseUp, 
     resetDrawingState 
-  } = useDrawing(canvasState, createShapeAt);
+  } = useDrawing(canvasState, createShapeAt, shapeManager);
 
   // Selection handlers (Select Mode with Marquee)
   const {
@@ -68,7 +45,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
     handleSelectionMouseMove,
     handleSelectionMouseUp,
     handleSelectionClick,
-  } = useShapeSelection(canvasState);
+  } = useShapeSelection(canvasState, shapeManager);
 
   // Handle mouse movement
   const handleMouseMove = useCallback((e) => {
@@ -105,23 +82,6 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
 
   // Handle canvas mouse down for drawing and marquee selection
   const handleCanvasMouseDown = useCallback((e) => {
-    // Check if middle mouse button (button === 1)
-    if (e.evt.button === 1) {
-      e.evt.preventDefault();
-      // Save current pan mode state and activate pan temporarily
-      previousPanModeRef.current = isPanMode;
-      isMiddleMousePanningRef.current = true;
-      setIsPanMode(true);
-      setIsDraggingCanvas(true); // Show grabbing cursor immediately
-      
-      // Start dragging the stage immediately
-      const stage = stageRef.current;
-      if (stage) {
-        stage.startDrag();
-      }
-      return;
-    }
-    
     const stage = stageRef.current;
     const pos = stage.getPointerPosition();
     if (!pos) return;
@@ -143,10 +103,7 @@ export const useCanvasHandlers = (canvasState, currentUser, sessionId, shapeMana
     stageRef, 
     stageX, 
     stageY, 
-    stageScale,
-    isPanMode,
-    setIsPanMode,
-    setIsDraggingCanvas
+    stageScale
   ]);
 
   // Handle canvas mouse up

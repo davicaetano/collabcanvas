@@ -19,7 +19,7 @@ import {
 export const useShapeOperations = (currentUser, selectedColor, shapeManager) => {
   // Create shape at specific position
   const createShapeAt = useCallback(async (x, y, width = DEFAULT_SHAPE_WIDTH, height = DEFAULT_SHAPE_HEIGHT) => {
-    if (!currentUser || !shapeManager) return;
+    if (!currentUser || !shapeManager) return null;
     
     const shapeData = {
       x: x,
@@ -32,7 +32,8 @@ export const useShapeOperations = (currentUser, selectedColor, shapeManager) => 
       rotation: 0,
     };
     
-    await shapeManager.createShape(shapeData);
+    const createdShape = await shapeManager.createShape(shapeData);
+    return createdShape;
   }, [currentUser, selectedColor, shapeManager]);
 
   // Delete all shapes
