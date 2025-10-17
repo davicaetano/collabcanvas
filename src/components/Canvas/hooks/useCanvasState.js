@@ -1,16 +1,49 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { subscribeToCanvasSettings, updateCanvasBackgroundColor } from '../../../utils/firestore';
 
+// localStorage key for viewport state
+const VIEWPORT_STORAGE_KEY = 'collabcanvas-viewport';
+
+// Load saved viewport state from localStorage
+const loadViewportState = () => {
+  try {
+    const saved = localStorage.getItem(VIEWPORT_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        scale: parsed.scale || 1,
+        x: parsed.x || 0,
+        y: parsed.y || 0,
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to load viewport state from localStorage:', error);
+  }
+  return { scale: 1, x: 0, y: 0 };
+};
+
+// Save viewport state to localStorage
+const saveViewportState = (scale, x, y) => {
+  try {
+    localStorage.setItem(VIEWPORT_STORAGE_KEY, JSON.stringify({ scale, x, y }));
+  } catch (error) {
+    console.warn('Failed to save viewport state to localStorage:', error);
+  }
+};
+
 export const useCanvasState = (currentUser, sessionId) => {
   const stageRef = useRef();
   
   // Canvas background color
   const [canvasBackgroundColor, setCanvasBackgroundColor] = useState('#ffffff');
   
-  // Canvas state
-  const [stageScale, setStageScale] = useState(1);
-  const [stageX, setStageX] = useState(0);
-  const [stageY, setStageY] = useState(0);
+  // Load initial viewport state from localStorage
+  const initialViewport = loadViewportState();
+  
+  // Canvas state - initialize from localStorage
+  const [stageScale, setStageScale] = useState(initialViewport.scale);
+  const [stageX, setStageX] = useState(initialViewport.x);
+  const [stageY, setStageY] = useState(initialViewport.y);
   
   // UI state - Tool modes (only one can be active at a time)
   const [isSelectMode, setIsSelectMode] = useState(true); // Default mode
@@ -47,6 +80,15 @@ export const useCanvasState = (currentUser, sessionId) => {
     
     return () => unsubscribe();
   }, [currentUser]);
+
+  // Save viewport state to localStorage whenever it changes (with throttle)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      saveViewportState(stageScale, stageX, stageY);
+    }, 500); // Throttle saves to every 500ms
+    
+    return () => clearTimeout(timeoutId);
+  }, [stageScale, stageX, stageY]);
 
   // Update canvas background color in Firestore
   const updateBackgroundColor = useCallback(async (color) => {
