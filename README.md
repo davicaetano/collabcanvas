@@ -1,129 +1,59 @@
-# CollabCanvas
+# Canvas Monorepo
 
-A real-time collaborative design tool built with React, Firebase, and Konva.
+This is a monorepo containing the Canvas collaborative tools.
 
-## Features
+## Structure
 
-- Real-time collaboration with multiple users
-- Canvas with pan and zoom
-- Shape creation and manipulation
-- Live cursor tracking
-- User presence awareness
-- Google OAuth authentication
+```
+canvas/
+├── packages/
+│   ├── frontend/     # React frontend with Vite + Tailwind + Firebase
+│   └── ai-agent/     # AI agent (coming soon)
+├── docs/             # Centralized documentation
+└── package.json      # Workspace root
+```
 
-## Quick Start
+## Getting Started
 
-### 1. Clone and Install
+### Install Dependencies
 
 ```bash
-cd collabcanvas
 npm install
 ```
 
-### 2. Firebase Setup
+### Development
 
-1. Create a Firebase project at https://console.firebase.google.com/
-2. Enable Authentication and select Google as a provider
-3. Enable Firestore Database
-4. Copy your Firebase configuration
-5. Create a `.env` file in the root directory:
-
-```bash
-VITE_FIREBASE_API_KEY=your-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
-```
-
-### 3. Run Development Server
+Run the frontend in development mode:
 
 ```bash
 npm run dev
+# or
+npm run dev:frontend
 ```
 
-### 4. Deploy to Vercel
+### Build
 
-1. Push to GitHub
-2. Connect your GitHub repo to Vercel
-3. Add your environment variables in Vercel dashboard
-4. Deploy!
+Build the frontend for production:
 
-## Tech Stack
-
-- **Frontend**: React + Vite
-- **Canvas**: react-konva
-- **Styling**: Tailwind CSS
-- **Backend**: Firebase Firestore
-- **Auth**: Firebase Auth (Google OAuth)
-- **Deployment**: Vercel
-
-## Architecture
-
-```
-React App ←→ Firebase Auth (Google OAuth)
-    ↓
-react-konva Canvas ←→ Firestore Database
-    ↓                     ↓
-Real-time Shapes    Real-time Cursors
+```bash
+npm run build
+# or
+npm run build:frontend
 ```
 
-## Development Status
+## Packages
 
-✅ Basic project setup  
-✅ Authentication system (Google OAuth)  
-✅ Canvas with pan/zoom functionality  
-✅ Basic shape creation and manipulation  
-✅ Real-time Firestore synchronization  
-✅ Live cursor tracking  
-✅ User presence system  
-🔄 Production deployment (next step)  
-⏳ Performance testing and polish  
+### Frontend (`packages/frontend`)
 
-## MVP Requirements Checklist
+A real-time collaborative canvas application built with React, Konva.js, and Firebase.
 
-- [x] Google OAuth authentication
-- [x] Canvas with pan/zoom functionality  
-- [x] Shape creation (rectangles)
-- [x] Shape manipulation (drag to move)
-- [x] Real-time shape synchronization between users
-- [x] Live cursor tracking with user names
-- [x] Presence awareness (online users list)
-- [x] State persistence via Firestore
-- [x] Conflict resolution (last-write-wins via Firestore)
-- [ ] Production deployment on Vercel
-- [ ] Performance testing with 5+ concurrent users
+See [packages/frontend/README.md](packages/frontend/README.md) for more details.
 
-## Current Features
+### AI Agent (`packages/ai-agent`)
 
-### ✅ Implemented
-- **Authentication**: Google OAuth login/logout
-- **Canvas**: Smooth pan (drag) and zoom (scroll wheel) 
-- **Shapes**: Click to create rectangles, drag to move
-- **Real-time Sync**: All changes appear instantly for other users
-- **Live Cursors**: See other users' mouse cursors with names
-- **Presence**: View who's online with avatars
-- **State Persistence**: Refresh browser, canvas state persists
+Coming soon.
 
-### 🚀 Ready for Testing
-The application is fully functional for the MVP requirements. You can:
-1. Set up Firebase credentials
-2. Test with multiple browser windows
-3. Deploy to Vercel for public access
+## Documentation
 
-## Next Steps
+See the [docs](docs/) directory for architecture diagrams and planning documents.
 
-### For Production Deployment:
-1. **Firebase Setup**: Create Firebase project and add credentials to `.env`
-2. **Vercel Deployment**: Push to GitHub and connect to Vercel
-3. **Performance Testing**: Test with 5+ concurrent users
-4. **Security Rules**: Apply the included `firestore.rules` to Firebase
-
-### Future Enhancements (Post-MVP):
-- Multiple shape types (circles, text)
-- Shape resizing and rotation
-- Color picker for shapes
-- Undo/redo functionality
-- Shape selection and multi-select
-- Export/import canvas data
