@@ -142,6 +142,9 @@ const Canvas = () => {
         currentUser={currentUser}
         onlineUsers={canvasState.onlineUsers}
         onLogout={logout}
+        shapes={shapeManager.shapes}
+        config={canvasState.config}
+        sessionId={sessionId}
       />
       
       {/* Content area below header */}

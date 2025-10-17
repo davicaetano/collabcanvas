@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import UserPresence from './UserPresence';
 import ConnectionStatus from './ConnectionStatus';
 import { CurrentUserAvatar } from '../shared/Avatar';
 import { APP_VERSION } from '../../config';
+import { ClockIcon } from '@heroicons/react/24/outline';
+import { VersionHistoryModal } from './VersionHistoryModal';
 
 const CanvasHeader = ({ 
   // Toolbar props
@@ -12,15 +14,31 @@ const CanvasHeader = ({
   // User props
   currentUser,
   onlineUsers,
-  onLogout
+  onLogout,
+  // Version History props
+  shapes,
+  config,
+  sessionId,
 }) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  
   return (
     <header className="bg-gray-800 text-white px-6 py-3">
       {/* Main header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-6">
-          <h1 className="text-xl font-bold">CollabCanvas</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-bold">CollabCanvas</h1>
+            <button
+              onClick={() => setIsVersionHistoryOpen(true)}
+              className="flex items-center space-x-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-blue-500 rounded-lg transition-colors text-sm"
+              title="Version History"
+            >
+              <ClockIcon className="w-4 h-4" />
+              <span>History</span>
+            </button>
+          </div>
           {isDevMode && (
             <div className="flex items-center space-x-4">
               <button
@@ -64,6 +82,16 @@ const CanvasHeader = ({
           </button>
         </div>
       </div>
+      
+      {/* Version History Modal */}
+      <VersionHistoryModal
+        isOpen={isVersionHistoryOpen}
+        onClose={() => setIsVersionHistoryOpen(false)}
+        currentUser={currentUser}
+        shapes={shapes}
+        config={config}
+        sessionId={sessionId}
+      />
     </header>
   );
 };

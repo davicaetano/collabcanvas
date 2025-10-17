@@ -331,3 +331,150 @@ export const addFavoriteColor = async (userId, color) => {
     // Silently fail
   }
 };
+
+// ==================== VERSION HISTORY OPERATIONS ====================
+
+/**
+ * Save a version history snapshot
+ * @param {string} name - User-provided name for this version
+ * @param {Object} user - User object with uid and displayName
+ * @param {Array} shapes - Snapshot of all shapes
+ * @param {Object} config - Canvas configuration (backgroundColor, etc)
+ * @returns {Promise<string>} The ID of the created history document
+ */
+export const saveVersionHistory = async (name, user, shapes, config) => {
+  const historyId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const historyRef = doc(db, 'canvases', CANVAS_ID, 'history', historyId);
+  
+  const historyData = {
+    name,
+    savedBy: user?.uid || 'anonymous',
+    savedByName: user?.displayName || user?.email || 'Anonymous User',
+    savedAt: serverTimestamp(),
+    shapes: shapes || [],
+    settings: config || {},
+  };
+  
+  await setDoc(historyRef, historyData);
+  return historyId;
+};
+
+/**
+ * Load all version histories for the canvas
+ * @returns {Promise<Array>} Array of history objects with id, name, savedBy, savedAt, shapes, settings
+ */
+export const loadVersionHistories = async () => {
+  const historyCollectionRef = collection(db, 'canvases', CANVAS_ID, 'history');
+  const snapshot = await getDocs(historyCollectionRef);
+  
+  const histories = [];
+  snapshot.forEach((doc) => {
+    histories.push({
+      id: doc.id,
+      ...doc.data(),
+    });
+  });
+  
+  // Sort by savedAt (newest first)
+  histories.sort((a, b) => {
+    const aTime = a.savedAt?.toMillis() || 0;
+    const bTime = b.savedAt?.toMillis() || 0;
+    return bTime - aTime;
+  });
+  
+  return histories;
+};
+
+/**
+ * Subscribe to version history changes in real-time
+ * @param {Function} callback - Called with array of histories whenever they change
+ * @returns {Function} Unsubscribe function
+ */
+export const subscribeToVersionHistories = (callback) => {
+  const historyCollectionRef = collection(db, 'canvases', CANVAS_ID, 'history');
+  
+  return onSnapshot(historyCollectionRef, (snapshot) => {
+    const histories = [];
+    snapshot.forEach((doc) => {
+      histories.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+    
+    // Sort by savedAt (newest first)
+    histories.sort((a, b) => {
+      const aTime = a.savedAt?.toMillis() || 0;
+      const bTime = b.savedAt?.toMillis() || 0;
+      return bTime - aTime;
+    });
+    
+    callback(histories);
+  });
+};
+
+/**
+ * Load a specific version history
+ * @param {string} historyId - ID of the history to load
+ * @returns {Promise<Object>} History object with shapes and settings
+ */
+export const loadVersionHistory = async (historyId) => {
+  const historyRef = doc(db, 'canvases', CANVAS_ID, 'history', historyId);
+  const snapshot = await getDoc(historyRef);
+  
+  if (!snapshot.exists()) {
+    throw new Error('Version history not found');
+  }
+  
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  };
+};
+
+/**
+ * Delete a version history
+ * @param {string} historyId - ID of the history to delete
+ */
+export const deleteVersionHistory = async (historyId) => {
+  const historyRef = doc(db, 'canvases', CANVAS_ID, 'history', historyId);
+  await deleteDoc(historyRef);
+};
+
+/**
+ * Restore a version history to the main canvas
+ * This replaces all current shapes and settings with the historical snapshot
+ * @param {string} historyId - ID of the history to restore
+ * @param {string} sessionId - Session ID for the restore operation
+ */
+export const restoreVersionHistory = async (historyId, sessionId) => {
+  const history = await loadVersionHistory(historyId);
+  
+  // Use batch operations for atomic restore
+  const batch = writeBatch(db);
+  
+  // 1. Delete all current shapes
+  const shapesSnapshot = await getDocs(collection(db, 'canvases', CANVAS_ID, 'shapes'));
+  shapesSnapshot.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+  
+  // 2. Restore shapes from history
+  history.shapes.forEach((shape) => {
+    const shapeRef = doc(collection(db, 'canvases', CANVAS_ID, 'shapes'), shape.id);
+    batch.set(shapeRef, {
+      ...shape,
+      sessionId, // Mark as restored by this session
+      restoredAt: serverTimestamp(),
+    });
+  });
+  
+  // 3. Restore settings/config
+  if (history.settings) {
+    const configRef = doc(db, 'canvases', CANVAS_ID, 'config', 'main');
+    batch.set(configRef, history.settings);
+  }
+  
+  // Execute all operations atomically
+  await batch.commit();
+};
