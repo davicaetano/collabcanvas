@@ -36,7 +36,7 @@ const saveAIPanelState = (isExpanded) => {
   }
 };
 
-const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCreated, onExpandedChange }) => {
+const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCreated, onExpandedChange, getViewport }) => {
   const [command, setCommand] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
   
@@ -92,8 +92,11 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
       // Clear input immediately
       setCommand('');
 
-      // Execute command via AI backend
-      const response = await executeCommand(userCommand);
+      // Get viewport bounds if function provided
+      const viewport = getViewport ? getViewport() : null;
+
+      // Execute command via AI backend with viewport
+      const response = await executeCommand(userCommand, viewport);
       
       // Add AI response to conversation
       if (response && response.message) {

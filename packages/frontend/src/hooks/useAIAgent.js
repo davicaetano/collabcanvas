@@ -26,9 +26,10 @@ export const useAIAgent = (canvasId, userId, sessionId) => {
    * Execute an AI command
    * 
    * @param {string} command - Natural language command to execute
+   * @param {Object} viewport - Optional viewport bounds {x_min, y_min, x_max, y_max}
    * @returns {Promise<Object>} Response with shapes
    */
-  const executeCommand = useCallback(async (command) => {
+  const executeCommand = useCallback(async (command, viewport = null) => {
     if (!command || command.trim().length === 0) {
       setError('Please enter a command');
       return null;
@@ -38,17 +39,24 @@ export const useAIAgent = (canvasId, userId, sessionId) => {
     setError(null);
     
     try {
+      const requestBody = {
+        command: command.trim(),
+        canvas_id: canvasId,
+        user_id: userId,
+        session_id: sessionId,
+      };
+
+      // Add viewport if provided
+      if (viewport) {
+        requestBody.viewport = viewport;
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/ai/command`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          command: command.trim(),
-          canvas_id: canvasId,
-          user_id: userId,
-          session_id: sessionId,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {

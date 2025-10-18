@@ -174,6 +174,26 @@ const Canvas = () => {
             sessionId={sessionId}
             onShapesCreated={handleAIShapesCreated}
             onExpandedChange={setIsAIPanelExpanded}
+            getViewport={() => {
+              // Calculate visible viewport bounds from canvas state
+              // Canvas viewport is determined by scale and position
+              const scale = canvasState.scale || 1;
+              const x = canvasState.x || 0;
+              const y = canvasState.y || 0;
+              
+              // Viewport size (approximation based on typical screen sizes)
+              // Account for AI Panel (360px wide) and Properties Panel (320px wide)
+              const viewportWidth = window.innerWidth - (isAIPanelExpanded ? 360 : 0) - 320;
+              const viewportHeight = window.innerHeight - 64; // Header height
+              
+              // Convert screen coordinates to canvas coordinates
+              const x_min = -x / scale;
+              const y_min = -y / scale;
+              const x_max = x_min + (viewportWidth / scale);
+              const y_max = y_min + (viewportHeight / scale);
+              
+              return { x_min, y_min, x_max, y_max };
+            }}
           />
         </div>
         

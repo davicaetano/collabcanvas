@@ -1,8 +1,8 @@
 """
 LangChain Tools for Canvas Manipulation
 
-Simplified and optimized docstrings while maintaining full functionality.
 These tools allow the AI agent to create and manipulate shapes on the canvas.
+Each tool returns a dictionary representing a canvas shape that will be sent to the frontend.
 """
 
 from langchain.tools import tool
@@ -59,18 +59,66 @@ def normalize_color(color: str) -> str:
 def get_canvas_shapes(canvas_id: str = "main-canvas") -> List[Dict[str, Any]]:
     """
     Get all shapes currently on the canvas.
-    Call this FIRST when manipulating existing shapes to get their IDs.
+    
+    **IMPORTANT**: Use this tool FIRST when you need to manipulate existing shapes!
+    This allows you to see what's on the canvas and get the IDs of shapes you want to modify.
     
     Args:
-        canvas_id: Canvas identifier (default: "main-canvas")
+        canvas_id: ID of the canvas to query (default: "main-canvas")
     
     Returns:
-        List of shapes with: id, type, x, y, width, height, fill, rotation, text (for text type), fontSize (for text type)
+        List of shape dictionaries with properties:
+        - id: unique identifier (use this for move_shape, resize_shape, etc.)
+        - type: "rectangle", "circle", or "text"
+        - x, y: position coordinates (center point)
+        - width, height: dimensions in pixels
+        - fill: color in hex format (e.g., "#0000FF" for blue)
+        - rotation: rotation angle in degrees
+        - text: text content (only for text type)
+        - fontSize: font size (only for text type)
+    
+    Example output:
+    [
+        {
+            "id": "abc-123-def-456",
+            "type": "rectangle",
+            "x": 200,
+            "y": 150,
+            "width": 100,
+            "height": 80,
+            "fill": "#0000FF",  # Blue
+            "rotation": 0
+        },
+        {
+            "id": "xyz-789-uvw-012",
+            "type": "circle",
+            "x": 400,
+            "y": 300,
+            "width": 60,
+            "height": 60,
+            "fill": "#FF0000",  # Red
+            "rotation": 0
+        }
+    ]
+    
+    Usage example:
+        # User asks: "move the blue rectangle to the right"
+        # Step 1: Get all shapes to find the blue rectangle
+        shapes = get_canvas_shapes()
+        # Step 2: Find the blue rectangle
+        blue_rect = [s for s in shapes if s['type']=='rectangle' and s['fill']=='#0000FF'][0]
+        # Step 3: Move it using its ID
+        move_shape(shape_id=blue_rect['id'], new_x=blue_rect['x']+150, new_y=blue_rect['y'])
     """
     try:
+        # Fetch all shapes from Firestore
         shapes = get_all_shapes(canvas_id)
+        
+        # Convert to simplified format for the agent
         simplified_shapes = shapes_to_simple_format(shapes)
+        
         return simplified_shapes
+    
     except Exception as e:
         print(f"Error fetching canvas shapes: {e}")
         return []
@@ -90,41 +138,45 @@ def create_shape(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Create a rectangle or circle on the canvas.
+    Create a shape on the canvas and save it to Firebase.
     
     Args:
-        shape_type: "rectangle" or "circle"
-        x: X position (center point)
-        y: Y position (center point)
-        width: Width in pixels (default: 100)
-        height: Height in pixels (default: 100, circle uses width as diameter)
-        color: Color name or hex code (default: "blue")
+        shape_type: Type of shape - "rectangle" or "circle"
+        x: X position on canvas (center point)
+        y: Y position on canvas (center point)
+        width: Width of the shape in pixels (default: 100)
+        height: Height of the shape in pixels (default: 100, for circle this is diameter)
+        color: Color of the shape (name like "red" or hex like "#FF0000")
         rotation: Rotation angle in degrees (default: 0)
-        canvas_id: Canvas identifier (default: "main-canvas")
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
     """
     shape_type_lower = shape_type.lower()
     
+    # Validate shape type
     if shape_type_lower not in ["rectangle", "circle"]:
         shape_type_lower = "rectangle"
     
+    # Normalize color
     fill_color = normalize_color(color)
     
+    # Create shape object
     shape = {
         "id": generate_shape_id(),
         "type": shape_type_lower,
         "x": float(x),
         "y": float(y),
         "width": float(width),
-        "height": float(height) if shape_type_lower == "rectangle" else float(width),
+        "height": float(height) if shape_type_lower == "rectangle" else float(width),  # Circle uses width as diameter
         "fill": fill_color,
         "rotation": float(rotation),
         "stroke": "#000000",
         "strokeWidth": 0,
     }
     
+    # Save to Firebase
     try:
         success = create_shape_in_firestore(
             shape=shape,
@@ -161,16 +213,16 @@ def create_text(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Create a text element on the canvas.
+    Create a text element on the canvas and save it to Firebase.
     
     Args:
-        text: Text content to display
-        x: X position
-        y: Y position
-        font_size: Font size in pixels (default: 16)
-        color: Color name or hex code (default: "black")
-        font_family: Font family (default: "Arial")
-        canvas_id: Canvas identifier (default: "main-canvas")
+        text: The text content to display
+        x: X position on canvas
+        y: Y position on canvas
+        font_size: Size of the font in pixels (default: 16)
+        color: Color of the text (name like "black" or hex like "#000000")
+        font_family: Font family name (default: "Arial")
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
@@ -186,12 +238,13 @@ def create_text(
         "fontSize": int(font_size),
         "fontFamily": font_family,
         "fill": fill_color,
-        "width": len(text) * font_size * 0.6,
-        "height": font_size * 1.2,
+        "width": len(text) * font_size * 0.6,  # Approximate width
+        "height": font_size * 1.2,  # Approximate height
         "stroke": "#000000",
         "strokeWidth": 0,
     }
     
+    # Save to Firebase
     try:
         success = create_shape_in_firestore(
             shape=text_shape,
@@ -227,18 +280,32 @@ def move_shape(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Move a shape to a new position. Call get_canvas_shapes() first to find the shape ID.
+    Move a shape to a new position by its ID.
+    
+    **IMPORTANT**: First call get_canvas_shapes() to find the shape ID!
     
     Args:
-        shape_id: Unique ID of the shape (from get_canvas_shapes)
+        shape_id: The unique ID of the shape to move (get this from get_canvas_shapes)
         new_x: New X position (center point)
         new_y: New Y position (center point)
-        canvas_id: Canvas identifier (default: "main-canvas")
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
+    
+    Example:
+        # User: "move the blue rectangle to the right"
+        # Step 1: Get shapes to find the ID
+        shapes = get_canvas_shapes()
+        # Step 2: Find the blue rectangle
+        blue_rect = [s for s in shapes if s['type']=='rectangle' and s['fill']=='#0000FF'][0]
+        # Step 3: Calculate new position (move right = increase x)
+        new_x = blue_rect['x'] + 150  # Move 150 pixels right
+        # Step 4: Move it
+        move_shape(shape_id=blue_rect['id'], new_x=new_x, new_y=blue_rect['y'])
     """
     try:
+        # Update shape position in Firestore
         success = update_shape_in_firestore(
             shape_id=shape_id,
             updates={
@@ -263,6 +330,7 @@ def move_shape(
                 "message": f"Failed to move shape {shape_id}. It may not exist on the canvas.",
                 "shape_id": shape_id
             }
+    
     except Exception as e:
         return {
             "success": False,
@@ -279,16 +347,29 @@ def resize_shape(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Resize a shape. Call get_canvas_shapes() first to find the shape ID.
+    Resize a shape to new dimensions by its ID.
+    
+    **IMPORTANT**: First call get_canvas_shapes() to find the shape ID!
     
     Args:
-        shape_id: Unique ID of the shape (from get_canvas_shapes)
+        shape_id: The unique ID of the shape to resize (get this from get_canvas_shapes)
         new_width: New width in pixels
-        new_height: New height in pixels (optional, defaults to new_width)
-        canvas_id: Canvas identifier (default: "main-canvas")
+        new_height: New height in pixels (optional, defaults to new_width for circles)
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
+    
+    Example:
+        # User: "make the red circle bigger"
+        # Step 1: Get shapes
+        shapes = get_canvas_shapes()
+        # Step 2: Find the red circle
+        red_circle = [s for s in shapes if s['type']=='circle' and s['fill']=='#FF0000'][0]
+        # Step 3: Calculate new size (1.5x bigger)
+        new_size = red_circle['width'] * 1.5
+        # Step 4: Resize it
+        resize_shape(shape_id=red_circle['id'], new_width=new_size, new_height=new_size)
     """
     if new_height is None:
         new_height = new_width
@@ -318,6 +399,7 @@ def resize_shape(
                 "message": f"Failed to resize shape {shape_id}. It may not exist on the canvas.",
                 "shape_id": shape_id
             }
+    
     except Exception as e:
         return {
             "success": False,
@@ -333,19 +415,31 @@ def rotate_shape(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Rotate a shape. Call get_canvas_shapes() first to find the shape ID.
+    Rotate a shape by setting its rotation angle.
+    
+    **IMPORTANT**: First call get_canvas_shapes() to find the shape ID!
     
     Args:
-        shape_id: Unique ID of the shape (from get_canvas_shapes)
-        angle: Rotation angle in degrees (0-360, positive = clockwise)
-        canvas_id: Canvas identifier (default: "main-canvas")
+        shape_id: The unique ID of the shape (get this from get_canvas_shapes)
+        angle: Rotation angle in degrees (0-360). Positive = clockwise
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
+    
+    Example:
+        # User: "rotate the text 45 degrees"
+        # Step 1: Get shapes
+        shapes = get_canvas_shapes()
+        # Step 2: Find text shape (id="abc-123")
+        # Step 3: Rotate it
+        result = rotate_shape(shape_id="abc-123", angle=45)
     """
     try:
+        # Normalize angle to 0-360 range
         normalized_angle = float(angle) % 360
         
+        # Update shape in Firestore
         success = update_shape_in_firestore(
             shape_id=shape_id,
             updates={"rotation": normalized_angle},
@@ -366,6 +460,7 @@ def rotate_shape(
                 "message": f"Failed to rotate shape {shape_id}. It may not exist on the canvas.",
                 "shape_id": shape_id
             }
+    
     except Exception as e:
         return {
             "success": False,
@@ -381,16 +476,28 @@ def change_shape_color(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Change the color of a shape. Call get_canvas_shapes() first to find the shape ID.
+    Change the color of a shape by its ID.
+    
+    **IMPORTANT**: First call get_canvas_shapes() to find the shape ID!
     
     Args:
-        shape_id: Unique ID of the shape (from get_canvas_shapes)
-        new_color: Color name or hex code
-        canvas_id: Canvas identifier (default: "main-canvas")
+        shape_id: The unique ID of the shape (get this from get_canvas_shapes)
+        new_color: New color (name like "red" or hex like "#FF0000")
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
+    
+    Example:
+        # User: "change the blue rectangle to red"
+        # Step 1: Get shapes
+        shapes = get_canvas_shapes()
+        # Step 2: Find the blue rectangle
+        blue_rect = [s for s in shapes if s['type']=='rectangle' and s['fill']=='#0000FF'][0]
+        # Step 3: Change its color
+        change_shape_color(shape_id=blue_rect['id'], new_color="red")
     """
+    # Normalize color (convert name to hex)
     fill_color = normalize_color(new_color)
     
     try:
@@ -414,6 +521,7 @@ def change_shape_color(
                 "message": f"Failed to change color of shape {shape_id}. It may not exist on the canvas.",
                 "shape_id": shape_id
             }
+    
     except Exception as e:
         return {
             "success": False,
@@ -428,14 +536,25 @@ def delete_shape_by_id(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Delete a shape from the canvas. Call get_canvas_shapes() first to find the shape ID.
+    Delete a shape from the canvas by its ID.
+    
+    **IMPORTANT**: First call get_canvas_shapes() to find the shape ID!
     
     Args:
-        shape_id: Unique ID of the shape to delete
-        canvas_id: Canvas identifier (default: "main-canvas")
+        shape_id: The unique ID of the shape to delete
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
+    
+    Example:
+        # User: "delete the yellow circle"
+        # Step 1: Get shapes
+        shapes = get_canvas_shapes()
+        # Step 2: Find the yellow circle
+        yellow_circle = [s for s in shapes if s['type']=='circle' and s['fill']=='#FFFF00'][0]
+        # Step 3: Delete it
+        delete_shape_by_id(shape_id=yellow_circle['id'])
     """
     try:
         success = delete_shape_from_firestore(
@@ -455,6 +574,7 @@ def delete_shape_by_id(
                 "message": f"Failed to delete shape {shape_id}. It may not exist on the canvas.",
                 "shape_id": shape_id
             }
+    
     except Exception as e:
         return {
             "success": False,
@@ -478,18 +598,18 @@ def create_grid(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Create a grid of rectangles on the canvas.
+    Create a grid of rectangles on the canvas and save them to Firebase.
     
     Args:
-        rows: Number of rows
-        cols: Number of columns
+        rows: Number of rows in the grid
+        cols: Number of columns in the grid
         cell_width: Width of each cell (default: 80)
         cell_height: Height of each cell (default: 80)
         start_x: Starting X position (default: 100)
         start_y: Starting Y position (default: 100)
         spacing: Space between cells (default: 20)
-        color: Color name or hex code (default: "blue")
-        canvas_id: Canvas identifier (default: "main-canvas")
+        color: Color of the cells (default: "blue")
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
@@ -516,6 +636,7 @@ def create_grid(
             }
             shapes.append(shape)
     
+    # Save all shapes to Firebase in batch
     try:
         success = create_shapes_batch_in_firestore(
             shapes=shapes,
@@ -549,13 +670,13 @@ def create_form(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Create a form with multiple elements (title, labels, fields, button).
+    Create a form with multiple elements (complex command) and save to Firebase.
     
     Args:
-        form_type: Type of form ("login", "signup", or "contact") - default: "login"
-        x: Starting X position (default: 200)
-        y: Starting Y position (default: 150)
-        canvas_id: Canvas identifier (default: "main-canvas")
+        form_type: Type of form to create - "login", "signup", or "contact" (default: "login")
+        x: Starting X position for the form (default: 200)
+        y: Starting Y position for the form (default: 150)
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
@@ -670,6 +791,7 @@ def create_form(
             "strokeWidth": 0,
         })
     
+    # Save all shapes to Firebase in batch
     try:
         success = create_shapes_batch_in_firestore(
             shapes=shapes,
@@ -703,17 +825,39 @@ def create_shapes_batch(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Create multiple shapes at once. Use for 3+ shapes. Handles any quantity (10, 100, 1000+) in one call.
+    Create multiple shapes at once in a single batch operation.
+    
+    This is much faster than creating shapes one by one when you need to create
+    multiple shapes (like a grid, form, or diagram).
+    
+    **Use this instead of multiple create_shape() calls when:**
+    - Creating 3+ shapes at once
+    - Creating grids, forms, or layouts
+    - Creating related shapes together
     
     Args:
-        shapes: List of shape dictionaries, each with: id, type, x, y, width, height, fill, rotation
-        canvas_id: Canvas identifier (default: "main-canvas")
+        shapes: List of shape dictionaries. Each shape must include:
+                - id: unique identifier (use generate_shape_id() or str(uuid.uuid4()))
+                - type: "rectangle" or "circle"
+                - x, y: position coordinates
+                - width, height: dimensions in pixels
+                - fill: color (hex format like "#FF0000" or color name like "red")
+                - rotation: rotation angle in degrees (optional, default 0)
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
+    
+    Example:
+        shapes = [
+            {"id": "abc-123", "type": "rectangle", "x": 100, "y": 100, "width": 50, "height": 50, "fill": "#FF0000", "rotation": 0},
+            {"id": "def-456", "type": "circle", "x": 200, "y": 100, "width": 50, "height": 50, "fill": "#0000FF", "rotation": 0},
+            {"id": "ghi-789", "type": "rectangle", "x": 300, "y": 100, "width": 50, "height": 50, "fill": "#00FF00", "rotation": 0},
+        ]
+        result = create_shapes_batch(shapes=shapes)
     """
     try:
-        # Validate and normalize shapes
+        # Validate shapes
         for i, shape in enumerate(shapes):
             if 'id' not in shape:
                 shape['id'] = generate_shape_id()
@@ -722,9 +866,11 @@ def create_shapes_batch(
                     "success": False,
                     "message": f"Shape {i} is missing required field 'type'"
                 }
+            # Normalize colors
             if 'fill' in shape:
                 shape['fill'] = normalize_color(shape['fill'])
         
+        # Create all shapes in Firebase batch
         success = create_shapes_batch_in_firestore(
             shapes=shapes,
             canvas_id=canvas_id,
@@ -742,6 +888,7 @@ def create_shapes_batch(
                 "success": False,
                 "message": "Failed to create shapes batch"
             }
+    
     except Exception as e:
         return {
             "success": False,
@@ -755,14 +902,47 @@ def update_shapes_batch(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Update multiple shapes at once. Use for 3+ shapes. Each update must include shape_id and fields to update.
+    Update multiple shapes at once in a single batch operation.
+    
+    This is much faster than updating shapes one by one when you need to modify
+    multiple shapes (like moving all shapes in a group, changing colors of multiple items, etc.).
+    
+    **Use this instead of multiple move_shape(), resize_shape(), etc. when:**
+    - Updating 3+ shapes at once
+    - Moving all shapes in a direction
+    - Changing colors of multiple shapes
+    - Resizing multiple shapes together
     
     Args:
-        updates: List of update dictionaries with shape_id and fields to update (x, y, width, height, fill, rotation)
-        canvas_id: Canvas identifier (default: "main-canvas")
+        updates: List of update dictionaries. Each must include:
+                 - shape_id: ID of the shape to update
+                 - Any fields to update: x, y, width, height, fill, rotation, etc.
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
+    
+    Example 1 - Move multiple shapes:
+        updates = [
+            {"shape_id": "abc-123", "x": 150, "y": 200},
+            {"shape_id": "def-456", "x": 250, "y": 200},
+            {"shape_id": "ghi-789", "x": 350, "y": 200},
+        ]
+        result = update_shapes_batch(updates=updates)
+    
+    Example 2 - Change colors of multiple shapes:
+        updates = [
+            {"shape_id": "abc-123", "fill": "#FF0000"},
+            {"shape_id": "def-456", "fill": "#FF0000"},
+        ]
+        result = update_shapes_batch(updates=updates)
+    
+    Example 3 - Mixed updates:
+        updates = [
+            {"shape_id": "abc-123", "x": 100, "fill": "#00FF00"},
+            {"shape_id": "def-456", "width": 200, "height": 150},
+        ]
+        result = update_shapes_batch(updates=updates)
     """
     try:
         # Validate updates
@@ -772,9 +952,11 @@ def update_shapes_batch(
                     "success": False,
                     "message": f"Update {i} is missing required field 'shape_id'"
                 }
+            # Normalize colors if present
             if 'fill' in update:
                 update['fill'] = normalize_color(update['fill'])
         
+        # Update all shapes in Firebase batch
         success = update_shapes_batch_in_firestore(
             updates=updates,
             canvas_id=canvas_id,
@@ -792,6 +974,7 @@ def update_shapes_batch(
                 "success": False,
                 "message": "Failed to update shapes batch"
             }
+    
     except Exception as e:
         return {
             "success": False,
@@ -805,14 +988,31 @@ def delete_shapes_batch(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Delete multiple shapes at once. Use for 3+ shapes.
+    Delete multiple shapes at once in a single batch operation.
+    
+    This is much faster than deleting shapes one by one when you need to remove
+    multiple shapes (like clearing a section, removing all of a certain type, etc.).
+    
+    **Use this instead of multiple delete_shape_by_id() calls when:**
+    - Deleting 3+ shapes at once
+    - Clearing a group of shapes
+    - Removing all shapes of a certain type
+    - Cleaning up multiple elements
     
     Args:
         shape_ids: List of shape IDs to delete
-        canvas_id: Canvas identifier (default: "main-canvas")
+        canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
+    
+    Example 1 - Delete specific shapes:
+        result = delete_shapes_batch(shape_ids=["abc-123", "def-456", "ghi-789"])
+    
+    Example 2 - Delete all rectangles (after getting them with get_canvas_shapes):
+        shapes = get_canvas_shapes()
+        rectangle_ids = [s['id'] for s in shapes if s['type'] == 'rectangle']
+        result = delete_shapes_batch(shape_ids=rectangle_ids)
     """
     try:
         if not shape_ids or len(shape_ids) == 0:
@@ -821,6 +1021,7 @@ def delete_shapes_batch(
                 "message": "No shape IDs provided"
             }
         
+        # Delete all shapes in Firebase batch
         success = delete_shapes_batch_from_firestore(
             shape_ids=shape_ids,
             canvas_id=canvas_id
@@ -837,6 +1038,7 @@ def delete_shapes_batch(
                 "success": False,
                 "message": "Failed to delete shapes batch"
             }
+    
     except Exception as e:
         return {
             "success": False,
@@ -846,24 +1048,25 @@ def delete_shapes_batch(
 
 # Export all tools
 ALL_TOOLS = [
-    # Read operations (call first to understand canvas state)
+    # Read operations (agent should use these first to understand canvas state)
     get_canvas_shapes,
     
-    # Create operations
+    # Create operations (new shapes)
     create_shape,
     create_text,
     create_grid,
     create_form,
     
-    # Manipulation operations (require shape_id from get_canvas_shapes)
+    # Manipulation operations (modify existing shapes)
     move_shape,
     resize_shape,
     rotate_shape,
     change_shape_color,
     delete_shape_by_id,
     
-    # Batch operations (for 3+ shapes - faster performance)
+    # Batch operations (for multiple shapes at once - faster performance)
     create_shapes_batch,
     update_shapes_batch,
     delete_shapes_batch,
 ]
+

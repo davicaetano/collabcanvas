@@ -37,8 +37,8 @@ def create_canvas_agent(memory: Optional[ConversationBufferWindowMemory] = None)
         model="gpt-4o-mini",  # Faster and cheaper than gpt-4o
         temperature=0,  # Zero temperature for fastest, most deterministic results
         api_key=api_key,
-        max_tokens=500,  # Limit response length for faster processing
-        timeout=30,  # 30 second timeout to prevent hanging
+        max_tokens=16000,  # Allow large batch operations (up to ~500 shapes)
+        timeout=60,  # 60 second timeout for large batch operations
     )
     
     # Create prompt template with optional chat history
@@ -71,7 +71,7 @@ def create_canvas_agent(memory: Optional[ConversationBufferWindowMemory] = None)
         verbose=True,  # Enable logging for debugging
         handle_parsing_errors=True,
         max_iterations=5,  # Reduced from 10 - most commands need 1-2 iterations
-        max_execution_time=30,  # 30 second timeout for entire execution
+        max_execution_time=90,  # 90 second timeout for large batch operations
         early_stopping_method="generate",  # Stop as soon as we have a valid response
         return_intermediate_steps=True,  # CRITICAL: Return tool outputs!
         memory=memory,  # Add memory to agent
@@ -80,7 +80,7 @@ def create_canvas_agent(memory: Optional[ConversationBufferWindowMemory] = None)
     return agent_executor
 
 
-def execute_canvas_command(command: str, canvas_id: str = "main-canvas", user_id: str = None, session_id: str = "ai-agent") -> Dict[str, Any]:
+def execute_canvas_command(command: str, canvas_id: str = "main-canvas", user_id: str = None, session_id: str = "ai-agent", viewport: Dict[str, float] = None) -> Dict[str, Any]:
     """
     Execute a canvas command and return the resulting shapes.
     
@@ -89,6 +89,7 @@ def execute_canvas_command(command: str, canvas_id: str = "main-canvas", user_id
         canvas_id: ID of the canvas (default: "main-canvas")
         user_id: ID of the user making the request (optional)
         session_id: Session ID of the browser tab (default: "ai-agent")
+        viewport: Visible canvas bounds {x_min, y_min, x_max, y_max} (optional)
     
     Returns:
         Dictionary with success status, message, and shapes:
@@ -101,6 +102,8 @@ def execute_canvas_command(command: str, canvas_id: str = "main-canvas", user_id
     """
     try:
         print(f"Executing AI command: {command} (session: {session_id})")
+        if viewport:
+            print(f"Viewport: {viewport}")
         
         # Get or create memory for this session
         memory = SessionManager.get_memory(session_id, k=6)
@@ -108,10 +111,14 @@ def execute_canvas_command(command: str, canvas_id: str = "main-canvas", user_id
         # Create agent with memory
         agent = create_canvas_agent(memory=memory)
         
+        # Build input with viewport if available
+        agent_input = {"input": command}
+        if viewport:
+            viewport_desc = f"The user's visible canvas area is from ({viewport['x_min']}, {viewport['y_min']}) to ({viewport['x_max']}, {viewport['y_max']}). Create shapes within this visible area when possible."
+            agent_input["input"] = f"{viewport_desc}\n\nUser command: {command}"
+        
         # Execute command
-        result = agent.invoke({
-            "input": command
-        })
+        result = agent.invoke(agent_input)
         
         # Extract shapes from the result
         shapes = extract_shapes_from_result(result)

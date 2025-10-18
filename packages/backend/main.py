@@ -75,12 +75,21 @@ class ShapeModel(BaseModel):
     target: Optional[str] = None   # For command-type responses
 
 
+class ViewportModel(BaseModel):
+    """Model for viewport bounds (visible area)"""
+    x_min: float = Field(..., description="Left edge of visible area")
+    y_min: float = Field(..., description="Top edge of visible area")
+    x_max: float = Field(..., description="Right edge of visible area")
+    y_max: float = Field(..., description="Bottom edge of visible area")
+
+
 class AICommandRequest(BaseModel):
     """Request model for AI command execution"""
     command: str = Field(..., description="Natural language command to execute")
     canvas_id: Optional[str] = Field("main-canvas", description="ID of the canvas")
     user_id: Optional[str] = Field(None, description="ID of the user making the request")
     session_id: Optional[str] = Field("ai-agent", description="Session ID of the browser tab")
+    viewport: Optional[ViewportModel] = Field(None, description="Visible canvas bounds")
 
 
 class AICommandResponse(BaseModel):
@@ -167,12 +176,23 @@ async def execute_ai_command(request: AICommandRequest):
     logger.info(f"Executing AI command: {request.command}")
     
     try:
+        # Convert viewport to dict if present
+        viewport_dict = None
+        if request.viewport:
+            viewport_dict = {
+                "x_min": request.viewport.x_min,
+                "y_min": request.viewport.y_min,
+                "x_max": request.viewport.x_max,
+                "y_max": request.viewport.y_max
+            }
+        
         # Execute command using the AI agent
         result = execute_canvas_command(
             command=request.command,
             canvas_id=request.canvas_id,
             user_id=request.user_id,
-            session_id=request.session_id
+            session_id=request.session_id,
+            viewport=viewport_dict
         )
         
         logger.info(f"Command executed successfully. Generated {len(result['shapes'])} shape(s)")
