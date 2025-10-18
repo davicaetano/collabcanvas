@@ -5,35 +5,34 @@
  * Returns null for invalid values (which keeps the previous value).
  * 
  * Strategy: Simple validation - reject invalid values silently
+ * 
+ * Note: Canvas is infinite, so position (x, y) and size (width, height) 
+ * have no upper bounds to support infinite scrolling and negative space.
  */
-
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from './canvas';
 
 // Define constraints for each property
 export const PROPERTY_CONSTRAINTS = {
   x: { 
     type: 'number', 
-    min: 0, 
-    max: CANVAS_WIDTH,
-    description: 'X position in canvas coordinates (0 to canvas width)'
+    // No min/max - allow infinite canvas including negative space
+    description: 'X position in canvas coordinates (infinite canvas)'
   },
   y: { 
     type: 'number', 
-    min: 0, 
-    max: CANVAS_HEIGHT,
-    description: 'Y position in canvas coordinates (0 to canvas height)'
+    // No min/max - allow infinite canvas including negative space
+    description: 'Y position in canvas coordinates (infinite canvas)'
   },
   width: { 
     type: 'number', 
-    min: 1, 
-    max: CANVAS_WIDTH,
-    description: 'Shape width (must be positive, max canvas width)'
+    min: 1,
+    // No max - allow any size in infinite canvas
+    description: 'Shape width (must be positive)'
   },
   height: { 
     type: 'number', 
-    min: 1, 
-    max: CANVAS_HEIGHT,
-    description: 'Shape height (must be positive, max canvas height)'
+    min: 1,
+    // No max - allow any size in infinite canvas
+    description: 'Shape height (must be positive)'
   },
   strokeWidth: { 
     type: 'number', 

@@ -36,7 +36,7 @@ const saveAIPanelState = (isExpanded) => {
   }
 };
 
-const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCreated }) => {
+const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCreated, onExpandedChange }) => {
   const [command, setCommand] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
   
@@ -70,7 +70,11 @@ const AIPanel = ({ currentUser, canvasId = 'main-canvas', sessionId, onShapesCre
   // Save AI Panel state to localStorage whenever isExpanded changes
   useEffect(() => {
     saveAIPanelState(isExpanded);
-  }, [isExpanded]);
+    // Notify parent component about expanded state change
+    if (onExpandedChange) {
+      onExpandedChange(isExpanded);
+    }
+  }, [isExpanded, onExpandedChange]);
 
   // Handle command execution
   const handleExecute = async () => {

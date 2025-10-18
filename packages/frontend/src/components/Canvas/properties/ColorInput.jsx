@@ -6,9 +6,9 @@ import { subscribeToUserFavoriteColors, addFavoriteColor } from '../../../utils/
  * Color input component for property editing
  * 
  * Features:
- * - Visual color preview with popup picker
+ * - Visual color preview with popover picker
  * - Text input for hex codes
- * - Custom color picker popup with recent colors
+ * - Custom color picker popover with recent colors
  * - Hex format validation
  * - Recent colors history (last 10 used)
  */
@@ -24,7 +24,15 @@ const ColorInput = ({
   const [favoriteColors, setFavoriteColors] = useState([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [colorBeforeOpen, setColorBeforeOpen] = useState(value); // Track color when opened
+  const [popoverPosition, setPopoverPosition] = useState({ left: '0', top: '2.5rem' });
   const pickerRef = useRef(null);
+  const buttonRef = useRef(null);
+  const currentColorRef = useRef(localValue); // Track current color for closePicker
+  
+  // Keep ref in sync with localValue
+  useEffect(() => {
+    currentColorRef.current = localValue;
+  }, [localValue]);
 
   // Sync with external value changes
   useEffect(() => {
@@ -35,48 +43,89 @@ const ColorInput = ({
 
   // Subscribe to user's favorite colors
   useEffect(() => {
-    console.log('[ColorInput] userId:', userId);
     if (!userId) return;
     
     const unsubscribe = subscribeToUserFavoriteColors(userId, (colors) => {
-      console.log('[ColorInput] Received favorite colors:', colors);
       setFavoriteColors(colors);
     });
     
     return () => unsubscribe();
   }, [userId]);
 
+  // Calculate popover position to keep it in viewport
+  useEffect(() => {
+    if (isPickerOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const popoverWidth = 180;
+      const popoverHeight = favoriteColors.length > 0 ? 280 : 220; // More accurate height
+      const gap = 8; // Small gap between button and popover
+      
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      let leftPos = 0;
+      let topPos = buttonRect.height + gap; // Default: below button
+      
+      // Check if there's space below
+      const spaceBelow = viewportHeight - buttonRect.bottom;
+      const spaceAbove = buttonRect.top;
+      const spaceRight = viewportWidth - buttonRect.left;
+      const spaceLeft = buttonRect.right;
+      
+      // Vertical positioning: prefer below, fallback to above
+      if (spaceBelow < popoverHeight && spaceAbove > spaceBelow) {
+        topPos = -(popoverHeight + gap); // Position above
+      }
+      
+      // Horizontal positioning: prefer right side, fallback to left
+      if (spaceRight < popoverWidth && spaceLeft > popoverWidth) {
+        leftPos = -(popoverWidth - buttonRect.width); // Align right edge with button right edge
+      }
+      
+      setPopoverPosition({
+        left: `${leftPos}px`,
+        top: `${topPos}px`
+      });
+    }
+  }, [isPickerOpen, favoriteColors.length]);
+
   // Close picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target)) {
-        closePicker();
+        // IMPORTANT: Apply changes SYNCHRONOUSLY before the click can propagate
+        // This ensures onChange executes even if the component gets unmounted
+        const finalColor = currentColorRef.current;
+        const beforeColor = colorBeforeOpen;
+        
+        if (finalColor !== beforeColor) {
+          // Apply change IMMEDIATELY and SYNCHRONOUSLY
+          onChange(finalColor);
+          saveColorToFavorites(finalColor);
+        }
+        
+        // Close picker AFTER applying changes
+        setIsPickerOpen(false);
       }
     };
 
     if (isPickerOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      // Use mousedown (not click) to execute BEFORE other handlers
+      document.addEventListener('mousedown', handleClickOutside, true); // true = capture phase
+      return () => document.removeEventListener('mousedown', handleClickOutside, true);
     }
-  }, [isPickerOpen, localValue, colorBeforeOpen]);
-
-  // No need to auto-open - custom picker is always visible
+  }, [isPickerOpen, colorBeforeOpen, onChange]);
 
   // Save color to favorites when it changes
   const saveColorToFavorites = async (color) => {
-    console.log('[ColorInput] saveColorToFavorites called:', { userId, color });
     if (!userId || !color) {
-      console.log('[ColorInput] Skipping save - no userId or color');
       return;
     }
     
     // Only save valid hex colors
     const hexPattern = /^#[0-9A-Fa-f]{6}$/;
     if (hexPattern.test(color)) {
-      console.log('[ColorInput] Saving color to Firebase:', color);
       await addFavoriteColor(userId, color.toUpperCase());
-    } else {
-      console.log('[ColorInput] Invalid color format:', color);
     }
   };
 
@@ -103,8 +152,8 @@ const ColorInput = ({
   const handleFavoriteColorClick = (color) => {
     if (disabled) return;
     setLocalValue(color);
-    onChange(color);
-    // Don't save yet - will save on close
+    currentColorRef.current = color; // Update ref synchronously to ensure closePicker uses the new color
+    // Will apply and save when picker closes
     closePicker();
   };
 
@@ -121,9 +170,11 @@ const ColorInput = ({
   };
 
   const closePicker = () => {
-    // Save color to favorites when closing (if changed)
-    if (localValue !== colorBeforeOpen) {
-      saveColorToFavorites(localValue);
+    const finalColor = currentColorRef.current;
+    // Apply the color change and save to favorites when closing (if changed)
+    if (finalColor !== colorBeforeOpen) {
+      onChange(finalColor); // Apply the change
+      saveColorToFavorites(finalColor); // Save to favorites
     }
     setIsPickerOpen(false);
   };
@@ -151,9 +202,10 @@ const ColorInput = ({
         </label>
       )}
       <div className="flex items-center gap-2">
-        {/* Color preview button with popup */}
-        <div className="relative" ref={pickerRef}>
+        {/* Color preview button with popover */}
+        <div className="relative">
           <button
+            ref={buttonRef}
             type="button"
             onClick={togglePicker}
             disabled={disabled}
@@ -162,33 +214,48 @@ const ColorInput = ({
             title="Click to pick a color"
           />
           
-          {/* Color picker popup - single view with picker + favorites */}
+          {/* Color picker popover - compact & smart positioning */}
           {isPickerOpen && (
-            <div className="absolute left-0 top-10 z-50 bg-gray-800 border border-gray-600 rounded-lg shadow-2xl min-w-[280px] p-3">
-              {/* Color picker */}
+            <div 
+              ref={pickerRef}
+              className="absolute z-[1200] bg-gray-800 border-2 border-gray-600 rounded-lg shadow-2xl w-[180px] p-3"
+              style={popoverPosition}
+            >
+              {/* Color picker - compact size */}
               <div className="mb-3">
                 <HexColorPicker 
                   color={localValue} 
                   onChange={(color) => {
+                    // Only update local value, don't trigger onChange yet
+                    // Will save when picker closes
                     setLocalValue(color);
-                    onChange(color);
+                    currentColorRef.current = color; // Update ref synchronously
                   }}
-                  style={{ width: '100%' }}
+                  style={{ width: '100%', height: '120px' }}
                 />
               </div>
               
-              {/* Favorite colors */}
+              {/* Current color display - compact */}
+              <div className="mb-3 flex items-center justify-between px-2 py-1.5 bg-gray-700 rounded text-xs">
+                <div 
+                  className="w-5 h-5 rounded border border-gray-600"
+                  style={{ backgroundColor: localValue }}
+                />
+                <span className="text-gray-200 font-mono">{localValue}</span>
+              </div>
+              
+              {/* Favorite colors - compact grid */}
               {userId && favoriteColors.length > 0 && (
-                <div className="border-t border-gray-700 pt-3">
-                  <label className="text-gray-400 text-xs font-medium mb-2 block">
-                    Recent Colors
+                <div className="border-t border-gray-700 pt-2 mt-2">
+                  <label className="text-gray-400 text-[10px] font-medium mb-1.5 block">
+                    Recent
                   </label>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-5 gap-1.5">
                     {favoriteColors.map((color, index) => (
                       <button
                         key={`${color}-${index}`}
                         onClick={() => handleFavoriteColorClick(color)}
-                        className="w-full aspect-square rounded border-2 border-gray-600 hover:border-blue-500 hover:scale-110 transition-all"
+                        className="w-full aspect-square rounded border border-gray-600 hover:border-blue-500 hover:scale-110 transition-all"
                         style={{ backgroundColor: color }}
                         title={color}
                       />

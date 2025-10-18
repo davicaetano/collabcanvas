@@ -30,6 +30,9 @@ const Canvas = () => {
   // Floating toolbar state - lifted up to sync with canvas modes
   const [selectedTool, setSelectedTool] = useState('select');
   
+  // AI Panel expanded state - used for Fit All calculations
+  const [isAIPanelExpanded, setIsAIPanelExpanded] = useState(true);
+  
   // Tool change handler - maps toolbar selections to canvas modes
   // Ensures only ONE mode is active at a time
   const handleToolChange = useCallback((toolId) => {
@@ -170,6 +173,7 @@ const Canvas = () => {
             canvasId="main-canvas"
             sessionId={sessionId}
             onShapesCreated={handleAIShapesCreated}
+            onExpandedChange={setIsAIPanelExpanded}
           />
         </div>
         
@@ -180,6 +184,7 @@ const Canvas = () => {
           shapeManager={shapeManager}
           canvasState={canvasState}
           currentUser={currentUser}
+          isAIPanelExpanded={isAIPanelExpanded}
         />
       </div>
     </div>

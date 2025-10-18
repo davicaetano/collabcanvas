@@ -12,12 +12,13 @@ import TextInput from './properties/TextInput';
 import SelectInput from './properties/SelectInput';
 import { 
   TrashIcon, 
-  DocumentDuplicateIcon, 
   ClipboardDocumentIcon,
-  ClipboardIcon 
+  ClipboardIcon,
+  QueueListIcon,
+  ArrowsPointingInIcon
 } from '@heroicons/react/24/outline';
 
-const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, canvasState, currentUser }) => {
+const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, canvasState, currentUser, isAIPanelExpanded = true }) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
   
   // Get the actual shape objects from the selected IDs
@@ -100,6 +101,70 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
     shapeManager.deleteShapeBatch(selectedShapes);
   };
   
+  /**
+   * Handle fit to content - centers and zooms to show all shapes
+   * If no shapes exist, resets to default view (0,0 at 100% zoom)
+   * Takes into account the AIPanel width if it's expanded
+   */
+  const handleFitAll = () => {
+    if (!canvasState || !canvasState.stageRef.current) return;
+    
+    // If no shapes, reset to default view
+    if (shapes.length === 0) {
+      canvasState.setStageScale(1); // 100% zoom
+      canvasState.setStageX(0);
+      canvasState.setStageY(0);
+      return;
+    }
+    
+    const stage = canvasState.stageRef.current;
+    const padding = 100; // Padding around content
+    const AI_PANEL_WIDTH = 360; // AIPanel width when expanded
+    
+    // Calculate bounding box of all shapes
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    shapes.forEach(shape => {
+      const shapeMinX = shape.x;
+      const shapeMinY = shape.y;
+      const shapeMaxX = shape.x + (shape.width || 0);
+      const shapeMaxY = shape.y + (shape.height || 0);
+      
+      minX = Math.min(minX, shapeMinX);
+      minY = Math.min(minY, shapeMinY);
+      maxX = Math.max(maxX, shapeMaxX);
+      maxY = Math.max(maxY, shapeMaxY);
+    });
+    
+    // Calculate content dimensions
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    
+    // Calculate available viewport (subtract AIPanel width if expanded)
+    const viewportWidth = stage.width();
+    const viewportHeight = stage.height();
+    const availableWidth = isAIPanelExpanded ? viewportWidth - AI_PANEL_WIDTH : viewportWidth;
+    const availableHeight = viewportHeight;
+    
+    // Calculate scale to fit content in available viewport
+    const scaleX = (availableWidth - padding * 2) / contentWidth;
+    const scaleY = (availableHeight - padding * 2) / contentHeight;
+    const newScale = Math.min(scaleX, scaleY, 1); // Don't zoom in beyond 100%
+    
+    // Calculate position to center content in available space
+    // If AIPanel is expanded, center in the space to the right of it
+    const contentCenterX = minX + contentWidth / 2;
+    const contentCenterY = minY + contentHeight / 2;
+    const offsetX = isAIPanelExpanded ? AI_PANEL_WIDTH / 2 : 0; // Offset to account for AIPanel
+    const newX = (viewportWidth / 2) + offsetX - contentCenterX * newScale;
+    const newY = viewportHeight / 2 - contentCenterY * newScale;
+    
+    // Apply new scale and position
+    canvasState.setStageScale(newScale);
+    canvasState.setStageX(newX);
+    canvasState.setStageY(newY);
+  };
+  
   return (
     <div
       className={`${PROPERTIES_PANEL_BACKGROUND} border-l overflow-y-auto flex-shrink-0 flex flex-col`}
@@ -108,7 +173,6 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
         minWidth: `${PROPERTIES_PANEL_WIDTH}px`,
         maxWidth: `${PROPERTIES_PANEL_WIDTH}px`,
         zIndex: Z_INDEX_PROPERTIES_TOOLBAR,
-        ...(isDevMode && { border: '5px solid red' }),
         backgroundColor: '#1f2937',
       }}
     >
@@ -201,18 +265,48 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
             />
           </button>
 
-          {/* Duplicate Button - Placeholder */}
+          {/* Select All Button */}
           <button
-            disabled={true}
-            className="flex items-center justify-center bg-gray-800 border border-gray-700 cursor-default opacity-50"
+            onClick={() => {
+              const allShapeIds = shapes.map(s => s.id);
+              shapeManager.selectShapes(allShapeIds);
+            }}
+            disabled={shapes.length === 0}
+            className={`group flex items-center justify-center bg-gray-800 border border-gray-700 transition-all ${
+              shapes.length === 0
+                ? 'cursor-default opacity-50' 
+                : 'hover:bg-gray-700 hover:border-blue-500 cursor-pointer'
+            }`}
             style={{
               width: '40px',
               height: '40px',
               borderRadius: '8px',
             }}
-            title="Duplicate (⌘D / Ctrl+D)"
+            title="Select All (⌘A / Ctrl+A)"
           >
-            <DocumentDuplicateIcon className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+            <QueueListIcon 
+              className={`w-5 h-5 transition-colors ${
+                shapes.length > 0 ? 'text-gray-300 group-hover:text-blue-400' : 'text-gray-600'
+              }`}
+              strokeWidth={1.5}
+            />
+          </button>
+
+          {/* Fit All Button - Always enabled, resets to origin if no shapes */}
+          <button
+            onClick={handleFitAll}
+            className="group flex items-center justify-center bg-gray-800 border border-gray-700 hover:bg-gray-700 hover:border-blue-500 cursor-pointer transition-all"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+            }}
+            title={shapes.length > 0 ? "Fit All Shapes" : "Reset View"}
+          >
+            <ArrowsPointingInIcon 
+              className="w-5 h-5 text-gray-300 group-hover:text-blue-400 transition-colors"
+              strokeWidth={1.5}
+            />
           </button>
         </div>
       </div>

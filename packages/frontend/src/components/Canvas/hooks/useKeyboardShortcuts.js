@@ -5,6 +5,7 @@ import { useEffect } from 'react';
  * Currently handles:
  * - ESC: Exit current mode and deselect shapes
  * - Backspace/Delete: Delete selected shapes
+ * - Command+A/Ctrl+A: Select all shapes
  * - Command+C/Ctrl+C: Copy selected shapes
  * - Command+V/Ctrl+V: Paste shapes
  * - V: Select tool
@@ -91,9 +92,20 @@ export const useKeyboardShortcuts = (canvasState, shapeManager, onToolChange) =>
         }
       }
       
-      // Copy & Paste shortcuts (Command+C, Command+V / Ctrl+C, Ctrl+V)
+      // Copy & Paste & Select All shortcuts (Command/Ctrl + C/V/A)
       if ((e.metaKey || e.ctrlKey) && !isTyping) {
         const key = e.key.toLowerCase();
+        
+        // Command+A / Ctrl+A: Select All
+        if (key === 'a') {
+          e.preventDefault(); // Always prevent default browser behavior
+          const allShapes = shapeManager.getAllShapes();
+          if (allShapes && allShapes.length > 0) {
+            const allShapeIds = allShapes.map(s => s.id);
+            shapeManager.selectShapes(allShapeIds);
+          }
+          return;
+        }
         
         // Command+C / Ctrl+C: Copy
         if (key === 'c') {

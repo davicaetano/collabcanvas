@@ -301,6 +301,7 @@ export const subscribeToUserFavoriteColors = (userId, callback) => {
  */
 export const addFavoriteColor = async (userId, color) => {
   try {
+    console.log('[Firestore] addFavoriteColor called with:', { userId, color });
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     
@@ -322,13 +323,17 @@ export const addFavoriteColor = async (userId, color) => {
       favColors = favColors.slice(0, 10);
     }
     
+    console.log('[Firestore] Saving colors to Firestore:', favColors);
+    
     // Save to Firestore
     await setDoc(userRef, {
       favColors,
       updatedAt: serverTimestamp(),
     }, { merge: true });
+    
+    console.log('[Firestore] Colors saved successfully!');
   } catch (error) {
-    // Silently fail
+    console.error('[Firestore] Error saving favorite color:', error);
   }
 };
 

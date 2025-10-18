@@ -62,11 +62,18 @@ const CanvasStage = React.memo(({
   // Update viewport dimensions on window resize
   useEffect(() => {
     const handleResize = () => {
+      // AIPanel is position:fixed (doesn't affect layout), so we only subtract PropertiesToolbar
+      const PROPERTIES_TOOLBAR_WIDTH = 320; // PropertiesToolbar width
+      const HEADER_HEIGHT = 64; // Header height
+      
       setViewportDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
+        width: window.innerWidth - PROPERTIES_TOOLBAR_WIDTH,
+        height: window.innerHeight - HEADER_HEIGHT
       });
     };
+
+    // Set initial dimensions
+    handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -78,7 +85,6 @@ const CanvasStage = React.memo(({
       className="flex-1 overflow-hidden"
       style={{
         backgroundColor: canvasBackgroundColor || '#ffffff',
-        ...(isDevMode && { border: '5px solid blue' }), // DEV MODE: Blue border for canvas area
       }}
     >
       <Stage
@@ -108,8 +114,14 @@ const CanvasStage = React.memo(({
         }}
       >
         <Layer>
-          {/* Grid background */}
-          <CanvasGrid />
+          {/* Grid background - infinite grid */}
+          <CanvasGrid 
+            stageX={stageX}
+            stageY={stageY}
+            stageScale={stageScale}
+            viewportWidth={viewportDimensions.width}
+            viewportHeight={viewportDimensions.height}
+          />
           
           {/* Preview shape while drawing */}
           <CanvasPreview addMode={addMode} previewRect={previewRect} selectedColor={selectedColor} />
