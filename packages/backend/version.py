@@ -8,8 +8,8 @@ Version format: YYYY.MM.DD.BUILD
 - BUILD: Build number for the day (increment for each deployment/fix)
 """
 
-__version__ = "2025.10.18.13"
-__version_name__ = "Prompt refinements: viewport, collision guideline, PV command"
+__version__ = "2025.10.18.18"
+__version_name__ = "Clarify move_random_shapes uses random selection + fix all references"
 
 def get_version():
     """Get the current backend version."""

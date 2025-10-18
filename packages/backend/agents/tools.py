@@ -227,7 +227,9 @@ def move_shape(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Move a shape to a new position. Call get_canvas_shapes() first to find the shape ID.
+    Move a SINGLE shape to a new position. FOR 3+ SHAPES, USE move_random_shapes INSTEAD!
+    
+    WARNING: Do NOT call this function multiple times! For moving 3+ shapes, you MUST use move_random_shapes.
     
     Args:
         shape_id: Unique ID of the shape (from get_canvas_shapes)
@@ -279,7 +281,9 @@ def resize_shape(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Resize a shape. Call get_canvas_shapes() first to find the shape ID.
+    Resize a SINGLE shape. FOR 3+ SHAPES, USE update_shapes_batch INSTEAD!
+    
+    WARNING: Do NOT call this function multiple times! For resizing 3+ shapes, use update_shapes_batch.
     
     Args:
         shape_id: Unique ID of the shape (from get_canvas_shapes)
@@ -381,7 +385,9 @@ def change_shape_color(
     canvas_id: str = "main-canvas"
 ) -> Dict[str, Any]:
     """
-    Change the color of a shape. Call get_canvas_shapes() first to find the shape ID.
+    Change the color of a SINGLE shape. FOR 3+ SHAPES, USE update_shapes_batch INSTEAD!
+    
+    WARNING: Do NOT call this function multiple times! For changing color of 3+ shapes, use update_shapes_batch.
     
     Args:
         shape_id: Unique ID of the shape (from get_canvas_shapes)
@@ -711,6 +717,96 @@ def delete_shape_by_id(
             "success": False,
             "message": f"Error deleting shape: {str(e)}",
             "shape_id": shape_id
+        }
+
+
+@tool
+def move_random_shapes(
+    count: int,
+    offset_x: float,
+    offset_y: float,
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Move a specific number of RANDOMLY SELECTED shapes by an offset. FAST! No shape IDs needed!
+    
+    This tool automatically selects random shapes from the canvas and moves them.
+    Perfect for commands like "move 10 shapes right" where specific shapes don't matter.
+    
+    Args:
+        count: Number of shapes to move (e.g., 10, 100, 500)
+        offset_x: Amount to move horizontally (positive = right, negative = left)
+        offset_y: Amount to move vertically (positive = down, negative = up)
+        canvas_id: Canvas identifier (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+        
+    Examples:
+        - "move 10 shapes 50 pixels to the right" → move_random_shapes(count=10, offset_x=50, offset_y=0)
+        - "shift 100 shapes down" → move_random_shapes(count=100, offset_x=0, offset_y=100)
+        - "move all shapes left" → get_canvas_shapes() to count, then move_random_shapes(count=total, offset_x=-50, offset_y=0)
+    
+    NOTE: Shapes are selected randomly. For moving ALL shapes, pass count equal to total shape count.
+    """
+    try:
+        import logging
+        import random
+        logger = logging.getLogger("tools")
+        logger.info(f"🔄 move_random_shapes called: count={count}, offset_x={offset_x}, offset_y={offset_y}")
+        
+        if count <= 0:
+            return {
+                "success": False,
+                "message": "Count must be greater than 0"
+            }
+        
+        # Get all shapes
+        all_shapes = get_all_shapes(canvas_id=canvas_id)
+        
+        if not all_shapes:
+            return {
+                "success": False,
+                "message": "No shapes found on canvas"
+            }
+        
+        # Select shapes (up to count, or all if fewer available)
+        shapes_to_move = random.sample(all_shapes, min(count, len(all_shapes)))
+        
+        # Build updates
+        updates = []
+        for shape in shapes_to_move:
+            current_x = shape.get('x', 0)
+            current_y = shape.get('y', 0)
+            
+            updates.append({
+                'shape_id': shape['id'],
+                'x': float(current_x + offset_x),
+                'y': float(current_y + offset_y)
+            })
+        
+        # Batch update
+        success = update_shapes_batch_in_firestore(
+            updates=updates,
+            canvas_id=canvas_id,
+            session_id="ai-agent"
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Moved {len(updates)} shapes by offset ({offset_x}, {offset_y})",
+                "shape_count": len(updates)
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to move shapes"
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error moving shapes: {str(e)}"
         }
 
 
@@ -1211,6 +1307,7 @@ ALL_TOOLS = [
     
     # Manipulation operations (require shape_id from get_canvas_shapes)
     move_shape,
+    move_random_shapes,         # NEW: Move N shapes by offset (FAST! No IDs needed)
     resize_shape,
     rotate_shape,
     change_shape_color,

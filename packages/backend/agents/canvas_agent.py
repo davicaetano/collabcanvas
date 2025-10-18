@@ -16,6 +16,7 @@ import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from langchain_openai import ChatOpenAI
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -97,7 +98,7 @@ def create_canvas_agent(memory: Optional[ConversationBufferWindowMemory] = None)
         tools=ALL_TOOLS,
         verbose=True,  # Enable logging for debugging
         handle_parsing_errors=True,
-        max_iterations=5,  # Reduced from 10 - most commands need 1-2 iterations
+        max_iterations=30,  # Limit to 30 iterations to force efficient tool usage
         max_execution_time=90,  # 90 second timeout for large batch operations
         early_stopping_method="generate",  # Stop as soon as we have a valid response
         return_intermediate_steps=True,  # CRITICAL: Return tool outputs!
@@ -312,8 +313,19 @@ def execute_canvas_command(command: str, canvas_id: str = "main-canvas", user_id
             viewport_desc = f"The user's visible canvas area is from ({viewport['x_min']}, {viewport['y_min']}) to ({viewport['x_max']}, {viewport['y_max']}). Create shapes within this visible area when possible."
             agent_input["input"] = f"{viewport_desc}\n\nUser command: {command}"
         
-        # Execute command
-        result = agent.invoke(agent_input)
+        # Execute command with timeout (20 seconds)
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(agent.invoke, agent_input)
+                result = future.result(timeout=20)
+        except FuturesTimeoutError:
+            agent_health_logger.error(f"⏱️  Command timed out after 20 seconds: {command}")
+            return {
+                "success": False,
+                "message": "Command took too long to execute (timeout after 20 seconds). This usually happens when the AI tries to process too many operations individually. Please try a simpler command or contact support.",
+                "shapes": [],
+                "error": "Timeout after 20 seconds"
+            }
         
         # Extract shapes from the result
         shapes = extract_shapes_from_result(result)
