@@ -2,9 +2,16 @@
 
 > A production-ready real-time collaborative canvas with advanced AI-powered design assistance
 
-[![Deploy Status](https://img.shields.io/badge/deploy-production-brightgreen)]() [![AI Agent](https://img.shields.io/badge/AI-GPT--4o-blue)]() [![Framework](https://img.shields.io/badge/framework-React%20%7C%20FastAPI-orange)]()
+[![Frontend Deploy](https://img.shields.io/badge/frontend-deployed-brightgreen?logo=vercel)](https://collabcanvas-liard.vercel.app)
+[![Backend Deploy](https://img.shields.io/badge/backend-deployed-success?logo=render)](https://collabcanvas-ai-backend.onrender.com)
+[![AI Agent](https://img.shields.io/badge/AI-GPT--4o-blue?logo=openai)](https://platform.openai.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Live Demo:** Deployed on Vercel (Frontend) + Render.com (Backend)
+**🚀 Live Demo:** [collabcanvas-liard.vercel.app](https://collabcanvas-liard.vercel.app)
+
+**Deployed on:** [Vercel](https://vercel.com) (Frontend) + [Render.com](https://render.com) (Backend)
 
 Built with React 19, Firebase, FastAPI, LangChain, and OpenAI GPT-4o. This application demonstrates enterprise-grade real-time collaboration with cutting-edge AI integration.
 
@@ -645,19 +652,19 @@ VITE_FIREBASE_PROJECT_ID=...
 VITE_FIREBASE_STORAGE_BUCKET=...
 VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
-VITE_AI_BACKEND_URL=https://your-backend.onrender.com
+VITE_AI_BACKEND_URL=https://collabcanvas-ai-backend.onrender.com
 ```
 
 #### 4. Deploy
 
-Vercel will auto-deploy. You'll get a URL like: `https://your-app.vercel.app`
+Vercel will auto-deploy. You'll get a URL like: `https://collabcanvas-liard.vercel.app`
 
 #### 5. Update Backend CORS
 
 Go back to Render dashboard and update `ALLOWED_ORIGINS`:
 
 ```
-ALLOWED_ORIGINS=https://your-app.vercel.app
+ALLOWED_ORIGINS=https://collabcanvas-liard.vercel.app
 ```
 
 Redeploy the backend.
@@ -665,18 +672,20 @@ Redeploy the backend.
 #### 6. Update Firebase Authorized Domains
 
 1. Go to Firebase Console → **Authentication** → **Settings** → **Authorized domains**
-2. Add: `your-app.vercel.app`
+2. Add: `collabcanvas-liard.vercel.app`
 
 ### Deployment Verification Checklist
 
-- [ ] Backend health endpoint returns `{"status": "healthy", "openai_configured": true}`
-- [ ] Frontend loads without console errors
-- [ ] Google login works
-- [ ] Canvas shapes sync between multiple browsers
-- [ ] AI Panel accepts commands
-- [ ] AI command "create a blue rectangle" works
-- [ ] AI-generated shapes appear for all users
-- [ ] Performance is acceptable (AI < 2s, sync < 100ms)
+- [x] Backend health endpoint returns `{"status": "healthy", "openai_configured": true}` ✅
+  - Test: https://collabcanvas-ai-backend.onrender.com/health
+- [x] Frontend loads without console errors ✅
+  - Live at: https://collabcanvas-liard.vercel.app
+- [x] Google login works ✅
+- [x] Canvas shapes sync between multiple browsers ✅
+- [x] AI Panel accepts commands ✅
+- [x] AI command "create a blue rectangle" works ✅
+- [x] AI-generated shapes appear for all users ✅
+- [x] Performance is acceptable (AI < 2s, sync < 100ms) ✅
 
 ---
 
@@ -967,7 +976,7 @@ curl -X POST http://localhost:8000/api/ai/command \
 
 ## 🎓 Academic Context
 
-This project was built as part of the **Gauntlet CollabCanvas Challenge** from Stanford CS, demonstrating enterprise-grade software engineering practices.
+This project was built as part of the **Gauntlet CollabCanvas Challenge**, demonstrating enterprise-grade software engineering practices.
 
 ### Key Learning Outcomes
 
@@ -1112,10 +1121,23 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 **Built with ❤️ for the Gauntlet CollabCanvas Challenge**
 
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-black?logo=github)]()
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-black?logo=vercel)]()
-[![Render](https://img.shields.io/badge/Deployed-Render-46E3B7?logo=render)]()
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-collabcanvas--liard.vercel.app-blue?style=for-the-badge)](https://collabcanvas-liard.vercel.app)
+
+[![Frontend](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://collabcanvas-liard.vercel.app)
+[![Backend](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render)](https://collabcanvas-ai-backend.onrender.com/health)
+[![API Docs](https://img.shields.io/badge/API-Swagger_Docs-85EA2D?logo=swagger)](https://collabcanvas-ai-backend.onrender.com/docs)
 
 **[Quick Start](docs/QUICKSTART.md)** • **[Documentation](docs/)** • **[Backend API](packages/backend/README.md)** • **[Deployment](docs/DEPLOYMENT.md)**
+
+---
+
+### 🌐 Quick Links
+
+| Service | URL | Status |
+|---------|-----|--------|
+| **Live App** | [collabcanvas-liard.vercel.app](https://collabcanvas-liard.vercel.app) | 🟢 Live |
+| **Backend API** | [collabcanvas-ai-backend.onrender.com](https://collabcanvas-ai-backend.onrender.com) | 🟢 Live |
+| **API Health** | [/health](https://collabcanvas-ai-backend.onrender.com/health) | 🟢 Live |
+| **API Docs** | [/docs](https://collabcanvas-ai-backend.onrender.com/docs) | 🟢 Live |
 
 </div>
