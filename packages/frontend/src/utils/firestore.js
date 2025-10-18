@@ -106,32 +106,6 @@ export const removeCursor = async (userId) => {
   await deleteDoc(cursorRef);
 };
 
-// Presence operations
-export const updatePresence = async (userId, userData) => {
-  const presenceRef = doc(db, 'canvases', CANVAS_ID, 'presence', userId);
-  await setDoc(presenceRef, {
-    ...userData,
-    lastSeen: serverTimestamp(),
-    online: true,
-  });
-};
-
-export const subscribeToPresence = (callback) => {
-  const presenceRef = collection(db, 'canvases', CANVAS_ID, 'presence');
-  return onSnapshot(presenceRef, (snapshot) => {
-    const users = {};
-    snapshot.forEach((doc) => {
-      users[doc.id] = doc.data();
-    });
-    callback(users);
-  });
-};
-
-export const removePresence = async (userId) => {
-  const presenceRef = doc(db, 'canvases', CANVAS_ID, 'presence', userId);
-  await deleteDoc(presenceRef);
-};
-
 // Batch write multiple shapes at once for better performance
 export const addShapesBatch = async (shapes) => {
   const shapesRef = collection(db, 'canvases', CANVAS_ID, 'shapes');

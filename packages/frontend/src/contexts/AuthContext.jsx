@@ -5,7 +5,8 @@ import {
   signOut 
 } from 'firebase/auth';
 import { auth, googleProvider } from '../utils/firebase';
-import { removePresence, removeCursor } from '../utils/firestore';
+import { removeCursor } from '../utils/firestore';
+import { removePresence, cancelDisconnect } from '../utils/realtimedb';
 
 const AuthContext = createContext({});
 
@@ -31,8 +32,9 @@ export const AuthProvider = ({ children }) => {
       // Clean up presence and cursor data before signing out
       if (currentUser) {
         await Promise.all([
-          removePresence(currentUser.uid),
-          removeCursor(currentUser.uid)
+          cancelDisconnect(currentUser.uid),  // Cancel onDisconnect before removing
+          removePresence(currentUser.uid),     // Remove from Realtime Database
+          removeCursor(currentUser.uid)        // Remove from Firestore
         ]);
       }
       
@@ -48,8 +50,9 @@ export const AuthProvider = ({ children }) => {
       if (!user && currentUser) {
         try {
           await Promise.all([
-            removePresence(currentUser.uid),
-            removeCursor(currentUser.uid)
+            cancelDisconnect(currentUser.uid),  // Cancel onDisconnect before removing
+            removePresence(currentUser.uid),     // Remove from Realtime Database
+            removeCursor(currentUser.uid)        // Remove from Firestore
           ]);
         } catch (error) {
           // Error cleaning up

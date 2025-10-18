@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { 
-  subscribeToShapes, 
-  subscribeToPresence,
-  updatePresence,
-  removePresence
+  subscribeToShapes
 } from '../../../utils/firestore';
+import {
+  subscribeToPresence,
+  updatePresenceWithDisconnect,
+  removePresence
+} from '../../../utils/realtimedb';
 
 export const useMultiplayer = (currentUser, shapeManager, setOnlineUsers, sessionId, isDraggingShape) => {
   // Keep track of previous data to avoid unnecessary updates
@@ -30,19 +32,37 @@ export const useMultiplayer = (currentUser, shapeManager, setOnlineUsers, sessio
     });
 
     // Subscribe to presence
-    const unsubscribePresence = subscribeToPresence((presenceData) => {
-      // Only update if presence data actually changed (deep comparison)
+    const unsubscribePresence = subscribeToPresence((allUsers) => {
+      // 1️⃣ Auto-correct: If I'm marked as offline but I'm still running, fix it!
+      // This handles the case where user has multiple tabs open and closes one
+      if (allUsers[currentUser.uid]?.online === false) {
+        console.log('[Presence] Detected self as offline, correcting to online...');
+        updatePresenceWithDisconnect(currentUser.uid, {
+          name: currentUser.displayName,
+          photo: currentUser.photoURL,
+        });
+      }
+      
+      // 2️⃣ Filter: only show users that are online (online !== false)
+      const onlineUsers = {};
+      Object.entries(allUsers).forEach(([userId, userData]) => {
+        if (userData.online !== false) {
+          onlineUsers[userId] = userData;
+        }
+      });
+      
+      // 3️⃣ Only update if presence data actually changed (deep comparison)
       const presenceChanged = !previousOnlineUsersRef.current || 
-        JSON.stringify(presenceData) !== JSON.stringify(previousOnlineUsersRef.current);
+        JSON.stringify(onlineUsers) !== JSON.stringify(previousOnlineUsersRef.current);
       
       if (presenceChanged) {
-        previousOnlineUsersRef.current = presenceData;
-        setOnlineUsers(presenceData);
+        previousOnlineUsersRef.current = onlineUsers;
+        setOnlineUsers(onlineUsers);
       }
     });
 
-    // Update presence when component mounts
-    updatePresence(currentUser.uid, {
+    // Update presence when component mounts (with onDisconnect)
+    updatePresenceWithDisconnect(currentUser.uid, {
       name: currentUser.displayName,
       photo: currentUser.photoURL,
     });
