@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import logging
 
 from agents.canvas_agent import execute_canvas_command
+from version import __version__, __version_name__
 
 # Load environment variables
 load_dotenv()
@@ -22,11 +23,14 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Log version on startup
+logger.info(f"=== CollabCanvas Backend v{__version__} ({__version_name__}) ===")
+
 # Initialize FastAPI app
 app = FastAPI(
     title="CollabCanvas AI API",
     description="AI-powered canvas manipulation API using LangChain and OpenAI GPT-4o-mini",
-    version="1.0.0",
+    version=__version__,
 )
 
 # Get allowed origins from environment
@@ -96,13 +100,25 @@ async def root():
     """Root endpoint - API information"""
     return {
         "name": "CollabCanvas AI API",
-        "version": "1.0.0",
+        "version": __version__,
+        "version_name": __version_name__,
         "description": "AI-powered canvas manipulation using LangChain and OpenAI GPT-4o-mini",
         "endpoints": {
             "health": "/health",
+            "version": "/version",
             "ai_command": "/api/ai/command",
             "docs": "/docs",
         }
+    }
+
+
+@app.get("/version")
+async def get_version():
+    """Get backend version information"""
+    return {
+        "version": __version__,
+        "name": __version_name__,
+        "message": f"CollabCanvas Backend v{__version__} ({__version_name__})"
     }
 
 
