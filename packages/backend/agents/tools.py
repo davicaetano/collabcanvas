@@ -94,8 +94,8 @@ def create_shape(
     
     Args:
         shape_type: "rectangle" or "circle"
-        x: X position (center point)
-        y: Y position (center point)
+        x: X position (top-left for rectangles, center for circles - Konva.js convention)
+        y: Y position (top-left for rectangles, center for circles - Konva.js convention)
         width: Width in pixels (default: 100)
         height: Height in pixels (default: 100, circle uses width as diameter)
         color: Color name or hex code (default: "blue")
@@ -233,8 +233,8 @@ def move_shape(
     
     Args:
         shape_id: Unique ID of the shape (from get_canvas_shapes)
-        new_x: New X position (center point)
-        new_y: New Y position (center point)
+        new_x: New X position (top-left for rectangles, center for circles - Konva.js convention)
+        new_y: New Y position (top-left for rectangles, center for circles - Konva.js convention)
         canvas_id: Canvas identifier (default: "main-canvas")
     
     Returns:
@@ -826,27 +826,28 @@ def create_random_shapes_simple(
     a large JSON array.
     
     **Use this tool when:**
-    - User asks for 50+ shapes (e.g., "create 500 rectangles")
+    - User asks for 50+ shapes (e.g., "create 500 squares", "create 500 rectangles")
     - User wants random positions and colors
     - Speed is important
     
     Args:
         count: Number of shapes to create (can be 100, 500, 1000+)
-        shape_type: Type of shapes - "rectangle", "circle", or "mixed" (default: "rectangle")
+        shape_type: Type of shapes - "rectangle", "square", "circle", or "mixed" (default: "rectangle")
         canvas_id: ID of the canvas (default: "main-canvas")
     
     Returns:
         Dictionary with success status and message
     
     Examples:
-        create_random_shapes_simple(count=500, shape_type="rectangle")
+        create_random_shapes_simple(count=500, shape_type="square")      # All squares (width = height)
+        create_random_shapes_simple(count=500, shape_type="rectangle")   # All rectangles (width != height)
         create_random_shapes_simple(count=100, shape_type="circle")
-        create_random_shapes_simple(count=1000, shape_type="mixed")
+        create_random_shapes_simple(count=1000, shape_type="mixed")      # Mix of all types
     """
     import random
     
     shape_type = shape_type.lower()
-    if shape_type not in ["rectangle", "circle", "mixed"]:
+    if shape_type not in ["rectangle", "square", "circle", "mixed"]:
         shape_type = "rectangle"
     
     # Color palette for random colors
@@ -859,7 +860,7 @@ def create_random_shapes_simple(
     for i in range(count):
         # Determine shape type (for mixed mode)
         if shape_type == "mixed":
-            current_type = random.choice(["rectangle", "circle"])
+            current_type = random.choice(["rectangle", "square", "circle"])
         else:
             current_type = shape_type
         
@@ -867,16 +868,30 @@ def create_random_shapes_simple(
         x = random.randint(50, 2950)
         y = random.randint(50, 2950)
         
-        # Random size
-        width = random.randint(30, 150)
-        height = random.randint(30, 150) if current_type == "rectangle" else width
+        # Random size - handle squares vs rectangles vs circles
+        if current_type == "square":
+            # Square: width = height (one random side, copied to both dimensions)
+            size = random.randint(30, 150)
+            width = size
+            height = size
+            render_type = "rectangle"  # Konva.js renders squares as rectangles with equal dimensions
+        elif current_type == "circle":
+            # Circle: width = diameter, height = width
+            width = random.randint(30, 150)
+            height = width
+            render_type = "circle"
+        else:  # rectangle
+            # Rectangle: width and height are independently random
+            width = random.randint(30, 150)
+            height = random.randint(30, 150)
+            render_type = "rectangle"
         
         # Random color
         color = random.choice(colors)
         
         shape = {
             "id": f"{generate_shape_id()}-{i}",
-            "type": current_type,
+            "type": render_type,  # "rectangle" or "circle" (not "square" - that's just a rectangle with equal sides)
             "x": float(x),
             "y": float(y),
             "width": float(width),

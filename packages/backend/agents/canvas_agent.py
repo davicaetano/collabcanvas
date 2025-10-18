@@ -60,9 +60,9 @@ def create_canvas_agent(memory: Optional[ConversationBufferWindowMemory] = None)
     if not api_key:
         raise ValueError("OPENAI_API_KEY not found in environment variables")
     
-    # Initialize ChatOpenAI with GPT-4o-mini for faster responses
+    # Initialize ChatOpenAI with GPT-4o for better reasoning and tool selection
     llm = ChatOpenAI(
-        model="gpt-4o-mini",  # Faster and cheaper than gpt-4o
+        model="gpt-4o",  # More intelligent, better at understanding complex commands
         temperature=0,  # Zero temperature for fastest, most deterministic results
         api_key=api_key,
         max_tokens=16000,  # Allow large batch operations (up to ~500 shapes)

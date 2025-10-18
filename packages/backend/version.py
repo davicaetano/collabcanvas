@@ -8,8 +8,8 @@ Version format: YYYY.MM.DD.BUILD
 - BUILD: Build number for the day (increment for each deployment/fix)
 """
 
-__version__ = "2025.10.18.18"
-__version_name__ = "Clarify move_random_shapes uses random selection + fix all references"
+__version__ = "2025.10.18.21"
+__version_name__ = "Add support for squares (width=height) as separate shape_type"
 
 def get_version():
     """Get the current backend version."""
