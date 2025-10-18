@@ -31,8 +31,8 @@ export const useShapeOperations = (currentUser, selectedColor, shapeManager) => 
       width: width,
       height: height,
       fill: fillColor,
-      stroke: selectedColor,
-      strokeWidth: SHAPE_STROKE_WIDTH,
+      stroke: '#000000',
+      strokeWidth: 0,
       rotation: 0,
     };
     
@@ -67,8 +67,8 @@ export const useShapeOperations = (currentUser, selectedColor, shapeManager) => 
         width,
         height,
         fill: randomColor,
-        stroke: randomColor,
-        strokeWidth: 2,
+        stroke: '#000000',
+        strokeWidth: 0,
         rotation: 0,
       };
       

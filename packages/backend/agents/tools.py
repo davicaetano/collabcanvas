@@ -173,7 +173,7 @@ def create_shape(
         "fill": fill_color,
         "rotation": float(rotation),
         "stroke": "#000000",
-        "strokeWidth": 2,
+        "strokeWidth": 0,
     }
     
     # Save to Firebase
@@ -240,6 +240,8 @@ def create_text(
         "fill": fill_color,
         "width": len(text) * font_size * 0.6,  # Approximate width
         "height": font_size * 1.2,  # Approximate height
+        "stroke": "#000000",
+        "strokeWidth": 0,
     }
     
     # Save to Firebase
@@ -630,7 +632,7 @@ def create_grid(
                 "fill": fill_color,
                 "rotation": 0,
                 "stroke": "#000000",
-                "strokeWidth": 2,
+                "strokeWidth": 0,
             }
             shapes.append(shape)
     
@@ -695,6 +697,8 @@ def create_form(
             "fill": "#000000",
             "width": 100,
             "height": 30,
+            "stroke": "#000000",
+            "strokeWidth": 0,
         })
         
         # Username label
@@ -709,6 +713,8 @@ def create_form(
             "fill": "#333333",
             "width": 100,
             "height": 20,
+            "stroke": "#000000",
+            "strokeWidth": 0,
         })
         
         # Username field
@@ -721,8 +727,8 @@ def create_form(
             "height": 40,
             "fill": "#FFFFFF",
             "rotation": 0,
-            "stroke": "#CCCCCC",
-            "strokeWidth": 2,
+            "stroke": "#000000",
+            "strokeWidth": 0,
         })
         
         # Password label
@@ -737,6 +743,8 @@ def create_form(
             "fill": "#333333",
             "width": 100,
             "height": 20,
+            "stroke": "#000000",
+            "strokeWidth": 0,
         })
         
         # Password field
@@ -749,8 +757,8 @@ def create_form(
             "height": 40,
             "fill": "#FFFFFF",
             "rotation": 0,
-            "stroke": "#CCCCCC",
-            "strokeWidth": 2,
+            "stroke": "#000000",
+            "strokeWidth": 0,
         })
         
         # Submit button
@@ -763,8 +771,8 @@ def create_form(
             "height": 45,
             "fill": "#007BFF",
             "rotation": 0,
-            "stroke": "#0056b3",
-            "strokeWidth": 2,
+            "stroke": "#000000",
+            "strokeWidth": 0,
         })
         
         # Button text
@@ -779,6 +787,8 @@ def create_form(
             "fill": "#FFFFFF",
             "width": 80,
             "height": 20,
+            "stroke": "#000000",
+            "strokeWidth": 0,
         })
     
     # Save all shapes to Firebase in batch

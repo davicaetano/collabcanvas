@@ -84,8 +84,8 @@ export const useShapeManager = (currentUser, sessionId) => {
       width: shapeData.width || (shapeType === 'text' ? DEFAULT_TEXT_WIDTH : DEFAULT_SHAPE_WIDTH),
       height: shapeData.height || (shapeType === 'text' ? DEFAULT_TEXT_HEIGHT : DEFAULT_SHAPE_HEIGHT),
       fill: shapeData.fill || '#3B82F6',
-      stroke: shapeData.stroke || '#3B82F6',
-      strokeWidth: shapeData.strokeWidth || SHAPE_STROKE_WIDTH,
+      stroke: shapeData.stroke || '#000000',
+      strokeWidth: shapeData.strokeWidth !== undefined ? shapeData.strokeWidth : 0,
       ...shapeData,
     };
     
@@ -99,7 +99,7 @@ export const useShapeManager = (currentUser, sessionId) => {
       // Text shapes should have black color by default and no stroke
       newShape.fill = shapeData.fill || '#000000';
       newShape.strokeWidth = 0;
-      newShape.stroke = 'transparent';
+      newShape.stroke = '#000000';
     }
     
     // Optimistic update - add to local state immediately
@@ -140,8 +140,8 @@ export const useShapeManager = (currentUser, sessionId) => {
         width: shapeData.width || (shapeType === 'text' ? DEFAULT_TEXT_WIDTH : DEFAULT_SHAPE_WIDTH),
         height: shapeData.height || (shapeType === 'text' ? DEFAULT_TEXT_HEIGHT : DEFAULT_SHAPE_HEIGHT),
         fill: shapeData.fill || '#3B82F6',
-        stroke: shapeData.stroke || '#3B82F6',
-        strokeWidth: shapeData.strokeWidth || SHAPE_STROKE_WIDTH,
+        stroke: shapeData.stroke || '#000000',
+        strokeWidth: shapeData.strokeWidth !== undefined ? shapeData.strokeWidth : 0,
         userId: currentUser.uid,
         ...shapeData,
       };
@@ -156,7 +156,7 @@ export const useShapeManager = (currentUser, sessionId) => {
         // Text shapes should have black color by default and no stroke
         newShape.fill = shapeData.fill || '#000000';
         newShape.strokeWidth = 0;
-        newShape.stroke = 'transparent';
+        newShape.stroke = '#000000';
       }
       
       return newShape;
