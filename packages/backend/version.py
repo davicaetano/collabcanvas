@@ -8,8 +8,8 @@ Version format: YYYY.MM.DD.BUILD
 - BUILD: Build number for the day (increment for each deployment/fix)
 """
 
-__version__ = "2025.10.18.10"
-__version_name__ = "Auto-reload Agent on File Changes"
+__version__ = "2025.10.18.11"
+__version_name__ = "Fix arrange spacing default to 0"
 
 def get_version():
     """Get the current backend version."""

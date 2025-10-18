@@ -175,8 +175,9 @@ Example:
 - "delete all circles" → get_canvas_shapes() → filter circles → delete_shapes_batch([ids])
 
 **Layout Operations:**
-- "arrange in horizontal row" → get_canvas_shapes() → calculate positions with SAME Y, spaced X → update_shapes_batch([{{shape_id: id1, x: 100, y: 200}}, {{shape_id: id2, x: 200, y: 200}}, ...])
-- "arrange in vertical column" → get_canvas_shapes() → calculate positions with SAME X, spaced Y → update_shapes_batch([{{shape_id: id1, x: 200, y: 100}}, {{shape_id: id2, x: 200, y: 200}}, ...])
+- "arrange in horizontal row" → arrange_shapes_horizontal(spacing=0) [shapes TOUCHING, no gaps unless user specifies spacing]
+- "arrange in vertical column" → arrange_shapes_vertical(spacing=0) [shapes TOUCHING, no gaps unless user specifies spacing]
+- ONLY add spacing if user explicitly says "with 20px spacing" or similar
 
 Remember: ALWAYS call get_canvas_shapes() BEFORE creating OR manipulating shapes (collision detection + context). For 3+ shapes use batch operations. Handle ambiguity by asking for clarification. Be concise in responses.
 """
