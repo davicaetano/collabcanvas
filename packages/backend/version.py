@@ -8,8 +8,8 @@ Version format: YYYY.MM.DD.BUILD
 - BUILD: Build number for the day (increment for each deployment/fix)
 """
 
-__version__ = "2025.10.18.5"
-__version_name__ = "Batch Operations - Final Template Fix"
+__version__ = "2025.10.18.6"
+__version_name__ = "Fast Random Shapes Tool"
 
 def get_version():
     """Get the current backend version."""

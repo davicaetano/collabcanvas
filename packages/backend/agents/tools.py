@@ -466,6 +466,108 @@ def delete_shape_by_id(
 # ==================== COMPLEX CREATE OPERATIONS ====================
 
 @tool
+def create_random_shapes_simple(
+    count: int,
+    shape_type: str = "rectangle",
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Create multiple random shapes efficiently (optimized for large quantities).
+    
+    This tool is MUCH FASTER than create_shapes_batch for creating many shapes
+    because it generates shapes in Python instead of requiring the LLM to generate
+    a large JSON array.
+    
+    **Use this tool when:**
+    - User asks for 50+ shapes (e.g., "create 500 rectangles")
+    - User wants random positions and colors
+    - Speed is important
+    
+    Args:
+        count: Number of shapes to create (can be 100, 500, 1000+)
+        shape_type: Type of shapes - "rectangle", "circle", or "mixed" (default: "rectangle")
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+    
+    Examples:
+        create_random_shapes_simple(count=500, shape_type="rectangle")
+        create_random_shapes_simple(count=100, shape_type="circle")
+        create_random_shapes_simple(count=1000, shape_type="mixed")
+    """
+    import random
+    
+    shape_type = shape_type.lower()
+    if shape_type not in ["rectangle", "circle", "mixed"]:
+        shape_type = "rectangle"
+    
+    # Color palette for random colors
+    colors = [
+        "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
+        "#FFA500", "#800080", "#FFC0CB", "#A52A2A", "#808080", "#000080"
+    ]
+    
+    shapes = []
+    for i in range(count):
+        # Determine shape type (for mixed mode)
+        if shape_type == "mixed":
+            current_type = random.choice(["rectangle", "circle"])
+        else:
+            current_type = shape_type
+        
+        # Random position (spread across canvas, avoiding edges)
+        x = random.randint(50, 2950)
+        y = random.randint(50, 2950)
+        
+        # Random size
+        width = random.randint(30, 150)
+        height = random.randint(30, 150) if current_type == "rectangle" else width
+        
+        # Random color
+        color = random.choice(colors)
+        
+        shape = {
+            "id": f"{generate_shape_id()}-{i}",
+            "type": current_type,
+            "x": float(x),
+            "y": float(y),
+            "width": float(width),
+            "height": float(height),
+            "fill": color,
+            "rotation": 0,
+            "stroke": "#000000",
+            "strokeWidth": 0,
+        }
+        shapes.append(shape)
+    
+    # Use existing batch create function
+    try:
+        success = create_shapes_batch_in_firestore(
+            shapes=shapes,
+            canvas_id=canvas_id,
+            session_id="ai-agent"
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Created {count} random {shape_type} shapes",
+                "shape_count": count
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Failed to create {count} shapes"
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error creating shapes: {str(e)}"
+        }
+
+
+@tool
 def create_grid(
     rows: int,
     cols: int,
@@ -852,6 +954,7 @@ ALL_TOOLS = [
     # Create operations
     create_shape,
     create_text,
+    create_random_shapes_simple,  # NEW: Fast creation of many random shapes (50+)
     create_grid,
     create_form,
     
