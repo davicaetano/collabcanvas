@@ -6,14 +6,15 @@ canvas manipulation capabilities using LangChain and OpenAI.
 """
 
 import os
+import asyncio
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import logging
 
-from agents.canvas_agent import execute_canvas_command
+from agents.canvas_agent import execute_canvas_command, initialize_agent, check_agent_health, get_agent_stats
 from version import __version__, __version_name__
 
 # Load environment variables
@@ -115,6 +116,7 @@ async def root():
         "endpoints": {
             "health": "/health",
             "version": "/version",
+            "agent_health": "/agent/health",
             "ai_command": "/api/ai/command",
             "docs": "/docs",
         }
@@ -128,6 +130,16 @@ async def get_version():
         "version": __version__,
         "name": __version_name__,
         "message": f"CollabCanvas Backend v{__version__} ({__version_name__})"
+    }
+
+
+@app.get("/agent/health")
+async def get_agent_health():
+    """Get AI agent health status and statistics"""
+    stats = get_agent_stats()
+    return {
+        "status": "healthy" if stats["is_initialized"] else "not_initialized",
+        **stats
     }
 
 
@@ -211,12 +223,19 @@ async def execute_ai_command(request: AICommandRequest):
 # Startup Event
 # ============================================================================
 
+async def agent_health_monitor():
+    """Background task that checks agent health every 10 minutes"""
+    while True:
+        await asyncio.sleep(600)  # 10 minutes = 600 seconds
+        check_agent_health()
+
+
 @app.on_event("startup")
 async def startup_event():
     """
     Startup event handler
     
-    Logs configuration and checks API key on startup.
+    Logs configuration, checks API key, and initializes AI agent.
     """
     logger.info("=" * 60)
     logger.info("CollabCanvas AI Backend Starting...")
@@ -231,6 +250,18 @@ async def startup_event():
     else:
         logger.warning("✗ OpenAI API Key: NOT CONFIGURED - AI features will not work!")
         logger.warning("  Please set OPENAI_API_KEY in your .env file")
+    
+    # Initialize AI Agent at startup (zero latency on first call)
+    logger.info("🤖 Initializing AI Agent...")
+    try:
+        initialize_agent()
+        logger.info("✓ AI Agent: Initialized and ready")
+    except Exception as e:
+        logger.error(f"✗ AI Agent: Failed to initialize - {e}")
+    
+    # Start background health check task
+    asyncio.create_task(agent_health_monitor())
+    logger.info("✓ Agent Health Monitor: Started (10min interval)")
     
     logger.info("=" * 60)
 

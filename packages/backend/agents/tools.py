@@ -423,6 +423,257 @@ def change_shape_color(
 
 
 @tool
+def arrange_shapes_horizontal(
+    spacing: float = 0,
+    y_position: Optional[float] = None,
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Arrange all shapes in a horizontal row (left to right).
+    
+    Each shape starts where the previous one ends, plus optional spacing.
+    
+    **Use when:**
+    - User says "arrange in a row", "line up horizontally", "put in a horizontal line"
+    - User wants shapes organized left to right
+    
+    Args:
+        spacing: Gap between shapes in pixels (default: 0 = no gap, shapes touching)
+        y_position: Y coordinate for the row (optional, uses average if not provided)
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+    
+    Example:
+        User: "arrange all shapes in a horizontal row"
+        → arrange_shapes_horizontal(spacing=0)
+        
+        User: "arrange shapes in a row with 20px spacing"
+        → arrange_shapes_horizontal(spacing=20)
+    """
+    try:
+        # Get all shapes
+        shapes = get_all_shapes(canvas_id)
+        
+        if len(shapes) == 0:
+            return {
+                "success": False,
+                "message": "No shapes on canvas to arrange"
+            }
+        
+        # Calculate Y position (use average of all shapes if not provided)
+        if y_position is None:
+            y_position = sum(s.get('y', 0) for s in shapes) / len(shapes)
+        
+        # Sort shapes by current X position (left to right)
+        shapes_sorted = sorted(shapes, key=lambda s: s.get('x', 0))
+        
+        # Calculate new positions
+        updates = []
+        current_x = 100  # Start position
+        
+        for shape in shapes_sorted:
+            updates.append({
+                'shape_id': shape['id'],
+                'x': current_x,
+                'y': y_position
+            })
+            # Next shape starts where this one ends + spacing
+            shape_width = shape.get('width', 50)
+            current_x += shape_width + spacing
+        
+        # Apply updates in batch
+        success = update_shapes_batch_in_firestore(
+            updates=updates,
+            canvas_id=canvas_id,
+            session_id="ai-agent"
+        )
+        
+        if success:
+            # Apply updates to shapes in memory to return updated shapes
+            for i, shape in enumerate(shapes_sorted):
+                shape['x'] = updates[i]['x']
+                shape['y'] = updates[i]['y']
+            
+            return {
+                "success": True,
+                "message": f"Arranged {len(shapes)} shapes in horizontal row",
+                "shape_count": len(shapes),
+                "shapes": shapes_sorted  # Return updated shapes
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to arrange shapes"
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error arranging shapes: {str(e)}"
+        }
+
+
+@tool
+def arrange_shapes_vertical(
+    spacing: float = 0,
+    x_position: Optional[float] = None,
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Arrange all shapes in a vertical column (top to bottom).
+    
+    Each shape starts where the previous one ends, plus optional spacing.
+    
+    **Use when:**
+    - User says "arrange in a column", "stack vertically", "put in a vertical line"
+    - User wants shapes organized top to bottom
+    
+    Args:
+        spacing: Gap between shapes in pixels (default: 0 = no gap, shapes touching)
+        x_position: X coordinate for the column (optional, uses average if not provided)
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+    
+    Example:
+        User: "arrange all shapes in a vertical column"
+        → arrange_shapes_vertical(spacing=0)
+        
+        User: "arrange shapes vertically with 20px spacing"
+        → arrange_shapes_vertical(spacing=20)
+    """
+    try:
+        # Get all shapes
+        shapes = get_all_shapes(canvas_id)
+        
+        if len(shapes) == 0:
+            return {
+                "success": False,
+                "message": "No shapes on canvas to arrange"
+            }
+        
+        # Calculate X position (use average of all shapes if not provided)
+        if x_position is None:
+            x_position = sum(s.get('x', 0) for s in shapes) / len(shapes)
+        
+        # Sort shapes by current Y position (top to bottom)
+        shapes_sorted = sorted(shapes, key=lambda s: s.get('y', 0))
+        
+        # Calculate new positions
+        updates = []
+        current_y = 100  # Start position
+        
+        for shape in shapes_sorted:
+            updates.append({
+                'shape_id': shape['id'],
+                'x': x_position,
+                'y': current_y
+            })
+            # Next shape starts where this one ends + spacing
+            shape_height = shape.get('height', 50)
+            current_y += shape_height + spacing
+        
+        # Apply updates in batch
+        success = update_shapes_batch_in_firestore(
+            updates=updates,
+            canvas_id=canvas_id,
+            session_id="ai-agent"
+        )
+        
+        if success:
+            # Apply updates to shapes in memory to return updated shapes
+            for i, shape in enumerate(shapes_sorted):
+                shape['x'] = updates[i]['x']
+                shape['y'] = updates[i]['y']
+            
+            return {
+                "success": True,
+                "message": f"Arranged {len(shapes)} shapes in vertical column",
+                "shape_count": len(shapes),
+                "shapes": shapes_sorted  # Return updated shapes
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to arrange shapes"
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error arranging shapes: {str(e)}"
+        }
+
+
+@tool
+def delete_all_shapes(
+    canvas_id: str = "main-canvas"
+) -> Dict[str, Any]:
+    """
+    Delete ALL shapes from the canvas in one fast operation.
+    
+    This is MUCH FASTER than getting all shapes and then calling delete_shapes_batch,
+    because it does everything in one operation.
+    
+    **Use when:**
+    - User says "delete all", "clear canvas", "remove everything", "delete all shapes"
+    - User wants to start fresh
+    
+    **WARNING:** This deletes EVERYTHING. Cannot be undone.
+    
+    Args:
+        canvas_id: ID of the canvas (default: "main-canvas")
+    
+    Returns:
+        Dictionary with success status and message
+    
+    Example:
+        User: "delete all shapes"
+        → delete_all_shapes()
+    """
+    try:
+        # Get all shapes
+        shapes = get_all_shapes(canvas_id)
+        
+        if len(shapes) == 0:
+            return {
+                "success": True,
+                "message": "Canvas is already empty (no shapes to delete)",
+                "shape_count": 0
+            }
+        
+        # Get all shape IDs
+        shape_ids = [shape['id'] for shape in shapes]
+        
+        # Delete all in batch
+        success = delete_shapes_batch_from_firestore(
+            shape_ids=shape_ids,
+            canvas_id=canvas_id
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Deleted all {len(shapes)} shapes from canvas",
+                "shape_count": len(shapes)
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to delete all shapes"
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error deleting all shapes: {str(e)}"
+        }
+
+
+@tool
 def delete_shape_by_id(
     shape_id: str,
     canvas_id: str = "main-canvas"
@@ -963,7 +1214,10 @@ ALL_TOOLS = [
     resize_shape,
     rotate_shape,
     change_shape_color,
+    arrange_shapes_horizontal,  # NEW: Arrange all shapes in horizontal row
+    arrange_shapes_vertical,    # NEW: Arrange all shapes in vertical column
     delete_shape_by_id,
+    delete_all_shapes,          # NEW: Delete all shapes (fast clear)
     
     # Batch operations (for 3+ shapes - faster performance)
     create_shapes_batch,
