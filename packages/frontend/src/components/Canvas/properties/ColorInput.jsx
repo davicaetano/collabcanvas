@@ -99,12 +99,11 @@ const ColorInput = ({
         const beforeColor = colorBeforeOpen;
         
         if (finalColor !== beforeColor) {
-          // Apply change IMMEDIATELY and SYNCHRONOUSLY
-          onChange(finalColor);
+          // Save to favorites (onChange already called in real-time during selection)
           saveColorToFavorites(finalColor);
         }
         
-        // Close picker AFTER applying changes
+        // Close picker AFTER saving to favorites
         setIsPickerOpen(false);
       }
     };
@@ -152,8 +151,9 @@ const ColorInput = ({
   const handleFavoriteColorClick = (color) => {
     if (disabled) return;
     setLocalValue(color);
-    currentColorRef.current = color; // Update ref synchronously to ensure closePicker uses the new color
-    // Will apply and save when picker closes
+    currentColorRef.current = color; // Update ref synchronously
+    onChange(color); // Apply change immediately
+    // Will save to favorites when picker closes
     closePicker();
   };
 
@@ -171,9 +171,9 @@ const ColorInput = ({
 
   const closePicker = () => {
     const finalColor = currentColorRef.current;
-    // Apply the color change and save to favorites when closing (if changed)
+    // Save to favorites when closing (if changed)
+    // Note: onChange is already called in real-time during color selection
     if (finalColor !== colorBeforeOpen) {
-      onChange(finalColor); // Apply the change
       saveColorToFavorites(finalColor); // Save to favorites
     }
     setIsPickerOpen(false);
@@ -226,10 +226,11 @@ const ColorInput = ({
                 <HexColorPicker 
                   color={localValue} 
                   onChange={(color) => {
-                    // Only update local value, don't trigger onChange yet
-                    // Will save when picker closes
+                    // Update local value and apply change immediately for real-time feedback
                     setLocalValue(color);
                     currentColorRef.current = color; // Update ref synchronously
+                    onChange(color); // Apply change in real-time
+                    // Will save to favorites when picker closes
                   }}
                   style={{ width: '100%', height: '120px' }}
                 />
