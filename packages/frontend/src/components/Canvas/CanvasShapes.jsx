@@ -301,7 +301,10 @@ const CanvasShapes = React.memo(({
           onDragEnd={(e) => {
             if (!isSelectMode) return;
             // Stop event propagation to prevent canvas dragging
-            e.evt.stopPropagation();
+            e.evt?.stopPropagation();
+            
+            // Safety check: if shape was deleted during drag, abort
+            if (!shape || !shape.width || !shape.height) return;
             
             // Get final position from Konva (center position)
             // Convert back to top-left corner for Firebase storage

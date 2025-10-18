@@ -208,9 +208,14 @@ export const useShapeManager = (currentUser, sessionId) => {
     try {
       await updateShapeInFirestore(shapeId, validatedUpdates, sessionId);
     } catch (error) {
-      // Note: We don't rollback on error because Firestore might be temporarily offline
-      // The next Firestore sync will correct the state if needed
+      // Silently ignore "document not found" errors in multiplayer scenarios
+      // This happens when another user deletes a shape while we're updating it
+      if (error.code === 'not-found' || error.message?.includes('No document to update')) {
+        return; // Shape was deleted by another user, ignore the error
+      }
       
+      // Note: We don't rollback on other errors because Firestore might be temporarily offline
+      // The next Firestore sync will correct the state if needed
       throw error;
     }
   }, [sessionId]);
