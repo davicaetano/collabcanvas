@@ -107,7 +107,8 @@ const CanvasShapes = React.memo(({
     }
     
     // Send final update to Firebase immediately
-    shapeManager.updateShape(shapeId, finalDimensions);
+    // force=true ensures final dimensions are saved even when offline (queued for reconnection)
+    shapeManager.updateShape(shapeId, finalDimensions, true);
     
     // Clear from resizing state
     setResizingShapes(prev => {
@@ -165,6 +166,7 @@ const CanvasShapes = React.memo(({
     const now = Date.now();
     const shouldUpdate = now - (e.target._lastShapeUpdate || 0) > SHAPE_UPDATE_THROTTLE;
     
+    // Send updates during drag (shapeManager decides whether to send to Firebase based on connection)
     if (shouldUpdate) {
       if (isMultipleSelection) {
         // Move all selected shapes together
@@ -181,13 +183,13 @@ const CanvasShapes = React.memo(({
           }
         });
         
-        // Batch update all shapes through shapeManager
+        // Batch update all shapes (force=false by default, skips if offline)
         shapeManager.updateShapeBatch(updates).catch(() => {
           // Ignore errors during drag - Firestore might be temporarily busy
         });
         
       } else {
-        // Single shape movement - use shape manager
+        // Single shape movement (force=false by default, skips if offline)
         shapeManager.updateShape(shape.id, {
           x: newPosition.x,
           y: newPosition.y,
@@ -322,6 +324,7 @@ const CanvasShapes = React.memo(({
             const isMultipleSelection = selectedShapes.length > 1 && selectedShapes.includes(shape.id);
             
             // Immediate final update to Firebase (no throttle)
+            // force=true ensures this update is queued even when offline (sent when reconnecting)
             if (isMultipleSelection) {
               const updates = {};
               selectedShapes.forEach(shapeId => {
@@ -333,9 +336,9 @@ const CanvasShapes = React.memo(({
                   };
                 }
               });
-              shapeManager.updateShapeBatch(updates);
+              shapeManager.updateShapeBatch(updates, true);
             } else {
-              shapeManager.updateShape(shape.id, finalPosition);
+              shapeManager.updateShape(shape.id, finalPosition, true);
             }
             
             // Clear local positions after a small delay to allow Firebase sync

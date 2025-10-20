@@ -9,6 +9,7 @@ import {
   deleteShapesBatch as deleteShapesBatchInFirestore,
   deleteAllShapes as deleteAllShapesInFirestore,
 } from '../../../utils/firestore';
+import { useConnectionStatus } from './useConnectionStatus';
 import { 
   DEFAULT_SHAPE_WIDTH,
   DEFAULT_SHAPE_HEIGHT,
@@ -41,6 +42,9 @@ import {
  */
 export const useShapeManager = (currentUser, sessionId) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
+  
+  // Track connection status for conditional Firebase updates
+  const { isConnected } = useConnectionStatus();
   
   // ==================== STATE ====================
   
@@ -180,11 +184,15 @@ export const useShapeManager = (currentUser, sessionId) => {
   
   /**
    * Update a single shape
+   * 
    * @param {string} shapeId - Shape ID
    * @param {Object} updates - Properties to update
+   * @param {boolean} force - If true, sends update even when offline (queues for later)
+   *                          Used in dragEnd to ensure final position is always saved.
+   *                          If false (default), skips update when offline to prevent queue buildup during drag.
    * @returns {Promise<void>}
    */
-  const updateShape = useCallback(async (shapeId, updates) => {
+  const updateShape = useCallback(async (shapeId, updates, force = false) => {
     // Validate all updates
     const validatedUpdates = {};
     for (const [key, value] of Object.entries(updates)) {
@@ -204,6 +212,16 @@ export const useShapeManager = (currentUser, sessionId) => {
       shape.id === shapeId ? { ...shape, ...validatedUpdates } : shape
     ));
     
+    // 🚫 Skip Firebase update if offline (unless force = true)
+    // This prevents queue buildup during drag when offline.
+    // When force = true (e.g., dragEnd), Firebase will queue the update for when connection returns.
+    if (!isConnected && !force) {
+      if (isDevMode) {
+        console.log('[ShapeManager] Skipping update (offline, not forced):', shapeId);
+      }
+      return;
+    }
+    
     // Sync to Firestore
     try {
       await updateShapeInFirestore(shapeId, validatedUpdates, sessionId);
@@ -218,14 +236,18 @@ export const useShapeManager = (currentUser, sessionId) => {
       // The next Firestore sync will correct the state if needed
       throw error;
     }
-  }, [sessionId]);
+  }, [sessionId, isConnected, isDevMode]);
   
   /**
    * Update multiple shapes at once (batch operation)
+   * 
    * @param {Object} updatesMap - Map of shapeId -> updates
+   * @param {boolean} force - If true, sends update even when offline (queues for later)
+   *                          Used in dragEnd to ensure final position is always saved.
+   *                          If false (default), skips update when offline to prevent queue buildup during drag.
    * @returns {Promise<void>}
    */
-  const updateShapeBatch = useCallback(async (updatesMap) => {
+  const updateShapeBatch = useCallback(async (updatesMap, force = false) => {
     // Validate all updates
     const validatedUpdatesMap = {};
     for (const [shapeId, updates] of Object.entries(updatesMap)) {
@@ -252,13 +274,23 @@ export const useShapeManager = (currentUser, sessionId) => {
       return updates ? { ...shape, ...updates } : shape;
     }));
     
+    // 🚫 Skip Firebase update if offline (unless force = true)
+    // This prevents queue buildup during drag when offline.
+    // When force = true (e.g., dragEnd), Firebase will queue the update for when connection returns.
+    if (!isConnected && !force) {
+      if (isDevMode) {
+        console.log('[ShapeManager] Skipping batch update (offline, not forced):', Object.keys(validatedUpdatesMap).length, 'shapes');
+      }
+      return;
+    }
+    
     // Sync to Firestore
     try {
       await updateShapesBatchInFirestore(validatedUpdatesMap, sessionId);
     } catch (error) {
       throw error;
     }
-  }, [sessionId]);
+  }, [sessionId, isConnected, isDevMode]);
   
   /**
    * Delete a single shape

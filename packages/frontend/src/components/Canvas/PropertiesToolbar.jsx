@@ -44,9 +44,10 @@ const PropertiesToolbar = ({ selectedShapes = [], shapes = [], shapeManager, can
     
     try {
       // shapeManager handles validation, optimistic update, and Firestore sync
+      // force=true ensures property changes are saved even when offline (queued for reconnection)
       await shapeManager.updateShape(shapeId, {
         [propertyName]: newValue
-      });
+      }, true);
       
     } catch (error) {
       // shapeManager handles rollback if needed

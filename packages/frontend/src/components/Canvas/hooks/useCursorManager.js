@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { updateCursor, removeCursor, subscribeToCursors } from '../../../utils/firestore';
 import { getUserColor } from '../../../utils/colors';
+import { useConnectionStatus } from './useConnectionStatus';
 
 /**
  * Central Cursor Manager Hook
@@ -13,6 +14,7 @@ import { getUserColor } from '../../../utils/colors';
  * - Handles cursor updates (throttled)
  * - Manages user presence (join/leave)
  * - Syncs with Firestore in real-time
+ * - Only sends cursor updates when connected (prevents queue buildup)
  * 
  * @param {Object} currentUser - Current authenticated user
  * @param {string} sessionId - Unique session ID for this browser tab
@@ -20,6 +22,7 @@ import { getUserColor } from '../../../utils/colors';
  */
 export const useCursorManager = (currentUser, sessionId) => {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
+  const { isConnected } = useConnectionStatus();
   
   // ==================== STATE ====================
   
@@ -46,6 +49,8 @@ export const useCursorManager = (currentUser, sessionId) => {
    * Track cursor position from stage coordinates
    * Converts stage position to canvas position and updates cursor in Firestore
    * 
+   * ONLY sends updates when connected - prevents queue buildup when offline
+   * 
    * @param {Object} params - Parameters object
    * @param {Object} params.stageRef - Stage ref
    * @param {number} params.stageX - Stage X offset
@@ -54,6 +59,9 @@ export const useCursorManager = (currentUser, sessionId) => {
    */
   const trackCursorFromStage = useCallback(({ stageRef, stageX, stageY, stageScale }) => {
     if (!currentUser) return;
+    
+    // 🚫 Don't send cursor updates when offline
+    if (!isConnected) return;
     
     const stage = stageRef.current;
     if (!stage) return;
@@ -67,23 +75,28 @@ export const useCursorManager = (currentUser, sessionId) => {
       y: (pos.y - stageY) / stageScale,
     };
     
-    // Update cursor in Firestore
+    // Update cursor in Firestore (only when online!)
     updateCursor(currentUser.uid, {
       x: canvasPos.x,
       y: canvasPos.y,
       name: currentUser.displayName,
       color: getUserColor(currentUser.uid),
     });
-  }, [currentUser]);
+  }, [currentUser, isConnected]);
   
   /**
    * Track cursor position from canvas coordinates (already converted)
    * Updates cursor in Firestore with throttling for performance
    * 
+   * ONLY sends updates when connected - prevents queue buildup when offline
+   * 
    * @param {Object} canvasPos - Canvas position {x, y}
    */
   const trackCursorPosition = useCallback((canvasPos) => {
     if (!currentUser) return;
+    
+    // 🚫 Don't send cursor updates when offline
+    if (!isConnected) return;
     
     // Throttle updates for performance
     const now = Date.now();
@@ -92,14 +105,14 @@ export const useCursorManager = (currentUser, sessionId) => {
     }
     lastUpdateRef.current = now;
     
-    // Update cursor in Firestore
+    // Update cursor in Firestore (only when online!)
     updateCursor(currentUser.uid, {
       x: canvasPos.x,
       y: canvasPos.y,
       name: currentUser.displayName,
       color: getUserColor(currentUser.uid),
     });
-  }, [currentUser]);
+  }, [currentUser, isConnected]);
   
   /**
    * Cleanup cursor data from Firestore

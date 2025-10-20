@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../../utils/firebase';
+import React from 'react';
+import { useConnectionStatus } from './hooks/useConnectionStatus';
 
 /**
  * ConnectionStatus Component
  * 
  * Displays a small indicator showing Firestore connection status.
- * Uses a real-time listener on the shapes collection to detect connectivity.
+ * Uses the shared useConnectionStatus hook for consistent state.
  * 
  * States:
  * - Connected (green): Successfully receiving Firestore updates
@@ -14,30 +13,7 @@ import { db } from '../../utils/firebase';
  * - Disconnected (red): No connection to Firestore (changes queued locally)
  */
 const ConnectionStatus = React.memo(() => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(true);
-
-  useEffect(() => {
-    setIsConnecting(true);
-    
-    // Listen to shapes collection to detect Firestore connectivity
-    const shapesRef = collection(db, 'canvases', 'main-canvas', 'shapes');
-    const unsubscribe = onSnapshot(
-      shapesRef,
-      (snapshot) => {
-        setIsConnected(true);
-        setIsConnecting(false);
-      },
-      (error) => {
-        setIsConnected(false);
-        setIsConnecting(false);
-      }
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+  const { isConnected, isConnecting } = useConnectionStatus();
 
   // Don't render anything in production (optional)
   // Uncomment the line below to hide in production
