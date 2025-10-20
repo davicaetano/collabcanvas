@@ -11,6 +11,7 @@ const CanvasStage = React.memo(({
   canvasState, 
   handlers, 
   currentUser,
+  onlineUsers,
   onShapeSelect,
   shapeManager,
   cursorManager
@@ -156,7 +157,12 @@ const CanvasStage = React.memo(({
           />
           
           {/* Cursors */}
-          <CanvasCursors cursors={cursorManager.cursors} currentUser={currentUser} stageScale={stageScale} />
+          <CanvasCursors 
+            cursors={cursorManager.cursors} 
+            onlineUsers={onlineUsers}
+            currentUser={currentUser} 
+            stageScale={stageScale} 
+          />
         </Layer>
       </Stage>
     </div>

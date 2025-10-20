@@ -1,7 +1,7 @@
 import React from 'react';
 import { Group, Line, RegularPolygon, Text as KonvaText } from 'react-konva';
 
-const CanvasCursors = React.memo(({ cursors, currentUser, stageScale = 1 }) => {
+const CanvasCursors = React.memo(({ cursors, onlineUsers, currentUser, stageScale = 1 }) => {
   // Calculate inverse scale to keep cursor size constant regardless of zoom
   const cursorScale = 1 / stageScale;
   
@@ -9,6 +9,7 @@ const CanvasCursors = React.memo(({ cursors, currentUser, stageScale = 1 }) => {
     <>
       {Object.entries(cursors)
         .filter(([userId]) => userId !== currentUser?.uid)
+        .filter(([userId]) => onlineUsers && onlineUsers[userId])
         .map(([userId, cursor]) => (
           <Group 
             key={userId} 

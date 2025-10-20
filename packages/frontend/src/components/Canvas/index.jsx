@@ -158,6 +158,7 @@ const Canvas = () => {
             canvasState={canvasState}
             handlers={handlers}
             currentUser={currentUser}
+            onlineUsers={canvasState.onlineUsers}
             onShapeSelect={handleShapeSelect}
             shapeManager={shapeManager}
             cursorManager={cursorManager}
